@@ -15,8 +15,10 @@ links:
 theory:
 	$(MAKE) -C theory
 
+# PYTHONPATH is cleared: a ROS install on the host leaks its site-packages via
+# PYTHONPATH and auto-registers broken pytest plugins; the venv must stay hermetic.
 test:
-	$(VENV)/bin/pytest -q
+	PYTHONPATH= $(VENV)/bin/pytest -q
 
 # usage: make review-pack ARGS="001 topic-slug [files...]"
 review-pack:
