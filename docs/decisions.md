@@ -24,6 +24,10 @@ One entry per hard-to-reverse decision. Format: `D<nnn> — <title> — <date> �
 - git tracks text only; `data/` and `results/` are gitignored symlinks.
 - Raw data is immutable by convention + `checksums.sha256`; filesystem-enforced
   immutability arrives with the migration to native Ubuntu/ext4.
+- Implementation note (2026-08-15): data root provisioned under `$GEOFDI_DATA_ROOT` with
+  `data/raw/{m1/{legacy-aug,audit,nominal,nuisance,pilot-fault},public/{liu-a1-fault,street-a1,legkilo-go1},sim}`,
+  `data/processed`, `results`, `models`, `lit`, `scratch`, `review/{outbox,archive,feedback}`;
+  repo symlinks `data/`, `results/` created and verified by `scripts/setup_paths.sh`.
 
 ## D003 — Formalization of H0 — 2026-08-15 — accepted
 
