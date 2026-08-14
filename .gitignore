@@ -1,0 +1,23 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- data & results: symlinks into $GEOFDI_DATA_ROOT, never committed ---
+/data
+/results
+
+# --- LaTeX build artifacts ---
+theory/build/
+
+# --- editors / OS noise ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+*Zone.Identifier

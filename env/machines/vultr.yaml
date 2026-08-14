@@ -1,0 +1,7 @@
+# Machine profile: Vultr cloud instance (compute bursts, CI-less checks).
+machine: vultr
+# TODO: set the real path when the instance is provisioned (placeholder below).
+data_root: /root/geofdi-data
+notes: >
+  Placeholder profile. Sync only the processed subsets an experiment needs;
+  raw data stays on the primary machine.

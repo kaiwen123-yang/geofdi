@@ -1,0 +1,35 @@
+# Normalize all text to LF in the repository.
+* text=auto eol=lf
+
+# Explicit text types
+*.py   text
+*.sh   text
+*.tex  text
+*.bib  text
+*.md   text
+*.yaml text
+*.yml  text
+*.toml text
+*.svg  text
+
+# Binary — never eol-convert, never textual diff
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.pdf     binary
+*.zip     binary
+*.tar     binary
+*.gz      binary
+*.bag     binary
+*.mcap    binary
+*.db3     binary
+*.npz     binary
+*.npy     binary
+*.parquet binary
+*.h5      binary
+*.hdf5    binary
+*.pkl     binary
+*.pt      binary
+*.onnx    binary
+*.mat     binary

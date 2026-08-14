@@ -1,0 +1,9 @@
+# e03 — head-to-head against baselines on the public Liu et al. A1 fault
+# dataset (resolved under data/raw/public/liu-a1-fault via the repo symlink).
+experiment: e03_liu_a1_headtohead
+seed: 0
+data:
+  source: public/liu-a1-fault
+  splits: [test]
+baselines: [supervised_classifier]
+metrics: [detection_delay, auc, false_alarms_per_hour]

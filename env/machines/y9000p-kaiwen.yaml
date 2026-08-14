@@ -1,0 +1,8 @@
+# Machine profile: future native Ubuntu install on the Lenovo Y9000P.
+machine: y9000p-kaiwen
+# TODO: set the real data volume mount point once the machine is provisioned
+# (placeholder below; pick an ext4 volume so chmod-based raw immutability holds).
+data_root: /data/geofdi-data
+notes: >
+  Placeholder profile. On native Ubuntu the data root must live on ext4 so that
+  ingest_session.sh's chmod -R a-w actually protects raw sessions.

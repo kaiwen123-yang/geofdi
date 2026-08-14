@@ -1,0 +1,17 @@
+# e02 — the "money figure": contact-aided InEKF innovation stream on a nominal
+# run vs. a run with an injected fault, with the symmetry-test alarm overlaid.
+experiment: e02_inekf_money_figure
+seed: 0
+data:
+  source: sim
+  fault:
+    type: gain_loss
+    leg: LF
+    joint: knee
+    scale: 0.7
+    onset_cycle: 100
+detector:
+  statistic: mirror_pair_energy   # placeholder until N1-3 fixes the statistic
+  calibration_cycles: 50
+outputs:
+  figures: [innovation_timeline, alarm_overlay]

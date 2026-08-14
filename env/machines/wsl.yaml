@@ -1,0 +1,9 @@
+# Machine profile: WSL2 Ubuntu 22.04 on the Windows laptop.
+# This yaml is the ONLY configuration location where the Windows mount path may
+# appear; all code reaches data via $GEOFDI_DATA_ROOT or the repo symlinks.
+machine: wsl
+data_root: /mnt/g/geofdi-data
+notes: >
+  Windows G: drive mounted through drvfs. NTFS does not honor POSIX
+  permissions, so raw-data immutability here is convention + checksums
+  (chmod-enforced only after migration to native Ubuntu/ext4).

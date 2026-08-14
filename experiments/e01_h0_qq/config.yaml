@@ -1,0 +1,13 @@
+# e01 — H0 sanity check: p-values of the invariance test must be uniform under
+# the null. Deliverable: QQ plot of p-values on H0-true data (sim first, then
+# nominal M1 flat-trot sessions).
+experiment: e01_h0_qq
+seed: 0
+data:
+  source: sim            # sim | m1_nominal
+  n_cycles: 200
+test:
+  statistic: mirror_pair_energy   # placeholder until N1-3 fixes the statistic
+  n_permutations: 1000
+outputs:
+  figures: [qq_pvalues]
