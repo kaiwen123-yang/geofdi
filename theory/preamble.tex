@@ -1,0 +1,53 @@
+% Shared preamble for the GeoFDI theory notes.
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{array}
+\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
+\usepackage{xcolor}
+% todonotes needs TikZ; fall back to a plain red inline note if unavailable so
+% the document still builds on a minimal TeX installation.
+\IfFileExists{todonotes.sty}{%
+  \usepackage[colorinlistoftodos,textsize=footnotesize]{todonotes}%
+}{%
+  \newcommand{\todo}[2][]{\textbf{\textcolor{red}{[TODO: #2]}}}%
+  \newcommand{\listoftodos}{}%
+}
+\usepackage[colorlinks=true,linkcolor=blue!55!black,citecolor=blue!55!black,urlcolor=blue!55!black]{hyperref}
+
+% ---------- theorem-like environments ----------
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{assumption}{Assumption}
+\renewcommand{\theassumption}{A\arabic{assumption}}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% ---------- notation macros ----------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Law}{\operatorname{Law}}
+\newcommand{\dtv}{d_{\mathrm{TV}}}
+\newcommand{\SE}{\mathrm{SE}}
+\newcommand{\SO}{\mathrm{SO}}
+\newcommand{\Ogrp}{\mathrm{O}}
+\newcommand{\eqdist}{\overset{d}{=}}
+\newcommand{\gs}{g_{\mathrm{s}}}               % sagittal reflection
+\newcommand{\symgrp}{\Sigma}                   % spatio-temporal gait symmetry group
+\newcommand{\eps}[1]{\varepsilon_{\mathrm{#1}}}
+\newcommand{\repQ}{\rho_{Q}}
+\newcommand{\repX}{\rho_{X}}
+\newcommand{\repU}{\rho_{U}}
+\newcommand{\repY}{\rho_{Y}}
+\newcommand{\repR}{\rho_{R}}
+\newcommand{\repW}{\rho_{W}}                   % block action on the data space W = X x U x Y
+\newcommand{\repenv}{\rho_{\mathrm{env}}}      % action on exogenous environment inputs
+\newcommand{\push}[1]{{#1}_{\#}}               % pushforward of a measure

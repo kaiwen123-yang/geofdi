@@ -1,0 +1,35 @@
+\documentclass[11pt]{article}
+\input{preamble}
+
+\title{GeoFDI Theory Notes --- Part 0:\\ Hypotheses and Assumptions}
+\author{GeoFDI project}
+\date{August 15, 2026 --- working notes v0.1}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We formalize the null hypothesis underlying GeoFDI: for a legged robot whose
+morphology, controller, environment, and sensing are (approximately) symmetric,
+the phase-registered per-cycle data stream is distribution-invariant under the
+gait's spatio-temporal symmetry group $\symgrp \subset G \times S^1$. Faults
+that break this symmetry become detectable as violations of distributional
+invariance, without any dynamics model of the fault. This note fixes notation
+and the concrete form of the symmetry representations (including the
+pseudovector transformation of gyroscope channels), states the standing
+assumptions A1--A4 with $\varepsilon$-approximate variants, audit procedures,
+and degradation paths, and derives the hypotheses $H_0$ and $H_1$, an
+$\varepsilon$-robustness lemma, and the recalibrated null $H_0'$ used when
+exact controller symmetry fails.
+\end{abstract}
+
+\tableofcontents
+\listoftodos
+
+\input{sections/00_notation}
+\input{sections/01_assumptions}
+
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+\end{document}

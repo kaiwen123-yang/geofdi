@@ -1,0 +1,162 @@
+\section{Scope and notation}
+\label{sec:notation}
+
+These notes are Part~0 of the GeoFDI theory series. They fix notation and the
+concrete form of the symmetry representations, state the standing assumptions
+\ref{as:dyn}--\ref{as:noise} together with $\varepsilon$-approximate variants,
+audit procedures, and degradation paths, and formalize the null hypothesis
+$H_0$ (distributional symmetry of healthy gait data), the structured
+alternative $H_1$, and the recalibrated null $H_0'$. Test construction,
+cross-cycle exchangeability, the isotypic detectability characterization, and
+full proofs are deferred to later parts (workstreams N1-1 through N1-4).
+
+The project sits between two literatures. Model-based proprioceptive fault and
+collision detection builds residuals from a dynamics model and monitors them
+\cite{haddadin2017robot,evangelisti2024datadriven}; symmetry-aware robotics
+identifies the finite morphological symmetry group of a robot and exploits it
+as an algebraic structure on models and data
+\cite{ordonez2023discrete,ordonez2025morphological}. GeoFDI uses the second
+structure to stand in for the first's model: under the assumptions of
+Section~\ref{sec:assumptions}, \emph{healthy} closed-loop gait data is
+distribution-invariant under the gait's spatio-temporal symmetry group, so
+fault detection reduces to statistical testing of group invariance --- a
+hypothesis class that admits exact, distribution-free permutation tests
+\cite{hemerik2018exact} and anytime-valid sequential e-processes
+\cite{perezortiz2024estatistics}.
+
+\subsection{State, input, output, and residual spaces}
+\label{sec:spaces}
+
+We consider a floating-base legged robot with $n_j$ actuated joints. The
+configuration space is
+\[
+  Q \;=\; \SE(3) \times \mathbb{T}^{n_j},
+  \qquad q = (q_B, q_J),
+\]
+with $q_B = (R_{B}, p_{B}) \in \SE(3)$ the base pose (body-to-world rotation
+and world position) and $q_J \in \mathbb{T}^{n_j}$ the joint coordinates. The
+state is $x = (q, v) \in X = TQ$, where $v = (\xi, \dot q_J) \in \R^{6+n_j}$
+stacks the body twist $\xi = (v_b, \omega_b)$ and the joint rates. Actuation
+commands (desired torques or motor commands) live in $u \in U \subseteq
+\R^{n_u}$. The measured output $y \in Y$ collects the proprioceptive channels:
+IMU specific force $a$ and angular rate $\omega$, joint encoders and rates,
+motor currents or measured torques, and per-leg contact indicators
+$c \in \{0,1\}^{4}$.
+
+A \emph{residual} $r \in R$ is any causally computed function of the data
+stream designed to be small or structured when the robot is healthy. The
+theory below treats $y$ and $r$ generically; the concrete channels planned for
+GeoFDI are the innovation sequences of a contact-aided invariant extended
+Kalman filter \cite{hartley2020contact,barrau2017invariant} and
+generalized-momentum residuals \cite{evangelisti2024datadriven}, alongside raw
+tracking errors. When a residual generator is built equivariantly, the induced
+representation $\repR$ on $R$ makes the residual stream inherit the symmetry
+of the data (workstream N2).
+
+\subsection{Morphological symmetry group and representations}
+\label{sec:group}
+
+$G$ denotes the finite morphological symmetry group of the robot: the group of
+transformations that map the mechanism onto itself (relabeling mirrored limbs
+and reflecting spatial quantities) while preserving its kinematic and dynamic
+description \cite{ordonez2023discrete,ordonez2025morphological}. $G$ acts on
+every space in play through representations
+\[
+  \repQ \text{ on } Q,\qquad
+  \repX \text{ on } X,\qquad
+  \repU \text{ on } U,\qquad
+  \repY \text{ on } Y,\qquad
+  \repR \text{ on } R,
+\]
+whose concrete matrices are spelled out in Section~\ref{sec:reps}. A map
+$h : X \times U \to X$ is \emph{$G$-equivariant} if
+$h(\repX(g)x, \repU(g)u) = \repX(g)\,h(x,u)$ for all $g \in G$. We write
+$W = X \times U \times Y$ for the per-sample data space and
+$\repW = \repX \oplus \repU \oplus \repY$ for the block action on it.
+Exogenous environment inputs (terrain heights, pushes) are denoted
+$w$ with action $\repenv$.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+symbol & meaning \\
+\midrule
+$Q = \SE(3)\times\mathbb{T}^{n_j}$ & configuration space: floating base $\times$ joints \\
+$x = (q,v) \in X$ & state; $v = (\xi, \dot q_J)$ body twist and joint rates \\
+$u \in U$ & actuation commands (torques / motor commands) \\
+$y \in Y$ & proprioceptive outputs (IMU, encoders, currents, contacts) \\
+$r \in R$ & residual channels (InEKF innovations, momentum residuals, \dots) \\
+$G$, $\gs$ & finite morphological symmetry group; sagittal reflection ($G=\mathbb{C}_2$ for M1) \\
+$\repQ,\repX,\repU,\repY,\repR$ & representations of $G$ on the respective spaces \\
+$W$, $\repW$ & data space $X\times U\times Y$ and its block action \\
+$w$, $\repenv$ & exogenous environment inputs and their action \\
+$\theta \in S^1 = \R/\mathbb{Z}$ & gait phase (period normalized to 1); $T$ = period [s] \\
+$\symgrp \subset G \times S^1$ & spatio-temporal symmetry group of the commanded gait \\
+$\sigma = (g, \Delta\theta)$ & element of $\symgrp$: spatial action paired with phase shift \\
+$Z_k$ & phase-registered per-cycle data element, cycle $k$ \\
+$\rho(\sigma)$ & action on cycle elements: $(\rho(\sigma)Z)(\theta) = \repW(g)\,Z(\theta+\Delta\theta)$ \\
+$\eps{dyn},\eps{ctrl},\eps{env},\eps{noise}$ & equivariance defects of the approximate assumptions \\
+$\nu$, $\nu_0$ & asymmetry functional and its calibration value (for $H_0'$) \\
+\bottomrule
+\end{tabular}
+\caption{Symbols used throughout the GeoFDI notes.}
+\label{tab:symbols}
+\end{table}
+
+\subsection{Gait phase and per-cycle data elements}
+\label{sec:cycles}
+
+The commanded gait is periodic with period $T$; the \emph{gait phase}
+$\theta(t) \in S^1$ is the normalized position within the cycle, estimated from
+contact events or a phase oscillator (workstream N1/N3; the phase-registration
+error budget enters the $\varepsilon$ accounting of
+Section~\ref{sec:h0prime}). Slicing the telemetry at phase zero yields the
+\emph{per-cycle data element}
+\[
+  Z_k \;=\; \bigl\{\, (x(t), u(t), y(t)) \;:\; t \in \text{cycle } k \,\bigr\},
+\]
+which after phase registration is a random function
+$Z_k : S^1 \to W$ --- the fundamental statistical object of this project: all
+tests act on the sequence $(Z_k)_{k\ge 1}$, never on raw time series.%
+\footnote{In implementation, channels are resampled on a fixed $N$-point phase
+grid, so $Z_k$ is a random vector in $\R^{dN}$ ($d$ channels); every law below
+lives on that finite-dimensional space, which sidesteps measure-theoretic
+subtleties on function spaces. $N$ is a protocol parameter.}
+
+For $\sigma = (g, \Delta\theta) \in G \times S^1$ define the action on cycle
+elements by
+\begin{equation}
+  \label{eq:cycle-action}
+  (\rho(\sigma) Z)(\theta) \;=\; \repW(g)\, Z(\theta + \Delta\theta),
+\end{equation}
+i.e.\ spatially transform every channel and shift the phase. This is a group
+action, and restricting it to the gait's symmetry group $\symgrp$
+(Section~\ref{sec:gait}) gives the invariance tested by $H_0$.
+
+\subsection{Concretization for the M1 quadruped}
+\label{sec:m1}
+
+For the M1 quadruped we take
+\[
+  G \;=\; \mathbb{C}_2 \;=\; \{e, \gs\},
+\]
+where $\gs$ is the sagittal (left--right) reflection, acting on leg labels by
+the permutation
+\[
+  \sigma_{\mathrm{s}} \;=\; (\mathrm{LF}\;\mathrm{RF})(\mathrm{LH}\;\mathrm{RH}),
+\]
+i.e.\ left-front $\leftrightarrow$ right-front and left-hind
+$\leftrightarrow$ right-hind. Front--hind symmetry is \emph{not} assumed (mass
+distribution and leg geometry differ between front and hind pairs), so the
+richer groups $\mathbb{C}_2\times\mathbb{C}_2$ or $\mathbb{K}_4$ of idealized
+quadrupeds are unavailable.
+
+\todo[inline]{M1 joint count and ordering are unresolved: it is not yet
+confirmed whether the platform is a 12-DoF point-foot quadruped (three joints
+per leg) or carries additional wheel degrees of freedom. $n_j$, the joint
+ordering convention, and the per-joint reflection signs of
+Table~\ref{tab:joint-signs} will be back-filled from the Day-0 telemetry
+audit. All statements are written for generic $n_j$ and specialize once the
+audit lands.}

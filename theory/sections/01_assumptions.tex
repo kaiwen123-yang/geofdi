@@ -1,0 +1,590 @@
+\section{Hypotheses and standing assumptions}
+\label{sec:assumptions}
+
+This section is written to be liftable into the paper's appendix. Throughout,
+``nominal'' means fault-free hardware executing the commanded gait;
+``healthy law'' means the probability law of the nominal per-cycle elements
+$Z_k$ of Section~\ref{sec:cycles}.
+
+\subsection{Concrete form of the morphological representations}
+\label{sec:reps}
+
+Fix the world frame with $x$ forward, $y$ to the robot's left, $z$ up, so the
+sagittal plane is the $x$--$z$ plane. The sagittal reflection acts on
+$\R^3$ by
+\[
+  E \;=\; \operatorname{diag}(1,-1,1) \;\in\; \Ogrp(3),
+  \qquad \det E = -1,\qquad E^2 = I .
+\]
+
+\paragraph{Base pose.}
+On the base pose $q_B = (R_B, p_B) \in \SE(3)$ the reflection acts by the
+conjugation
+\begin{equation}
+  \label{eq:base-action}
+  \repQ(\gs)\,(R_B,\, p_B) \;=\; \bigl(E\,R_B\,E,\;\; E\,p_B\bigr).
+\end{equation}
+Conjugating (rather than left-multiplying) keeps the result in $\SO(3)$:
+$\det(E R_B E) = \det R_B = +1$. Geometrically, the mirrored robot's body
+frame is itself reflected, which restores right-handedness; this is the
+standard action of reflections on floating-base systems
+\cite{ordonez2025morphological}.
+
+\paragraph{Base velocities.}
+Body-frame linear velocity is a true (polar) vector, body-frame angular
+velocity is a pseudovector (axial vector):
+\begin{equation}
+  \label{eq:twist-action}
+  v_b \;\longmapsto\; E\,v_b,
+  \qquad
+  \omega_b \;\longmapsto\; \det(E)\,E\,\omega_b \;=\; -E\,\omega_b .
+\end{equation}
+Since $-E = \operatorname{diag}(-1,1,-1)$, the pitch rate $\omega_y$ is
+\emph{preserved} while roll $\omega_x$ and yaw $\omega_z$ \emph{flip} --- as
+intuition demands: a robot rolling to its left maps to one rolling to its
+right, while pitching forward stays pitching forward.
+
+\paragraph{Joint coordinates.}
+The reflection permutes legs by $\sigma_{\mathrm{s}}$ and flips the sign of
+joints whose axes are reversed by the mirror. With three joints per leg
+(hip abduction/adduction HAA, hip flexion/extension HFE, knee KFE) and the
+\emph{uniform-axis convention} (all four legs carry identically oriented joint
+axes), the joint representation is
+\begin{equation}
+  \label{eq:joint-action}
+  q_J \;\longmapsto\; P_{\gs}\, q_J,
+  \qquad
+  P_{\gs} \;=\; \Pi_{\sigma_{\mathrm{s}}} \otimes S,
+  \qquad
+  S = \operatorname{diag}(s_{\mathrm{HAA}}, s_{\mathrm{HFE}}, s_{\mathrm{KFE}}),
+\end{equation}
+where $\Pi_{\sigma_{\mathrm{s}}}$ is the $4\times4$ leg-permutation matrix and
+the signs follow from the axis directions (Table~\ref{tab:joint-signs}).
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+joint & axis (uniform convention) & behavior under $\gs$ & sign $s$ \\
+\midrule
+hip abduction/adduction (HAA, ``roll'')   & $\pm x$ & leg swapped, angle flips & $-1$ \\
+hip flexion/extension (HFE, ``pitch'')    & $\pm y$ & leg swapped, angle kept  & $+1$ \\
+knee flexion/extension (KFE, ``pitch'')   & $\pm y$ & leg swapped, angle kept  & $+1$ \\
+wheel spin (if present)                   & $\pm y$ & leg swapped, rate kept   & $+1$ \\
+\bottomrule
+\end{tabular}
+\caption{Per-joint transformation under the sagittal reflection, assuming the
+uniform-axis convention. The M1-specific signs are to be \emph{measured}, not
+assumed (see the remark below).}
+\label{tab:joint-signs}
+\end{table}
+
+\begin{remark}[Vendor conventions absorb signs]
+\label{rem:vendor-signs}
+Firmware and URDF files frequently define \emph{mirrored} positive directions
+between left and right legs, in which case part or all of $S$ is absorbed into
+the coordinates and $P_{\gs}$ is closer to a pure permutation. The actual $S$
+for M1 must therefore be established from data (commanding small symmetric
+motions and checking recorded signs), not read off a datasheet.
+\todo[inline]{Back-fill the M1 joint ordering, per-joint signs, and wheel DoFs
+(if any) in Table~\ref{tab:joint-signs} after the Day-0 telemetry audit.}
+\end{remark}
+
+\paragraph{Actuation.}
+Joint torques are conjugate to joint coordinates and transform by the same
+matrix: $\repU(\gs) = P_{\gs}$ (restricted to the actuated coordinates).
+Signed motor currents follow the torque sign; magnitude-only channels
+(e.g.\ RMS current, temperature) transform by the pure permutation
+$\Pi_{\sigma_{\mathrm{s}}}$.
+
+\paragraph{IMU channels.}
+The accelerometer measures specific force, a true vector; the rate gyro
+measures angular velocity, a pseudovector:
+\begin{equation}
+  \label{eq:imu-action}
+  a \;\longmapsto\; E\,a,
+  \qquad
+  \omega \;\longmapsto\; \det(E)\,E\,\omega \;=\; -E\,\omega .
+\end{equation}
+(A magnetometer, if one is ever used, measures the magnetic field --- also a
+pseudovector --- and transforms like $\omega$.)%
+\footnote{This sign is a known implementation trap: applying $E$ instead of
+$-E$ to the gyro corrupts the mirrored data by a sign error on the
+$\omega_x,\omega_z$ (equivalently, on $\omega_y$, depending on the erroneous
+variant) channels, so mirrored and original healthy data \emph{systematically}
+disagree. The test then rejects $H_0$ on a perfectly healthy robot ---
+symmetry breaking fabricated by software, indistinguishable from a real fault
+and not fixable by more data. Guard: unit-test all representation code on
+simulated trajectories mirrored analytically, where invariance is exact by
+construction.}
+
+\paragraph{Contacts and ground reactions.}
+Per-leg contact indicators are permuted without signs:
+$c \mapsto \Pi_{\sigma_{\mathrm{s}}}\, c$. World-frame ground reaction forces
+are true vectors attached to legs, $f_i \mapsto E\, f_{\sigma_{\mathrm{s}}(i)}$;
+contact torques, if measured, are pseudovectors,
+$\tau_i \mapsto -E\, \tau_{\sigma_{\mathrm{s}}(i)}$.
+
+Collecting the blocks above gives the explicit matrices of
+$\repX$, $\repU$, $\repY$; the residual representation $\repR$ is induced by
+the (equivariant) residual generator (workstream N2).
+
+\subsection{Spatio-temporal gait symmetry}
+\label{sec:gait}
+
+A periodic gait couples space and time: reflecting a trotting robot does not
+reproduce the same instantaneous picture --- it reproduces the picture
+\emph{half a period later}. The right symmetry object is therefore not $G$
+alone but a subgroup of $G \times S^1$
+\cite{golubitsky1999symmetry,collins1993coupled,golubitsky2002symmetry}.
+
+\begin{definition}[Gait symmetry group]
+\label{def:gait-group}
+The commanded gait prescribes a subgroup
+$\symgrp \subset G \times S^1$, the \emph{spatio-temporal symmetry group} of
+the gait. The nominal closed-loop process is called $\symgrp$-symmetric if for
+every $\sigma = (g, \Delta\theta) \in \symgrp$ and all $t$,
+\begin{equation}
+  \label{eq:st-symmetry}
+  \bigl(x(t + \Delta\theta\, T),\; u(t + \Delta\theta\, T)\bigr)
+  \;\eqdist\;
+  \bigl(\repX(g)\, x(t),\; \repU(g)\, u(t)\bigr),
+\end{equation}
+with $\eqdist$ denoting equality in distribution.
+\end{definition}
+
+\paragraph{Trot.}
+The symmetric trot pairs diagonal legs and is generated by the single element
+$\sigma_* = (\gs, \tfrac12)$:
+\begin{equation}
+  \label{eq:trot}
+  \Bigl(x\bigl(t+\tfrac{T}{2}\bigr),\; u\bigl(t+\tfrac{T}{2}\bigr)\Bigr)
+  \;\eqdist\;
+  \bigl(\repX(\gs)\,x(t),\; \repU(\gs)\,u(t)\bigr),
+\end{equation}
+i.e.\ \emph{reflection composed with a half-period shift} --- not a pure
+spatial reflection. Since $\Delta\theta = \tfrac12$ is 2-torsion in $S^1$,
+$\sigma_*^2 = (e, 0)$ and $\symgrp_{\mathrm{trot}} = \{(e,0), (\gs,\tfrac12)\}
+\cong \mathbb{Z}_2$.
+
+\paragraph{Contrast: pronk and walk.}
+Two bracketing examples fix intuition:
+\begin{itemize}
+  \item \emph{Pronk} (all four legs in phase): the symmetry element is
+  $(\gs, 0)$ --- pure spatial reflection with \emph{zero} shift.
+  \item \emph{Walk}: primary walking gaits carry a \emph{quarter-period}
+  structure --- legs fire in sequence with $\Delta\theta = \tfrac14$ spacing,
+  and the full spatio-temporal symmetry is a cyclic group of order four
+  generated by a leg-cycling permutation with a $\tfrac14$ shift
+  \cite{golubitsky1999symmetry,collins1993coupled}. Leg-cycling permutations
+  mix front and hind legs, however, and are morphological symmetries only when
+  $G$ is larger than the sagittal $\mathbb{C}_2$. With $G = \mathbb{C}_2$
+  (the M1 case), the usable element of a lateral-sequence walk --- legs at
+  phases $\mathrm{LF}\!:0$, $\mathrm{RH}\!:\tfrac14$, $\mathrm{RF}\!:\tfrac12$,
+  $\mathrm{LH}\!:\tfrac34$ --- is again $(\gs, \tfrac12)$, since each mirror
+  pair sits half a period apart.
+\end{itemize}
+
+\begin{definition}[Mirror-pairing rule]
+\label{def:pairing}
+Let $\symgrp$ be generated by $(g, \Delta\theta_{\mathrm{gait}})$. Every
+scalar channel attached to leg $i$ and registered at phase $\theta$ is paired
+with the same channel of leg $\sigma(i)$ at phase
+$\theta + \Delta\theta_{\mathrm{gait}}$, after multiplication by the channel's
+sign under $\rho(g)$ (Section~\ref{sec:reps}). Under $H_0$
+(Definition~\ref{def:h0}) paired quantities are equal in distribution.
+\end{definition}
+
+Definition~\ref{def:pairing} is the construction rule for \emph{every} test
+statistic in this project: mirror pairs are the atoms from which paired
+differences, rank statistics, and kernel two-sample statistics are built. For
+the M1 trot: leg LF at phase $\theta$ pairs with leg RF at phase
+$\theta + \tfrac12$, and leg LH at $\theta$ with RH at $\theta + \tfrac12$.
+
+\subsection{Standing assumptions A1--A4}
+\label{sec:standing}
+
+Each assumption is stated in four registers: exact statement,
+$\varepsilon$-approximate variant (in total-variation distance), audit (who
+verifies it, on which data), and degradation path if falsified.
+
+\paragraph{Kernel notation.}
+The sampled nominal closed loop factorizes into a dynamics transition kernel
+$P_{\mathrm{dyn}}(\mathrm{d}x^+ \mid x, u, w)$, a (possibly randomized) policy
+kernel $P_{\mathrm{ctrl}}(\mathrm{d}u \mid x, \theta)$, an exogenous
+environment law $P_{\mathrm{env}}$ (terrain field and disturbances over a
+cycle), and an observation kernel $P_{\mathrm{obs}}(\mathrm{d}y \mid x)$. For
+a measurable map $\rho$ and a measure $\mu$, $\push{\rho}\mu$ denotes the
+pushforward; $\dtv$ is total variation; $\mathcal{K}$ is a compact operating
+region (the states, inputs, and environments visited by the commanded gait
+class). All suprema below are over $\mathcal{K}$.
+
+% ---------------------------------------------------------------- A1
+\begin{assumption}[Dynamics $G$-equivariance]
+\label{as:dyn}
+The nominal dynamics is $G$-equivariant: the drift satisfies
+$f(\repX(g)x, \repU(g)u) = \repX(g) f(x,u)$ for all $g \in G$, and, including
+process noise and exogenous inputs, the transition kernel satisfies
+\[
+  \push{\repX(g)}\, P_{\mathrm{dyn}}(\cdot \mid x, u, w)
+  \;=\;
+  P_{\mathrm{dyn}}\bigl(\cdot \mid \repX(g)x,\, \repU(g)u,\, \repenv(g)w\bigr)
+  \qquad \forall g \in G .
+\]
+\end{assumption}
+
+\emph{$\varepsilon$-variant (A1$'$).} The defect
+\[
+  \eps{dyn}
+  \;=\;
+  \sup_{(x,u,w) \in \mathcal{K},\; g \in G}
+  \dtv\Bigl(
+    \push{\repX(g)}\, P_{\mathrm{dyn}}(\cdot \mid x,u,w),\;
+    P_{\mathrm{dyn}}\bigl(\cdot \mid \repX(g)x, \repU(g)u, \repenv(g)w\bigr)
+  \Bigr)
+\]
+is finite and small.
+
+\emph{Nature and audit.} A1 is the structural morphological-symmetry
+assumption: it follows from a symmetric kinematic tree and symmetric mass
+distribution \cite{ordonez2023discrete,ordonez2025morphological}.
+Manufacturing asymmetry (mass and CoM offsets, friction spread, belt tension)
+makes exact equality false on real hardware; those effects are \emph{folded
+into $\eps{dyn}$}, not treated as faults. Audit: URDF/CAD parameter
+comparison plus mirrored system identification on \texttt{raw/m1/audit}
+sessions (per-joint chirps, slow sinusoids); statistic: relative gap between
+mirror-leg identified parameters.
+
+\emph{Degradation if falsified.} Per-leg nominal bias calibration: learn
+per-leg reference offsets during a certified-healthy calibration window and
+subtract them before testing --- i.e.\ absorb the \emph{static} part of the
+asymmetry into the reference measure, leaving only the dynamic part in
+$\eps{dyn}$. (Operationally this coincides with moving toward $H_0'$,
+Section~\ref{sec:h0prime}.)
+
+% ---------------------------------------------------------------- A2
+\begin{assumption}[Controller equivariance --- empirical, not axiomatic]
+\label{as:ctrl}
+The closed-loop policy $\pi$ respects the gait symmetry: for all
+$\sigma = (g, \Delta\theta) \in \symgrp$,
+\[
+  \pi\bigl(\repX(g)\,x,\; \theta\bigr)
+  \;=\;
+  \repU(g)\,\pi\bigl(x,\; \theta + \Delta\theta\bigr),
+\]
+and, for randomized or filtered controllers, the policy kernel satisfies the
+corresponding distributional identity
+$\push{\repU(g)} P_{\mathrm{ctrl}}(\cdot \mid x, \theta)
+= P_{\mathrm{ctrl}}(\cdot \mid \repX(g)x, \theta + \Delta\theta)$.
+\end{assumption}
+
+Because the condition is quantified over the whole group, replacing $\sigma$
+by $\sigma^{-1}$ shows the sign convention on $\Delta\theta$ is immaterial;
+for the trot generator $\Delta\theta = \tfrac12$ is 2-torsion anyway.
+
+\emph{$\varepsilon$-variant (A2$'$).}
+\[
+  \eps{ctrl}
+  \;=\;
+  \sup_{(x,\theta) \in \mathcal{K},\; \sigma \in \symgrp}
+  \dtv\Bigl(
+    \push{\repU(g)}\, P_{\mathrm{ctrl}}(\cdot \mid x, \theta),\;
+    P_{\mathrm{ctrl}}\bigl(\cdot \mid \repX(g)x,\, \theta + \Delta\theta\bigr)
+  \Bigr) .
+\]
+
+\emph{Nature and audit --- Gate 1.} A2 is an \emph{empirical hypothesis about
+the vendor controller}, not an axiom: M1 ships with an opaque locomotion
+controller, and whether it treats mirrored states symmetrically (equal gains,
+no hidden per-leg scheduling, symmetric internal filter states) is unknown.
+\emph{Gate~1} is the pre-registered audit that measures it: on
+\texttt{raw/m1/nominal} flat-ground trot data, compare the distribution of
+commanded torques at phase $\theta + \tfrac12$ against the
+$\repU(\gs)$-transformed commands at phase $\theta$, conditionally on matched
+mirrored state neighborhoods; report the estimated distributional distance
+$\hat\varepsilon_{\mathrm{ctrl}}$ with a confidence interval. Gate~1 passing
+(below budget $\tau_{\mathrm{ctrl}}$) licenses deploying $H_0$; failing
+switches deployment to $H_0'$.
+
+\emph{Degradation if falsified.} Switch the working null from $H_0$ to
+$H_0'$ (asymmetry-\emph{change} detection, Section~\ref{sec:h0prime}). No
+attempt is made to symmetrize an opaque controller.
+
+% ---------------------------------------------------------------- A3
+\begin{assumption}[Environment and disturbance symmetry]
+\label{as:env}
+The law of the exogenous inputs over a cycle (terrain height field along the
+path, external pushes) is $G$-invariant:
+$\Law(\repenv(g)\, w) = \Law(w)$ for all $g \in G$.
+\end{assumption}
+
+\emph{$\varepsilon$-variant (A3$'$).}
+$\eps{env} = \sup_{g \in G} \dtv\bigl(\push{\repenv(g)} P_{\mathrm{env}},\,
+P_{\mathrm{env}}\bigr)$.
+
+\emph{Nature and audit.} This is the weakest link. On prepared flat ground the
+assumption holds exactly (the environment is deterministically invariant).
+Outdoors it is made to hold \emph{in distribution, by protocol}: every strip
+is collected in both directions (out-and-back); composing direction reversal
+with the sagittal reflection turns a left-slope segment into a right-slope
+segment, so the pooled session ensemble is left--right balanced by
+construction. Audit: direction bookkeeping in \texttt{meta.yaml}
+(\texttt{direction} field) and the data catalog; estimated per-foot
+contact-height and base-attitude statistics compared across directions.
+
+\emph{Degradation if falsified.} Restrict analysis to flat segments; enforce
+paired-direction blocks in every test batch; carry an explicit $\eps{env}$
+term in the size budget of Lemma~\ref{lem:eps}.
+
+% ---------------------------------------------------------------- A4
+\begin{assumption}[Noise identically distributed across mirrored channels]
+\label{as:noise}
+Measurement noise is equally distributed across mirror-paired channels: the
+observation kernel is $G$-equivariant,
+$\push{\repY(g)} P_{\mathrm{obs}}(\cdot \mid x)
+= P_{\mathrm{obs}}(\cdot \mid \repX(g) x)$ for all $g \in G$. In particular,
+for each mirrored encoder/current pair the noise laws agree (up to the channel
+sign), and the IMU --- mapped to itself by the reflection --- has noise
+invariant under \eqref{eq:imu-action}.
+\end{assumption}
+
+\emph{$\varepsilon$-variant (A4$'$).}
+\[
+  \eps{noise}
+  \;=\;
+  \sup_{x \in \mathcal{K},\; g \in G}
+  \dtv\Bigl(
+    \push{\repY(g)}\, P_{\mathrm{obs}}(\cdot \mid x),\;
+    P_{\mathrm{obs}}\bigl(\cdot \mid \repX(g)x\bigr)
+  \Bigr) .
+\]
+
+\emph{Nature and audit.} Plausible because mirrored channels use identical
+sensor models and firmware; violated by unit-to-unit calibration spread.
+Audit: \texttt{raw/m1/audit} static-stand and suspended (legs unloaded)
+recordings; per-channel high-frequency residual distributions compared across
+mirror pairs (two-sample Kolmogorov--Smirnov / energy tests with false
+discovery rate control across channels) and PSD ratios.
+
+\begin{remark}[Temperature drift threatens exchangeability, not A4]
+\label{rem:temp}
+Motor temperature drift makes noise and friction \emph{nonstationary in
+time}. Under a symmetric gait, mirror legs heat approximately together, so
+cross-leg equality at matched times (A4) survives; what drift threatens is
+\emph{cross-cycle exchangeability} of $(Z_k)_k$ --- the validity requirement
+of the permutation/e-process machinery, which is a separate assumption
+handled in workstream N1-1 (local blocking, detrending, e-processes). The
+\texttt{motor\_temp\_start/end} fields of \texttt{meta.yaml} exist for exactly
+this audit.
+\end{remark}
+
+\emph{Degradation if falsified.} Per-channel standardization (studentized
+statistics), block permutations, detrending, and the e-process route.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}p{0.16\linewidth}p{0.36\linewidth}p{0.38\linewidth}@{}}
+\toprule
+assumption & falsification signal & degradation path \\
+\midrule
+\ref{as:dyn} dynamics &
+mirrored system-ID parameter gap above $\tau_{\mathrm{dyn}}$ &
+per-leg nominal bias calibration; enlarge $\eps{dyn}$ budget \\
+\ref{as:ctrl} controller &
+Gate~1 distributional gap above $\tau_{\mathrm{ctrl}}$ &
+switch working null to $H_0'$ (asymmetry change) \\
+\ref{as:env} environment &
+direction/terrain statistics unbalanced across mirror &
+flat-only segments + paired directions + explicit $\eps{env}$ budget \\
+\ref{as:noise} noise &
+mirrored-channel noise mismatch; temperature drift &
+standardization, blocking, detrending, e-process route (N1-1) \\
+\bottomrule
+\end{tabular}
+\caption{Falsification--degradation map for the standing assumptions.}
+\label{tab:degradation}
+\end{table}
+
+\subsection{Null and alternative hypotheses}
+\label{sec:h0}
+
+\begin{definition}[Null hypothesis $H_0$]
+\label{def:h0}
+Under Assumptions \ref{as:dyn}--\ref{as:noise} and a $\symgrp$-symmetric gait
+command, the phase-registered per-cycle data elements are
+distribution-invariant under the gait symmetry group:
+\begin{equation}
+  \label{eq:h0}
+  H_0 :\qquad
+  \Law\bigl(\rho(\sigma)\, Z_k\bigr) \;=\; \Law\bigl(Z_k\bigr)
+  \qquad \forall\, \sigma \in \symgrp .
+\end{equation}
+\end{definition}
+
+\begin{remark}[Exchangeability is a separate requirement]
+\label{rem:exch}
+Permutation tests and group-invariance e-processes additionally require that
+the cycle sequence $(Z_1, \dots, Z_n)$ be exchangeable (or satisfy a weaker
+martingale condition) for their validity guarantees
+\cite{hemerik2018exact,perezortiz2024estatistics}. That requirement is
+\emph{independent} of \eqref{eq:h0}: temperature drift and fatigue can destroy
+exchangeability across cycles while leaving each cycle's within-cycle mirror
+symmetry intact, and vice versa. It is deliberately \emph{not} folded into
+$H_0$; it is maintained and audited separately (workstream N1-1).
+\end{remark}
+
+\begin{definition}[Alternative $H_1$]
+\label{def:h1}
+$H_1$: $\Law(\rho(\sigma) Z_k) \neq \Law(Z_k)$ for some
+$\sigma \in \symgrp$. The \emph{structured} alternatives of interest are
+parametric fault families $\delta = (i, j, \text{type}, \text{magnitude})$
+acting on leg $i$, joint $j$: actuation faults
+$u_{ij} \mapsto \kappa\, u_{ij} + b$ (gain $\kappa \neq 1$ or bias
+$b \neq 0$) and the corresponding sensing faults on channel $(i,j)$. A fault
+supported on a single leg breaks the equivariance of the closed loop down to
+the stabilizer $\symgrp_\delta = \{\sigma \in \symgrp : \sigma \text{ fixes
+the fault pattern}\}$, which is trivial for generic single-leg faults.
+\end{definition}
+
+\subsubsection{Which faults are invisible: isotypic preview}
+\label{sec:isotypic}
+
+Under $G = \mathbb{C}_2$ every representation space splits into isotypic
+components for the trivial and sign representations,
+\[
+  R \;=\; R^{+} \oplus R^{-},
+\]
+with $R^{+}$ the symmetric combinations of mirror pairs (e.g.\
+$\mathrm{LF} + \mathrm{RF}$ channels, phase-aligned per
+Definition~\ref{def:pairing}) and $R^{-}$ the antisymmetric ones
+(e.g.\ $\mathrm{LF} - \mathrm{RF}$). An invariance test of \eqref{eq:h0} is
+sensitive exactly to the $R^{-}$ content of a fault signature; the precise
+detectability characterization is workstream N1-2. The structural consequence
+is worth stating early:
+
+\begin{example}[Bilateral synchronized degradation is invisible]
+\label{ex:bilateral}
+Suppose both front hips lose $20\%$ torque gain simultaneously and
+identically. The faulty closed loop is still $G$-equivariant, $H_0$ still
+holds, and \emph{no} $\symgrp$-invariance test can detect the fault: its
+signature lies entirely in the trivial component $R^{+}$. This blind spot is
+structural, not statistical --- it must be covered by complementary absolute
+channels (e.g.\ model-based residual magnitude
+\cite{haddadin2017robot,evangelisti2024datadriven}), not by tuning the
+statistic. Conversely, a single-leg gain loss perturbs
+$\mathrm{LF} - \mathrm{RF}$ at first order, has nonzero $R^{-}$ content, and
+is visible.
+\end{example}
+
+\subsection{$\varepsilon$-robustness and the recalibrated null $H_0'$}
+\label{sec:h0prime}
+
+Real hardware satisfies A1--A4 only approximately. The next lemma says the
+approximation errors degrade the test level \emph{additively} --- they do not
+invalidate it.
+
+\begin{lemma}[$\varepsilon$-robust type-I control]
+\label{lem:eps}
+Suppose the approximate variants A1$'$--A4$'$ hold with defects
+$\eps{dyn}, \eps{ctrl}, \eps{env}, \eps{noise}$. Then for every
+$\sigma \in \symgrp$,
+\begin{equation}
+  \label{eq:eps-bound}
+  \dtv\Bigl( \Law\bigl(\rho(\sigma) Z_k\bigr),\; \Law\bigl(Z_k\bigr) \Bigr)
+  \;\le\;
+  \eps{tot} \;:=\; \eps{dyn} + \eps{ctrl} + \eps{env} + \eps{noise},
+\end{equation}
+and every test $\varphi$ that is level-$\alpha$ under all exactly
+$\symgrp$-invariant laws satisfies
+$\mathbb{E}[\varphi] \le \alpha + \eps{tot}$ under the actual nominal law.
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+(i) $Z_k$ and $\rho(\sigma)Z_k$ are generated by two compositions of the same
+chain of kernels ($P_{\mathrm{env}}, P_{\mathrm{ctrl}}, P_{\mathrm{dyn}},
+P_{\mathrm{obs}}$) that differ, kernel by kernel, by at most the respective
+equivariance defect; replacing one kernel at a time and applying the
+data-processing inequality for total variation telescopes the distance to the
+sum \eqref{eq:eps-bound}. (ii) Let $\widetilde P$ be the law generated by the
+symmetrized kernels; $\widetilde P$ is exactly $\symgrp$-invariant and
+$\dtv(P, \widetilde P) \le \eps{tot}$ by the same hybrid argument, hence
+$\mathbb{E}_P[\varphi] \le \mathbb{E}_{\widetilde P}[\varphi] + \eps{tot}
+\le \alpha + \eps{tot}$. Full proof --- including measurability details and
+whether each constant carries a factor $\le 2$ depending on defining
+$\eps{\bullet}$ as an equivariance defect versus a distance to
+symmetrization --- is deferred to workstream N1-4.
+\end{proof}
+
+\begin{definition}[Recalibrated null $H_0'$: asymmetry-change detection]
+\label{def:h0prime}
+Fix an estimable asymmetry functional $\nu(P) \ge 0$ on laws of cycle
+elements, with $\nu(P) = 0$ when $P$ is $\symgrp$-invariant --- e.g.\ an
+energy-distance or kernel discrepancy between $\Law(Z)$ and
+$\Law(\rho(\sigma_*) Z)$ evaluated through a fixed statistic class. A
+calibration window of certified-healthy operation yields the nominal
+asymmetry level $\nu_0$ (and its sampling variability). The recalibrated
+hypotheses are
+\[
+  H_0' :\; \nu = \nu_0
+  \qquad \text{versus} \qquad
+  H_1' :\; \nu > \nu_0 \;\; \text{(drift/increase)} .
+\]
+\end{definition}
+
+$H_0'$ is the deployment form when Gate~1 fails, i.e.\ when the vendor
+controller is measurably but \emph{stably} asymmetric: the healthy signature
+is then a stable nonzero asymmetry, and faults are detected as \emph{changes}
+of asymmetry rather than its existence. The machinery is unchanged --- the
+same mirror-paired statistics compared between calibration and monitoring
+windows, with permutation or e-process calibration
+\cite{perezortiz2024estatistics} --- and $H_0'$ inherits a useful robustness:
+any static asymmetry common to calibration and monitoring (manufacturing
+offsets, stable controller bias) cancels by construction.
+
+\subsection{Appendix: assumption audit checklist}
+\label{sec:audit}
+
+Table~\ref{tab:audit} maps each assumption to the concrete audit that tests
+it: which raw-data batch, which statistic, and what passing means. Thresholds
+$\tau_{\mathrm{dyn}}, \tau_{\mathrm{ctrl}}, \tau_{\mathrm{env}},
+\alpha_{\mathrm{audit}}$ are protocol parameters to be frozen in
+\texttt{docs/protocol} \emph{before} the corresponding data collection; via
+Lemma~\ref{lem:eps} the $\tau$ budget translates directly into the type-I
+inflation budget of the deployed test.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}p{0.11\linewidth}p{0.27\linewidth}p{0.34\linewidth}p{0.18\linewidth}@{}}
+\toprule
+assumption & data batch & statistic & pass criterion \\
+\midrule
+\ref{as:dyn} &
+\texttt{raw/m1/audit}: per-joint chirps, slow sinusoids; URDF/CAD tables &
+relative gap of mirror-leg identified parameters (inertia, friction, torque
+constants) &
+gap $\le \tau_{\mathrm{dyn}}$ \\
+\ref{as:ctrl} (Gate~1) &
+\texttt{raw/m1/nominal}: flat-ground trot &
+distributional distance between mirrored commands at paired phases
+($\hat\varepsilon_{\mathrm{ctrl}}$ with CI) &
+$\hat\varepsilon_{\mathrm{ctrl}} \le \tau_{\mathrm{ctrl}}$ \\
+\ref{as:env} &
+\texttt{raw/m1/nominal}: direction-paired sessions &
+per-direction contact-height and base-attitude statistics; direction balance
+of the batch &
+$\hat\varepsilon_{\mathrm{env}} \le \tau_{\mathrm{env}}$ \\
+\ref{as:noise} &
+\texttt{raw/m1/audit}: static stand, suspended legs &
+mirrored-channel two-sample tests (KS/energy) with FDR control; PSD ratios;
+temperature-drift regression &
+no FDR rejection at $\alpha_{\mathrm{audit}}$ \\
+\bottomrule
+\end{tabular}
+\caption{Assumption audit checklist. Data batches refer to the raw-data layout
+of the project data root; procedures will be frozen in
+\texttt{docs/protocol}.}
+\label{tab:audit}
+\end{table}
