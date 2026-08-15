@@ -7,17 +7,17 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [x] 2509404 spec + progress file committed (`docs: sprint7 spec and progress file`)
 
 ## Block 0 — backfills (`chore: liu/sprint6 backfills, decisions D006–D009`)
-- [ ] 0.1 Liu PDF in `$GEOFDI_DATA_ROOT/lit/liu2025_grufd_ftc.pdf`; provenance = Gazebo simulation in `liu_a1_audit.md`
-- [ ] 0.2 fault model τ_real = η τ_cmd = `actuator_gain` recorded
-- [ ] 0.3 official joint order (0–2 LF, 3–5 LH, 6–8 RF, 9–11 RH) corrected in the audit doc
-- [ ] 0.4 CSV η fields scanned for diagonal double faults; e03 pre-registration class 4 decided
-- [ ] 0.5 GRU spec (Table I) → `baselines/gru.py` `mode: regression_eta`; `baseline_protocol.md` updated
-- [ ] 0.6 latency benchmark (~1 s) and the episode-length consequence recorded
-- [ ] 0.7 real-robot arguments (drift/aging/threshold limitation) → `theory_intake.md`
-- [ ] 0.8 theory_intake: N3-3 candidate, contamination saturation, centring trap
-- [ ] 0.9 decisions D006–D009
-- [ ] 0.10 protocol_params additions (URDF damping conservativeness, torque source, floors, centring trap, wheel-angle exclusion)
-- [ ] Block 0 review pack
+- [x] 23a69d9 0.1 Liu PDF in `$GEOFDI_DATA_ROOT/lit/liu2025_grufd_ftc.pdf`; provenance = Gazebo simulation in `liu_a1_audit.md`
+- [x] 23a69d9 0.2 fault model τ_real = η τ_cmd = `actuator_gain` recorded
+- [x] 23a69d9 0.3 official joint order (0–2 LF, 3–5 LH, 6–8 RF, 9–11 RH) corrected in the audit doc
+- [x] 23a69d9 0.4 CSV η fields scanned for diagonal double faults; e03 pre-registration class 4 decided
+- [x] 23a69d9 0.5 GRU spec (Table I) → `baselines/gru.py` `mode: regression_eta`; `baseline_protocol.md` updated
+- [x] 23a69d9 0.6 latency benchmark (~1 s) and the episode-length consequence recorded
+- [x] 23a69d9 0.7 real-robot arguments (drift/aging/threshold limitation) → `theory_intake.md`
+- [x] 23a69d9 0.8 theory_intake: N3-3 candidate, contamination saturation, centring trap
+- [x] 23a69d9 0.9 decisions D006–D009
+- [x] 23a69d9 0.10 protocol_params additions (URDF damping conservativeness, torque source, floors, centring trap, wheel-angle exclusion)
+- [x] rp015 Block 0 review pack
 
 ## Block W — dual hardware readiness → tag `hw-ready`
 - [ ] W1 wheeled M1 world (`m1_wheeled.xml` / `m1_wheeled_sym.xml`, ctrlrange/forcerange recorded, damping 0.05, IMU site)
