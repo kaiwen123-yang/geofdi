@@ -59,9 +59,11 @@ def build_manifest(include_groups=("q", "dq", "tau_cmd", "tau_meas", "imu_acc", 
             ch.append({"name": f"c_{leg}", "group": "contact", "leg": leg, "joint": None, "kind": "scalar-magnitude",
                        "partner": f"c_{MIRROR_LEG[leg]}", "sign": +1, "in_Z": True})
     if "temp" in include_groups:
+        # Temperature surrogate: a slow monotone nuisance (theory Remark rem:temp) — recorded for audits, NOT a
+        # per-cycle mirror atom: its within-cycle drift makes Z(theta) - Z(theta+1/2) systematically nonzero.
         for leg in LEGS:
             ch.append({"name": f"temp_{leg}", "group": "temp", "leg": leg, "joint": None, "kind": "scalar-magnitude",
-                       "partner": f"temp_{MIRROR_LEG[leg]}", "sign": +1, "in_Z": True})
+                       "partner": f"temp_{MIRROR_LEG[leg]}", "sign": +1, "in_Z": False})
     for name in ("base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "base_qz", "base_vx", "base_vy", "base_vz"):
         ch.append({"name": name, "group": "diagnostic", "leg": None, "joint": None, "kind": "diagnostic",
                    "partner": None, "sign": None, "in_Z": False})

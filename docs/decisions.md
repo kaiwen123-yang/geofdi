@@ -45,3 +45,25 @@ One entry per hard-to-reverse decision. Format: `D<nnn> — <title> — <date> �
   inflation is additive (ε-robustness lemma, theory Part 0 §5).
 - If Gate 1 shows the vendor controller is measurably asymmetric, the deployed null
   becomes H0′: asymmetry-*change* detection against a calibration baseline.
+
+## D004 — Simulation world for S0/S1 (Go2, headless MuJoCo) — 2026-08-15 — accepted
+
+- Model: Menagerie Unitree Go2 (commit `da76818e`) vendored mesh-free (`go2_sym.xml`), with two
+  symmetrization edits (FL calf collision cylinder; base inertia ixy/iyz projected out) so that the
+  dynamics are mirror-equivariant to floating point (t01: mirror-sim agrees to 1e-10). Actuators are
+  torque motors; the joint convention is uniform-axis (S = diag(-1,+1,+1)).
+- Controller: phase-driven PD trot, Σ-equivariant by construction (one left-leg template; RF/RH from
+  LF/LH by S and a half-period shift). Reference is C¹ (sin² lift) and the phase is an integer clock:
+  a discontinuous reference velocity sampled exactly at the stance/swing transition (float ambiguity in
+  θ = t/T) produced a systematic mirror asymmetry at two grid points — a lesson worth remembering.
+- Gait parameters: kp = 80, kd = 2, lift (KFE 0.45, HFE 0.20), period 0.5 s, speed 0 (trot in
+  place). At kp = 60 with the same lift the Σ-symmetric orbit is *unstable* and the trot settles into
+  a chiral limit cycle (spontaneous symmetry breaking: A1–A4 hold, H0 is false for the realized law).
+  H0 therefore also needs the symmetric orbit to be the unique attractor (theory: ergodicity caveat).
+- Data element Z: q, dq, tau_cmd, tau_meas (12 each), IMU a/w (body frame), contacts — 58 channels.
+  The temperature surrogate stays in the telemetry but is **not** in Z (`in_Z: false`): it is a slow
+  monotone nuisance whose within-cycle drift makes Z(θ) − Z(θ+½) systematically nonzero.
+- Registration: controller truth phase, N = 64 grid, first 10 cycles discarded as warm-up.
+- Test: Hemerik–Goeman random-subset flips over cycles (identity included, p = (1+#)/M, M = 512),
+  statistics = paired-difference L2 energy and mirror energy distance, per-channel standardization
+  by the flip-invariant pooled std.

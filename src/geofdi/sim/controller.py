@@ -49,9 +49,18 @@ class TrotParams:
     lift_hfe: float = 0.20                 # thigh forward at mid-swing (rad)
     leg_len: float = 0.30                  # effective leg length used to convert speed -> sweep [m]
     speed: float = 0.0                     # commanded forward speed [m/s] (0 = trot in place)
-    kp: tuple = (60.0, 60.0, 60.0)
-    kd: tuple = (1.5, 1.5, 1.5)
+    # kp=80/kd=2 keeps the Sigma-symmetric orbit stable; at kp=60 (lift .45/.20) the symmetric trot bifurcates
+    # into a chiral limit cycle (spontaneous symmetry breaking) — see experiments/e01_h0_qq/config.yaml notes.
+    kp: tuple = (80.0, 80.0, 80.0)
+    kd: tuple = (2.0, 2.0, 2.0)
     tau_max: tuple = (23.7, 23.7, 45.43)
+    # Equivariant lateral/yaw stabilizer (HAA setpoint offsets, identical gains on all legs; see stabilizer()).
+    # Needed because a purely open-loop trot has a lightly damped lateral sway / yaw mode with ~5 s memory.
+    stab_k_vy: float = 0.0        # rad per m/s of body-frame lateral velocity (all legs, same sign)
+    stab_k_roll: float = 0.0      # rad per rad of body roll (all legs, same sign)
+    stab_k_wx: float = 0.0        # rad per rad/s of roll rate (all legs, same sign)
+    stab_k_wz: float = 0.0        # rad per rad/s of yaw rate: front legs +, hind legs - (differential)
+    stab_max: float = 0.15        # |offset| clip [rad]
     asymmetry: list = field(default_factory=list)   # list[AsymmetrySpec]
 
 
@@ -74,9 +83,13 @@ class TrotController:
         s_st = th / d
         s_sw = (th - d) / (1.0 - d)
         haa = np.zeros_like(th) + self.q0[0]
+        # C^1 lift profile: sin^2 has zero slope at both swing boundaries, so the reference velocity (and hence
+        # the PD torque) is continuous at the stance/swing transitions when speed == 0. (For speed > 0 the linear
+        # stance sweep meets the swing return with a velocity kink, as in real trots.)
+        bump = np.sin(np.pi * s_sw) ** 2
         hfe = np.where(stance, self.q0[1] + self.sweep * (2 * s_st - 1),
-                       self.q0[1] + self.sweep * (1 - 2 * s_sw) - self.p.lift_hfe * np.sin(np.pi * s_sw))
-        kfe = np.where(stance, self.q0[2] + 0 * th, self.q0[2] - self.p.lift_kfe * np.sin(np.pi * s_sw))
+                       self.q0[1] + self.sweep * (1 - 2 * s_sw) - self.p.lift_hfe * bump)
+        kfe = np.where(stance, self.q0[2] + 0 * th, self.q0[2] - self.p.lift_kfe * bump)
         return np.stack([haa, hfe, kfe], axis=-1)
 
     def reference(self, theta: float, with_velocity: bool = True):
@@ -105,12 +118,28 @@ class TrotController:
                 bias[i] = a.setpoint_bias
         return kp, kd, bias
 
+    def stabilizer(self, body: dict | None) -> np.ndarray:
+        """HAA setpoint offsets (12,) from body-frame quantities: v_y (lateral velocity), roll, roll rate w_x,
+        yaw rate w_z. Under the sagittal mirror all four inputs flip sign and so does HAA, and the same gains
+        act on every leg (front/hind differential for yaw), so the map is Sigma-equivariant by construction."""
+        off = np.zeros(12)
+        if not body:
+            return off
+        p = self.p
+        common = p.stab_k_vy * body.get("v_y", 0.0) + p.stab_k_roll * body.get("roll", 0.0) + p.stab_k_wx * body.get("w_x", 0.0)
+        yaw = p.stab_k_wz * body.get("w_z", 0.0)
+        for i, leg in enumerate(LEGS):
+            sgn_fh = 1.0 if leg in ("LF", "RF") else -1.0
+            off[3 * i] = np.clip(common + sgn_fh * yaw, -p.stab_max, p.stab_max)
+        return off
+
     def torque(self, q: np.ndarray, dq: np.ndarray, theta: float, t: float,
-               setpoint_offset: np.ndarray | None = None):
-        """PD torque command (12,) given measured joint state (12,) and gait phase; returns (tau, q_ref, dq_ref)."""
+               setpoint_offset: np.ndarray | None = None, body: dict | None = None):
+        """PD torque command (12,) given measured joint state (12,), gait phase, and optional body-state feedback;
+        returns (tau, q_ref, dq_ref)."""
         q_ref, dq_ref = self.reference(theta)
         kp, kd, bias = self.gains(t)
-        q_ref = q_ref + bias
+        q_ref = q_ref + bias + self.stabilizer(body)
         if setpoint_offset is not None:
             q_ref = q_ref + setpoint_offset
         tau = kp * (q_ref - q) + kd * (dq_ref - dq)

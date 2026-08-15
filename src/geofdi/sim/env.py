@@ -96,19 +96,27 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
     sid = {n: mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, n) for n in ("imu_acc", "imu_gyro", "base_quat", "base_linvel")}
     sadr = {n: (m.sensor_adr[i], m.sensor_dim[i]) for n, i in sid.items()}
     T = cparams.period_s
+    n_per = round(T / cfg.ctrl_dt)                             # control steps per gait period (integer phase clock)
+    if abs(n_per * cfg.ctrl_dt - T) > 1e-12:
+        raise ValueError("period_s must be an integer multiple of ctrl_dt (integer phase clock)")
+    k0 = round(cfg.phase_offset * n_per)
+    if abs(k0 - cfg.phase_offset * n_per) > 1e-9:
+        raise ValueError("phase_offset must be a multiple of ctrl_dt/period_s")
     n_steps = round(cfg.duration_s / cfg.ctrl_dt)
     rows = np.empty((n_steps, len(all_columns())), dtype=float)
     temp = np.zeros(4)
     a_temp = np.exp(-cfg.ctrl_dt / cfg.temp_tau_s)
+    gyr_prev = np.zeros(3)
     for k in range(n_steps):
         t = d.time
-        theta = (t / T + cfg.phase_offset) % 1.0
+        theta = ((k + k0) % n_per) / n_per                     # exact rational phase; no float ambiguity at transitions
         q = d.qpos[qadr].copy(); dq = d.qvel[vadr].copy()
         faults.advance(t)
         faults.model_update(t)
         q_meas = faults.measure(q, t) + rng.normal(0.0, noise.encoder_pos_std, 12)
         dq_meas = dq + rng.normal(0.0, noise.encoder_vel_std, 12)
-        tau_cmd, _, _ = ctrl.torque(q_meas, dq_meas, theta, t, setpoint_offset=faults.setpoint_offset(t))
+        body = _body_state(d, sadr, noise, rng, gyr_prev)
+        tau_cmd, _, _ = ctrl.torque(q_meas, dq_meas, theta, t, setpoint_offset=faults.setpoint_offset(t), body=body)
         tau_app = faults.torque(tau_cmd, t) + rng.normal(0.0, noise.actuator_std, 12)
         d.ctrl[:] = tau_app
         for _ in range(nsub):
@@ -116,6 +124,7 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
         tau_meas = tau_app + rng.normal(0.0, noise.torque_meas_std, 12)
         acc = d.sensordata[sadr["imu_acc"][0]:sadr["imu_acc"][0] + 3] + rng.normal(0.0, noise.imu_acc_std, 3)
         gyr = d.sensordata[sadr["imu_gyro"][0]:sadr["imu_gyro"][0] + 3] + rng.normal(0.0, noise.imu_gyro_std, 3)
+        gyr_prev = gyr
         c = np.zeros(4)
         for i in range(d.ncon):
             g1, g2 = d.contact[i].geom1, d.contact[i].geom2
@@ -135,6 +144,18 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
     if return_state:
         return df, manifest, (d.qpos.copy(), d.qvel.copy())
     return df, manifest
+
+
+def _body_state(d, sadr, noise, rng, gyr_meas):
+    """Body-frame feedback quantities for the stabilizer: roll (from the framequat sensor), roll/yaw rate (last
+    measured gyro sample), lateral velocity (framelinvel rotated into the body frame). Mirror-antisymmetric."""
+    q = d.sensordata[sadr["base_quat"][0]:sadr["base_quat"][0] + 4]
+    w, x, y, z = q
+    roll = np.arctan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y))
+    vw = d.sensordata[sadr["base_linvel"][0]:sadr["base_linvel"][0] + 3]
+    R = np.zeros(9); mujoco.mju_quat2Mat(R, q); R = R.reshape(3, 3)
+    vb = R.T @ vw
+    return {"roll": float(roll), "w_x": float(gyr_meas[0]), "w_z": float(gyr_meas[2]), "v_y": float(vb[1])}
 
 
 def keyframe_state(model: mujoco.MjModel | None = None):

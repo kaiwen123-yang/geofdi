@@ -490,7 +490,7 @@ channels:
   kind: scalar-magnitude
   partner: temp_RF
   sign: 1
-  in_Z: true
+  in_Z: false
 - name: temp_RF
   group: temp
   leg: RF
@@ -498,7 +498,7 @@ channels:
   kind: scalar-magnitude
   partner: temp_LF
   sign: 1
-  in_Z: true
+  in_Z: false
 - name: temp_LH
   group: temp
   leg: LH
@@ -506,7 +506,7 @@ channels:
   kind: scalar-magnitude
   partner: temp_RH
   sign: 1
-  in_Z: true
+  in_Z: false
 - name: temp_RH
   group: temp
   leg: RH
@@ -514,7 +514,7 @@ channels:
   kind: scalar-magnitude
   partner: temp_LH
   sign: 1
-  in_Z: true
+  in_Z: false
 - name: base_x
   group: diagnostic
   leg: null
