@@ -82,6 +82,13 @@ class SimConfig:
     noise: dict = field(default_factory=dict)        # NoiseConfig overrides
     faults: list = field(default_factory=list)       # FaultSpec dicts
     nuisance: list = field(default_factory=list)     # FaultSpec dicts (nuisance types)
+    foot_contact: str = "menagerie"  # 'menagerie' (soft feet, solimp .015 1 .022: tangential creep 1-3 cm/s under load) |
+                                      # 'stiff' (solref 0.004 1, solimp .9 .95 .001: rubber foot on hard floor; estimator worlds)
+    contact_force_thresh: float = 0.0 # contact indicator c = 1 iff the foot's normal contact force > this [N]
+                                      # (0 = geometric contact, S1/S2 default; estimators use a settled-foot threshold)
+    imu_mode: str = "sampled"         # 'sampled' (last substep) | 'averaged' (mean of substep readings) | 'integrating'
+                                      # (exact delta-v/delta-theta over the control step, as an integrating IMU reports;
+                                      # sampled accelerometers alias the contact impulses at 200 Hz: +0.014 m/s^2 z bias)
     init_qpos: list | None = None     # explicit initial state (overrides keyframe + perturbation)
     init_qvel: list | None = None
     temp_tau_s: float = 20.0          # temperature-surrogate time constant
@@ -96,6 +103,12 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
     m = model if model is not None else mujoco.MjModel.from_xml_path(scene_path(cfg.terrain))
     m.opt.timestep = cfg.sim_dt
     apply_terrain(m, cfg.terrain, cfg.slope_deg, cfg.slope_axis)
+    if cfg.foot_contact == "stiff":
+        for gname in FOOT_GEOMS:
+            gid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, gname)
+            m.geom_solref[gid] = (0.004, 1.0); m.geom_solimp[gid] = (0.9, 0.95, 0.001, 0.5, 2.0)
+    elif cfg.foot_contact != "menagerie":
+        raise ValueError(cfg.foot_contact)
     nsub = round(cfg.ctrl_dt / cfg.sim_dt)
     if abs(nsub * cfg.sim_dt - cfg.ctrl_dt) > 1e-12:
         raise ValueError("ctrl_dt must be an integer multiple of sim_dt")
@@ -144,32 +157,68 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
         tau_cmd, q_ref, _ = ctrl.torque(q_meas, dq_meas, theta, t, setpoint_offset=faults.setpoint_offset(t), body=body)
         tau_app = faults.torque(tau_cmd, t) + rng.normal(0.0, noise.actuator_std, 12)
         d.ctrl[:] = tau_app
+        if cfg.imu_mode == "integrating":
+            q_prev = d.sensordata[sadr["base_quat"][0]:sadr["base_quat"][0] + 4].copy()
+            v_prev = d.sensordata[sadr["base_linvel"][0]:sadr["base_linvel"][0] + 3].copy()
+        acc_sum = np.zeros(3); gyr_sum = np.zeros(3)
         for _ in range(nsub):
             mujoco.mj_step(m, d)
+            if cfg.imu_mode == "averaged":
+                acc_sum += d.sensordata[sadr["imu_acc"][0]:sadr["imu_acc"][0] + 3]
+                gyr_sum += d.sensordata[sadr["imu_gyro"][0]:sadr["imu_gyro"][0] + 3]
         tau_meas = tau_app + rng.normal(0.0, noise.torque_meas_std, 12)
-        acc = d.sensordata[sadr["imu_acc"][0]:sadr["imu_acc"][0] + 3] + rng.normal(0.0, noise.imu_acc_std, 3)
-        gyr = d.sensordata[sadr["imu_gyro"][0]:sadr["imu_gyro"][0] + 3] + rng.normal(0.0, noise.imu_gyro_std, 3)
+        if cfg.imu_mode == "sampled":
+            acc0 = d.sensordata[sadr["imu_acc"][0]:sadr["imu_acc"][0] + 3].copy()
+            gyr0 = d.sensordata[sadr["imu_gyro"][0]:sadr["imu_gyro"][0] + 3].copy()
+        elif cfg.imu_mode == "averaged":
+            acc0 = acc_sum / nsub; gyr0 = gyr_sum / nsub
+        else:                                   # integrating IMU: exact mean specific force / angular rate over the step
+            mujoco.mj_forward(m, d)             # sensors at the post-step state (velocity/quaternion of the imu site)
+            q_new = d.sensordata[sadr["base_quat"][0]:sadr["base_quat"][0] + 4]
+            v_new = d.sensordata[sadr["base_linvel"][0]:sadr["base_linvel"][0] + 3]
+            R_prev = np.zeros(9); mujoco.mju_quat2Mat(R_prev, q_prev); R_prev = R_prev.reshape(3, 3)
+            R_new = np.zeros(9); mujoco.mju_quat2Mat(R_new, q_new); R_new = R_new.reshape(3, 3)
+            dR = R_prev.T @ R_new
+            ang = np.arccos(np.clip((np.trace(dR) - 1) / 2, -1, 1))
+            axis = np.array([dR[2, 1] - dR[1, 2], dR[0, 2] - dR[2, 0], dR[1, 0] - dR[0, 1]])
+            gyr0 = (axis / (2 * np.sin(ang)) * ang / cfg.ctrl_dt) if ang > 1e-12 else np.zeros(3)
+            R_mid = R_prev @ _exp_so3(0.5 * gyr0 * cfg.ctrl_dt)
+            acc0 = R_mid.T @ ((v_new - v_prev) / cfg.ctrl_dt - m.opt.gravity)
+        acc = acc0 + rng.normal(0.0, noise.imu_acc_std, 3)
+        gyr = gyr0 + rng.normal(0.0, noise.imu_gyro_std, 3)
         gyr_prev = gyr
-        c = np.zeros(4)
+        c = np.zeros(4); fz = np.zeros(4); f6 = np.zeros(6)
         for i in range(d.ncon):
             g1, g2 = d.contact[i].geom1, d.contact[i].geom2
             for j, f in enumerate(feet):
                 if (g1 == floor and g2 == f) or (g2 == floor and g1 == f):
-                    c[j] = 1.0
+                    mujoco.mj_contactForce(m, d, i, f6); fz[j] += abs(f6[0])       # normal force in the contact frame
+        c[:] = (fz > cfg.contact_force_thresh).astype(float) if cfg.contact_force_thresh > 0 else (fz > 0).astype(float)
         temp = a_temp * temp + (1 - a_temp) * (tau_app.reshape(4, 3) ** 2).mean(axis=1)
         base_lin = d.sensordata[sadr["base_linvel"][0]:sadr["base_linvel"][0] + 3]
+        foot_w = np.concatenate([d.geom_xpos[g] for g in feet])
         rows[k, :] = np.concatenate([[d.time, theta], q_meas, dq_meas, tau_cmd, tau_meas, acc, gyr, c, temp,
-                                     d.qpos[0:3], d.qpos[3:7], base_lin, q_ref])
+                                     d.qpos[0:3], d.qpos[3:7], base_lin, foot_w, q_ref])
     df = pd.DataFrame(rows, columns=all_columns())
     manifest = build_manifest(sim_meta={"model": "unitree_go2 (menagerie da76818e, symmetrized, mesh-free)",
                                         "ctrl_dt": cfg.ctrl_dt, "sim_dt": cfg.sim_dt, "period_s": T,
                                         "gait": cfg.gait, "speed": cfg.speed, "terrain": cfg.terrain,
                                         "slope_deg": cfg.slope_deg, "slope_axis": cfg.slope_axis, "seed": cfg.seed,
                                         "phase_offset": cfg.phase_offset,
+                                        "imu_mode": cfg.imu_mode, "foot_contact": cfg.foot_contact,
+                                        "contact_force_thresh": cfg.contact_force_thresh,
                                         "record_time": "end of control step (state at t+ctrl_dt; tau_cmd from t)"})
     if return_state:
         return df, manifest, (d.qpos.copy(), d.qvel.copy())
     return df, manifest
+
+
+def _exp_so3(phi):
+    a = np.linalg.norm(phi)
+    K = np.array([[0, -phi[2], phi[1]], [phi[2], 0, -phi[0]], [-phi[1], phi[0], 0]])
+    if a < 1e-10:
+        return np.eye(3) + K
+    return np.eye(3) + np.sin(a) / a * K + (1 - np.cos(a)) / a**2 * K @ K
 
 
 def _body_state(d, sadr, noise, rng, gyr_meas):

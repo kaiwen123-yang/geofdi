@@ -63,6 +63,11 @@ class TrotParams:
                                   # the smallest swept gain (0.1/0.2/0.5) that suppresses slope-induced yaw drift at v=0
                                   # (-0.29 -> -0.02 rad / 40 s) and halves the yaw-rate std; the trot is stable without it.
     stab_max: float = 0.15        # |offset| clip [rad]
+    # Slow attitude maneuvers (state-estimation experiments): yaw via a front/hind HAA differential, pitch via a
+    # front/hind KFE differential; both are the same on the two legs of a pair (yaw is antisymmetric per realization).
+    maneuver_yaw_amp: float = 0.0     # rad HAA
+    maneuver_pitch_amp: float = 0.0   # rad KFE
+    maneuver_period_s: float = 30.0
     asymmetry: list = field(default_factory=list)   # list[AsymmetrySpec]
 
 
@@ -135,13 +140,24 @@ class TrotController:
             off[3 * i] = np.clip(common + sgn_fh * yaw, -p.stab_max, p.stab_max)
         return off
 
+    def maneuver(self, t: float) -> np.ndarray:
+        p = self.p; off = np.zeros(12)
+        if p.maneuver_yaw_amp == 0.0 and p.maneuver_pitch_amp == 0.0:
+            return off
+        w = 2 * np.pi / p.maneuver_period_s
+        for i, leg in enumerate(LEGS):
+            sgn_fh = 1.0 if leg in ("LF", "RF") else -1.0
+            off[3 * i] += sgn_fh * p.maneuver_yaw_amp * np.sin(w * t)        # HAA differential -> yaw
+            off[3 * i + 2] += -sgn_fh * p.maneuver_pitch_amp * np.cos(w * t)  # KFE differential -> pitch
+        return off
+
     def torque(self, q: np.ndarray, dq: np.ndarray, theta: float, t: float,
                setpoint_offset: np.ndarray | None = None, body: dict | None = None):
         """PD torque command (12,) given measured joint state (12,), gait phase, and optional body-state feedback;
         returns (tau, q_ref, dq_ref)."""
         q_ref, dq_ref = self.reference(theta)
         kp, kd, bias = self.gains(t)
-        q_ref = q_ref + bias + self.stabilizer(body)
+        q_ref = q_ref + bias + self.stabilizer(body) + self.maneuver(t)
         if setpoint_offset is not None:
             q_ref = q_ref + setpoint_offset
         tau = kp * (q_ref - q) + kd * (dq_ref - dq)

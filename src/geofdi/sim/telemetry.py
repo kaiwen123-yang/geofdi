@@ -67,6 +67,10 @@ def build_manifest(include_groups=("q", "dq", "tau_cmd", "tau_meas", "imu_acc", 
     for name in ("base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "base_qz", "base_vx", "base_vy", "base_vz"):
         ch.append({"name": name, "group": "diagnostic", "leg": None, "joint": None, "kind": "diagnostic",
                    "partner": None, "sign": None, "in_Z": False})
+    for leg in LEGS:                    # ground-truth foot world positions (sim diagnostics for the InEKF experiments)
+        for ax in "xyz":
+            ch.append({"name": f"foot_{ax}_{leg}", "group": "diagnostic", "leg": leg, "joint": None, "kind": "diagnostic",
+                       "partner": None, "sign": None, "in_Z": False})
     for leg in LEGS:                    # controller reference (sim-only; M1's controller is opaque) -> R+ channel
         for j in JOINTS:
             ch.append({"name": f"qref_{leg}_{j}", "group": "qref", "leg": leg, "joint": j, "kind": "scalar-signed",
@@ -84,6 +88,7 @@ def all_columns() -> list[str]:
     return (["t", "theta"] + joint_channels() + [f"imu_a_{a}" for a in "xyz"] + [f"imu_w_{a}" for a in "xyz"]
             + [f"c_{l}" for l in LEGS] + [f"temp_{l}" for l in LEGS]
             + ["base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "base_qz", "base_vx", "base_vy", "base_vz"]
+            + [f"foot_{ax}_{l}" for l in LEGS for ax in "xyz"]
             + [f"qref_{l}_{j}" for l in LEGS for j in JOINTS])
 
 
