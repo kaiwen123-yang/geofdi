@@ -1,5 +1,5 @@
 <mujoco model="m1_wheeled_sym scene">
-  <option timestep="0.0025"/>
+  <option timestep="0.0025" cone="elliptic"/>
   <include file="m1_wheeled_sym.xml"/>
   <worldbody>
     <geom name="floor" size="0 0 0.05" type="plane" friction="0.8 0.02 0.01"/>

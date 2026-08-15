@@ -48,9 +48,13 @@ class RollingParams:
     kd: tuple = (4.0, 4.0, 4.0)
     kv_wheel: float = 3.0                    # N m per rad/s of wheel-rate error
     wheel_r: float = WHEEL_R
-    k_yaw: float = 1.0                       # differential wheel torque per rad/s yaw rate (equivariant)
+    k_yaw: float = 50.0                      # differential wheel torque per rad/s yaw rate (equivariant). W2 finding: with 1.0 a lightly
+                                             # damped yaw/lateral mode leaves some realizations with block-to-block dependence (flip-test size
+                                             # 0.17-0.4 at 1-2 m/s); 50 (0.5 N m per 0.01 rad/s) restores exchangeable blocks (size in band).
     stab_k_roll: float = 0.0                 # ABAD setpoint offset per rad of body roll (all legs, same sign) — equivariant
     stab_k_wx: float = 0.0                   # ... per rad/s roll rate
+    stab_k_vy: float = 0.0                   # ... per m/s of body-frame lateral velocity (kills the slow lateral-creep mode)
+    stab_max: float = 0.15                   # |ABAD offset| clip [rad]
     tau_max: tuple = (40.0, 60.0, 60.0, 20.0)  # ctrlrange (ABAD, HIP, KNEE, WHEEL)
     asymmetry: list = field(default_factory=list)
 
@@ -80,9 +84,9 @@ class RollingController:
         tau = np.zeros(16)
         # equivariant roll stabilizer on ABAD (all legs, same sign): body roll > 0 (left down) -> ABAD offset
         off = np.zeros(16)
-        if body is not None and (p.stab_k_roll or p.stab_k_wx):
-            d = p.stab_k_roll * body.get("roll", 0.0) + p.stab_k_wx * body.get("w_x", 0.0)
-            off[0::4] = d
+        if body is not None and (p.stab_k_roll or p.stab_k_wx or p.stab_k_vy):
+            d = p.stab_k_roll * body.get("roll", 0.0) + p.stab_k_wx * body.get("w_x", 0.0) + p.stab_k_vy * body.get("v_y", 0.0)
+            off[0::4] = float(np.clip(d, -p.stab_max, p.stab_max))
         # asymmetries (eps_ctrl injections)
         kp_mul = np.ones(16); kd_mul = np.ones(16); rate_mul = np.ones(4); bias = np.zeros(16)
         for a in self.asym:

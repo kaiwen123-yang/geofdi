@@ -10,7 +10,8 @@ From src/geofdi/sim/assets/m1/zgws_source.xml (verbatim MATRiX MJCF, BSD-3-Claus
   m1_wheeled_sym.xml   SYMMETRIZED: left legs = exact mirror of the right-leg templates (front: FAR, hind: RBL mirrored into
                        RAR, i.e. the majority knee mass 0.86312 kg on all four), base com_y = 0, base inertia products
                        (xy, yz) removed by I <- (I + E I E)/2.
-  scene_*.xml          floor plane; option timestep 0.0025.
+  scene_*.xml          floor plane; option timestep 0.0025, cone=elliptic (the default pyramidal cone is anisotropic in the
+                       world frame: a rolling wheel at a heading angle picks up a heading-dependent lateral force -> persistent lean).
 Both: joint damping 0.05 (all 16), armature 0.01, ctrlrange HIP/KNEE +-60, ABAD +-40, WHEEL +-20 N m (start values,
 recorded), actuatorfrcrange as in the source (legs +-150, wheels +-40), IMU site at the base origin, S0-style sensors,
 'stand' keyframe (ABAD 0, HIP 0.8, KNEE -1.5, WHEEL 0; z 0.42).
@@ -181,7 +182,7 @@ def build(with_meshes: str | None):
         ET.indent(r, space="  ")
         p = OUT / f"{variant}.xml"; ET.ElementTree(r).write(p, encoding="unicode", xml_declaration=False)
         (OUT / f"scene_{variant}.xml").write_text(
-            f'<mujoco model="{variant} scene">\n  <option timestep="0.0025"/>\n  <include file="{variant}.xml"/>\n'
+            f'<mujoco model="{variant} scene">\n  <option timestep="0.0025" cone="elliptic"/>\n  <include file="{variant}.xml"/>\n'
             f'  <worldbody>\n    <geom name="floor" size="0 0 0.05" type="plane" friction="0.8 0.02 0.01"/>\n  </worldbody>\n</mujoco>\n')
         print("wrote", p)
     if with_meshes:
