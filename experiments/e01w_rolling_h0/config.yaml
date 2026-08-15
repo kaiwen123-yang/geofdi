@@ -1,0 +1,58 @@
+# e01-W — H0 machinery for the wheeled M1 in ROLLING mode (Σ = G: pure reflection, fixed-duration blocks). Sprint 7 W2.
+experiment: e01w_rolling_h0
+workers: 22
+sim:
+  model: m1_wheeled_sym
+  mode: rolling
+  speed: 1.0
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  warmup_s: 6.0                          # 3 s speed ramp + settle
+  controller: {ramp_s: 3.0, kp: [150, 150, 150], kd: [4, 4, 4], kv_wheel: 3.0, k_yaw: 50.0}   # k_yaw 50: W2 finding (see controller_wheeled.py)
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+registration: {N: 64}
+test: {M: 512, alpha: 0.05, alphas: [0.01, 0.05, 0.10], statistics: [paired_energy, energy_distance]}
+stage_a:                                 # exactness vs block length and speed; original-world column
+  R: 200
+  seed_base: 71000
+  K: 60                                  # blocks per test (same K for every L)
+  L_list: [0.5, 1.0, 2.0]                # s
+  speeds: [0.5, 1.0, 2.0]
+  original_world_speed: 1.0              # m1_wheeled (chiral) column at this speed
+stage_b:                                 # eps_ctrl -> H0 inflates, H0' (differenced) restores size; delta doubling alarm
+  R: 50
+  seed_base: 72000
+  L: 1.0
+  K_cal: 60
+  K_mon: 60
+  window: 10                             # blocks per e-process window (differenced test)
+  asymmetries:
+    wheel_rate_1.02: [{leg: RF, joint: WHEEL, rate_gain: 1.02}]
+    hip_kp_1.02: [{leg: LF, joint: HIP, kp_gain: 1.02}]
+  doubling: {at_block: 30, factor: 2.0}   # in the change run the asymmetry (rate_gain-1 / kp_gain-1) doubles at this monitored block
+stage_c:                                 # nuisance / fault snapshot: R- e-process timelines (window 5 blocks) after 60 calibration blocks
+  R: 30
+  seed_base: 73000
+  L: 1.0
+  K_cal: 60
+  K_post: 100
+  window: 5
+  conditions:
+    payload_sym_1kg: {nuisance: [{type: payload_symmetric, magnitude: 1.0}]}
+    payload_asym_0.5kg: {nuisance: [{type: payload_asymmetric, magnitude: 0.5, params: {offset_y: 0.05}}]}
+    wheel_friction_LF_x0.7: {faults: [{type: wheel_friction, leg: LF, magnitude: -0.3}]}
+    wheel_motor_LF_k0.8: {faults: [{type: actuator_gain, leg: LF, joint: WHEEL, magnitude: -0.2}]}
+    hip_motor_LF_k0.8: {faults: [{type: actuator_gain, leg: LF, joint: HIP, magnitude: -0.2}]}
+stage_d:                                 # e13d: equivariant DeLaN residual R- on the rolling M1
+  train: {rollouts_per_speed: 6, speeds: [0.5, 1.0, 2.0], duration_s: 40.0, seed_base: 74000, epochs: 40, batch: 8192, lr: 0.002}
+  R_size: 100
+  R_power: 30
+  seed_base: 75000
+  L: 1.0
+  K_cal: 60
+  K_post: 100
+  window: 5
+  conditions:
+    wheel_motor_LF_k0.8: {faults: [{type: actuator_gain, leg: LF, joint: WHEEL, magnitude: -0.2}]}
+    payload_sym_1kg: {nuisance: [{type: payload_symmetric, magnitude: 1.0}]}
+    payload_asym_0.5kg: {nuisance: [{type: payload_asymmetric, magnitude: 0.5, params: {offset_y: 0.05}}]}
