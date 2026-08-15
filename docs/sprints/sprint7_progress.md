@@ -4,7 +4,7 @@ Read this first in a new session; continue from the first unchecked item. Each i
 `[~] <commit>` done with a documented miss. Update and push at the end of every Block. Spec: `sprint7_spec.md`.
 
 ## Anti-loss
-- [ ] spec + progress file committed (`docs: sprint7 spec and progress file`)
+- [x] 2509404 spec + progress file committed (`docs: sprint7 spec and progress file`)
 
 ## Block 0 — backfills (`chore: liu/sprint6 backfills, decisions D006–D009`)
 - [ ] 0.1 Liu PDF in `$GEOFDI_DATA_ROOT/lit/liu2025_grufd_ftc.pdf`; provenance = Gazebo simulation in `liu_a1_audit.md`
