@@ -26,16 +26,16 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [x] 97f4097 W1 t01: sym world 1e-10; original world ε_dyn candidate
 - [x] 97f4097 W1 rolling controller `sim/controller_wheeled.py` 0.5/1.0/2.0 m/s × 60 s smoke
 - [x] 97f4097 W1 stepping mode tried (kept as `m1_stepping` or skipped with record)
-- [ ] W2 `phase/registration.py mode: rolling`; H0′ two-sample construction
-- [ ] W2 e01-W (R=200): three speeds QQ + size table; L ∈ {0.5,1,2} s → minimal exchangeable L; original-world column; ε_ctrl → H0′ size recovery + δ doubling alarm
-- [ ] W2 nuisance/fault snapshot (R=30) R⁻ timelines
-- [ ] W2 e13d: equivariant DeLaN on M1 rolling nominal data; residual R⁻ size + wheel motor κ=0.8 power; nuisance readings
-- [ ] W3 `io/go2_mapping.yaml` + `io/go2_lowstate.py`; synthetic Go2 session ingested to `raw/sim/go2_rehearsal/`
-- [ ] W3 `phase/estimator.py` (< 5 % cycle error on Go2 sim)
-- [ ] W4 `scripts/run_pipeline.sh` — M1 synthetic rolling and Go2 synthetic trot sessions run with zero manual steps
-- [ ] W4 Gate 1 estimator rehearsal (< 30 % error)
-- [ ] W4 `docs/protocol/m1_day0_wheeled.md` + `docs/protocol/go2_day0.md`; protocol_params L boundary + phase-estimator error
-- [ ] Block W review pack; tag `hw-ready`
+- [x] W-done W2 `phase/registration.py mode: rolling`; H0′ two-sample construction
+- [x] W-done W2 e01-W (R=200): three speeds QQ + size table; L ∈ {0.5,1,2} s → minimal exchangeable L; original-world column; ε_ctrl → H0′ size recovery + δ doubling alarm
+- [x] W-done W2 nuisance/fault snapshot (R=30) R⁻ timelines
+- [x] W-done W2 e13d: equivariant DeLaN on M1 rolling nominal data; residual R⁻ size + wheel motor κ=0.8 power; nuisance readings
+- [x] W-done W3 `io/go2_mapping.yaml` + `io/go2_lowstate.py`; synthetic Go2 session ingested to `raw/sim/go2_rehearsal/`
+- [x] W-done W3 `phase/estimator.py` (< 5 % cycle error on Go2 sim)
+- [x] W-done W4 `scripts/run_pipeline.sh` — M1 synthetic rolling and Go2 synthetic trot sessions run with zero manual steps
+- [x] W-done W4 Gate 1 estimator rehearsal (< 30 % error)
+- [x] W-done W4 `docs/protocol/m1_day0_wheeled.md` + `docs/protocol/go2_day0.md`; protocol_params L boundary + phase-estimator error
+- [x] rp016 Block W review pack; tag `hw-ready`
 
 ## Block E — e03 external benchmark + sequential redesign
 - [ ] E1 `detect/sequential.py` (e-process / e-CUSUM / conformal-CUSUM; half-cycle elements; calibration ≥ 400 cycles); e04a κ=0.7: median delay ≤ 2 cycles, nominal ARL ≥ 1/α
