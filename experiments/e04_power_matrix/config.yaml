@@ -1,0 +1,63 @@
+# e04 — power / nuisance / isotypic / noise-sweep / isolation suite (Sprint 2). Stages: run.py --stage a|b|c|d|e
+experiment: e04_power_matrix
+seed: 0
+workers: 22
+sim:                              # closed-loop S2 world: kp 80 / kd 2, equivariant yaw damping kwz 0.2, S1 baseline noise
+  gait: trot
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+registration: {N: 64, drop_first: 10}
+detect:
+  alpha: 0.05
+  M: 512
+  window_rminus: 5                # cycles per R^- window (power stages)
+  window_rminus_far: 20           # cycles per R^- window in the FAR stage (slope pairs need >= 10 pairs)
+  ecusum_far_horizon_windows: 20  # e-CUSUM threshold calibrated for a 100-cycle horizon (20 windows of 5)
+stage_a:                          # power grid: onset at cycle 60, 100 monitored cycles, R replicates
+  R: 50
+  seed_base: 11000
+  K_cal: 60
+  K_post: 100
+  leg: LF
+  joints: [HFE, KFE]
+  faults:
+    actuator_gain: [0.9, 0.8, 0.7, 0.5]        # kappa (magnitude = kappa - 1)
+    actuator_bias: [0.5, 1.0, 2.0]             # N m
+    friction_scale: [1.5, 2.0, 3.0]            # scale (magnitude = scale - 1)
+    inertia_add: [0.05, 0.10, 0.20]            # kg on the link distal to the joint
+stage_b:                          # nuisance false-alarm table: 60 calibration + 200 monitored nominal cycles
+  R: 100
+  seed_base: 12000
+  K_cal: 60
+  K_mon: 200
+  nuisances:
+    payload_symmetric: [0.5, 1.0, 2.0]         # kg at the base COM
+    payload_asymmetric: [0.5, 1.0]             # kg with lateral offset 0.05 m  (asymmetric nuisance, expected R^- hits)
+    drift_symmetric: [0.10]                    # OU sigma, tau 20 s (S1)
+    speed: [0.3, 0.5, 0.8]                     # m/s
+    slope_deg: 5.0                             # lateral slope: +5 single, -5 single, merged out-and-back (paired blocks) and merged-naive
+stage_c:                          # isotypic prediction (pre-registered in docs/protocol/e04c_preregistration.md)
+  R: 50
+  seed_base: 13000
+  K_cal: 60
+  K_post: 100
+  groups:
+    single: [{leg: LF, joint: KFE, kappa: 0.7}]
+    bilateral_equal: [{leg: LF, joint: KFE, kappa: 0.7}, {leg: RF, joint: KFE, kappa: 0.7}]
+    bilateral_unequal: [{leg: LF, joint: KFE, kappa: 0.7}, {leg: RF, joint: KFE, kappa: 0.5}]
+stage_d:                          # noise sweep: wrapped vs unfolded test size under H0
+  R: 200
+  seed_base: 14000
+  K: 60
+  actuator_std: [0.02, 0.05, 0.10, 0.20]
+stage_e:                          # isolation ranking under a severe single-leg fault
+  R: 50
+  seed_base: 15000
+  K_cal: 60
+  K_post: 100
+  fault: {leg: LF, joint: KFE, kappa: 0.5}
+outputs: {store_cycles_first_n: 2}
