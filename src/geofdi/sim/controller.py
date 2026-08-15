@@ -59,7 +59,9 @@ class TrotParams:
     stab_k_vy: float = 0.0        # rad per m/s of body-frame lateral velocity (all legs, same sign)
     stab_k_roll: float = 0.0      # rad per rad of body roll (all legs, same sign)
     stab_k_wx: float = 0.0        # rad per rad/s of roll rate (all legs, same sign)
-    stab_k_wz: float = 0.0        # rad per rad/s of yaw rate: front legs +, hind legs - (differential)
+    stab_k_wz: float = 0.2        # rad per rad/s of yaw rate: front legs +, hind legs - (differential). Sprint-2 default:
+                                  # the smallest swept gain (0.1/0.2/0.5) that suppresses slope-induced yaw drift at v=0
+                                  # (-0.29 -> -0.02 rad / 40 s) and halves the yaw-rate std; the trot is stable without it.
     stab_max: float = 0.15        # |offset| clip [rad]
     asymmetry: list = field(default_factory=list)   # list[AsymmetrySpec]
 

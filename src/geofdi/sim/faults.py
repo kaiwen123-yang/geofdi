@@ -8,7 +8,8 @@ Faults (act on the leg/joint given, or on all if None):
   deadzone        applied torque := 0 where |tau| < magnitude*s(t) [N m]
   delay           applied torque delayed by magnitude [s] (rounded to control steps; step schedule only)
   friction_scale  joint damping & frictionloss *= 1 + magnitude*s(t)
-  inertia_add     calf mass += magnitude*s(t) [kg] (inertia scaled with the mass)
+  inertia_add     link mass += magnitude*s(t) [kg], link distal to the joint (HFE -> thigh, KFE/None -> calf);
+                  inertia scaled with the mass
   encoder_bias    measured q += magnitude*s(t) [rad]
   foot_friction   foot geom sliding friction *= 1 + magnitude*s(t)
 Nuisances (symmetric or symmetric-in-law; not faults):
@@ -94,6 +95,7 @@ class FaultBank:
         import mujoco
         self._mj = mujoco
         self._calf_body = [mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, n) for n in ("FL_calf", "FR_calf", "RL_calf", "RR_calf")]
+        self._thigh_body = [mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, n) for n in ("FL_thigh", "FR_thigh", "RL_thigh", "RR_thigh")]
         self._foot_geom = [mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, n) for n in ("FL", "FR", "RL", "RR")]
         self._base_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "base")
         jn = [f"{l}_{j}_joint" for l in ("FL", "FR", "RL", "RR") for j in ("hip", "thigh", "calf")]
@@ -184,10 +186,10 @@ class FaultBank:
                 dof = self._dof[s.mask()]
                 m.dof_damping[dof] = self._dof_damping0[dof] * (1 + s.magnitude * sv)
                 m.dof_frictionloss[dof] = self._dof_frictionloss0[dof] * (1 + s.magnitude * sv)
-            elif s.type == "inertia_add" and sv:
+            elif s.type == "inertia_add" and sv:      # mass added to the link distal to the joint (HFE -> thigh, else calf)
                 for i, leg in enumerate(LEGS):
                     if s.leg in (None, leg):
-                        b = self._calf_body[i]
+                        b = self._thigh_body[i] if s.joint == "HFE" else self._calf_body[i]
                         m0 = self._body_mass0[b]
                         m.body_mass[b] = m0 + s.magnitude * sv
                         m.body_inertia[b] = self._body_inertia0[b] * (m.body_mass[b] / m0)

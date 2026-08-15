@@ -26,9 +26,27 @@ FOOT_GEOMS = ("FL", "FR", "RL", "RR")
 
 
 def scene_path(terrain: str = "flat") -> str:
-    if terrain != "flat":
-        raise NotImplementedError("S1 uses flat terrain only; slope/rough are reserved for later sprints")
+    if terrain not in ("flat", "slope"):
+        raise NotImplementedError("terrains: flat | slope (rough is reserved for later sprints)")
     return str(resources.files("geofdi.sim").joinpath("assets/unitree_go2/scene_flat.xml"))
+
+
+def apply_terrain(m: mujoco.MjModel, terrain: str, slope_deg: float, slope_axis: str) -> None:
+    """'slope' tilts gravity instead of the ground plane (exactly equivalent for a robot on the plane, keeps the
+    keyframe valid): slope_axis 'lateral' = roll tilt about x (ground higher on the robot's left for
+    slope_deg > 0; mirror-breaking, the A3 out-and-back case), 'sagittal' = pitch tilt about y (uphill along +x
+    for slope_deg > 0; mirror-symmetric)."""
+    g = 9.81
+    if terrain == "flat" or slope_deg == 0.0:
+        m.opt.gravity[:] = (0.0, 0.0, -g)
+        return
+    a = np.deg2rad(slope_deg)
+    if slope_axis == "lateral":
+        m.opt.gravity[:] = (0.0, g * np.sin(a), -g * np.cos(a))
+    elif slope_axis == "sagittal":
+        m.opt.gravity[:] = (-g * np.sin(a), 0.0, -g * np.cos(a))
+    else:
+        raise ValueError(slope_axis)
 
 
 @dataclass
@@ -53,6 +71,8 @@ class SimConfig:
     gait: str = "trot"
     speed: float = 0.0
     terrain: str = "flat"
+    slope_deg: float = 0.0            # terrain == 'slope': tilt angle
+    slope_axis: str = "lateral"       # 'lateral' (mirror-breaking) | 'sagittal'
     duration_s: float = 30.0
     ctrl_dt: float = 0.005            # 200 Hz control / telemetry (M1 rate)
     sim_dt: float = 0.0025            # 400 Hz physics (2 substeps)
@@ -75,6 +95,7 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
         raise NotImplementedError("only the trot is implemented")
     m = model if model is not None else mujoco.MjModel.from_xml_path(scene_path(cfg.terrain))
     m.opt.timestep = cfg.sim_dt
+    apply_terrain(m, cfg.terrain, cfg.slope_deg, cfg.slope_axis)
     nsub = round(cfg.ctrl_dt / cfg.sim_dt)
     if abs(nsub * cfg.sim_dt - cfg.ctrl_dt) > 1e-12:
         raise ValueError("ctrl_dt must be an integer multiple of sim_dt")
@@ -120,7 +141,7 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
         q_meas = faults.measure(q, t) + rng.normal(0.0, noise.encoder_pos_std, 12)
         dq_meas = dq + rng.normal(0.0, noise.encoder_vel_std, 12)
         body = _body_state(d, sadr, noise, rng, gyr_prev)
-        tau_cmd, _, _ = ctrl.torque(q_meas, dq_meas, theta, t, setpoint_offset=faults.setpoint_offset(t), body=body)
+        tau_cmd, q_ref, _ = ctrl.torque(q_meas, dq_meas, theta, t, setpoint_offset=faults.setpoint_offset(t), body=body)
         tau_app = faults.torque(tau_cmd, t) + rng.normal(0.0, noise.actuator_std, 12)
         d.ctrl[:] = tau_app
         for _ in range(nsub):
@@ -138,11 +159,12 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
         temp = a_temp * temp + (1 - a_temp) * (tau_app.reshape(4, 3) ** 2).mean(axis=1)
         base_lin = d.sensordata[sadr["base_linvel"][0]:sadr["base_linvel"][0] + 3]
         rows[k, :] = np.concatenate([[d.time, theta], q_meas, dq_meas, tau_cmd, tau_meas, acc, gyr, c, temp,
-                                     d.qpos[0:3], d.qpos[3:7], base_lin])
+                                     d.qpos[0:3], d.qpos[3:7], base_lin, q_ref])
     df = pd.DataFrame(rows, columns=all_columns())
     manifest = build_manifest(sim_meta={"model": "unitree_go2 (menagerie da76818e, symmetrized, mesh-free)",
                                         "ctrl_dt": cfg.ctrl_dt, "sim_dt": cfg.sim_dt, "period_s": T,
-                                        "gait": cfg.gait, "speed": cfg.speed, "terrain": cfg.terrain, "seed": cfg.seed,
+                                        "gait": cfg.gait, "speed": cfg.speed, "terrain": cfg.terrain,
+                                        "slope_deg": cfg.slope_deg, "slope_axis": cfg.slope_axis, "seed": cfg.seed,
                                         "phase_offset": cfg.phase_offset,
                                         "record_time": "end of control step (state at t+ctrl_dt; tau_cmd from t)"})
     if return_state:

@@ -67,6 +67,10 @@ def build_manifest(include_groups=("q", "dq", "tau_cmd", "tau_meas", "imu_acc", 
     for name in ("base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "base_qz", "base_vx", "base_vy", "base_vz"):
         ch.append({"name": name, "group": "diagnostic", "leg": None, "joint": None, "kind": "diagnostic",
                    "partner": None, "sign": None, "in_Z": False})
+    for leg in LEGS:                    # controller reference (sim-only; M1's controller is opaque) -> R+ channel
+        for j in JOINTS:
+            ch.append({"name": f"qref_{leg}_{j}", "group": "qref", "leg": leg, "joint": j, "kind": "scalar-signed",
+                       "partner": f"qref_{MIRROR_LEG[leg]}_{j}", "sign": JOINT_SIGN[j], "in_Z": False})
     return {"schema": "geofdi-m1-telemetry-v1", "leg_order": list(LEGS), "joint_order": list(JOINTS),
             "gait_group": {"G": "C2 sagittal reflection", "Sigma": "{(e,0),(g_s,1/2)}", "delta_theta": 0.5},
             "channels": ch, "sim": sim_meta or {}}
@@ -79,7 +83,8 @@ def z_channel_names(manifest: dict) -> list[str]:
 def all_columns() -> list[str]:
     return (["t", "theta"] + joint_channels() + [f"imu_a_{a}" for a in "xyz"] + [f"imu_w_{a}" for a in "xyz"]
             + [f"c_{l}" for l in LEGS] + [f"temp_{l}" for l in LEGS]
-            + ["base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "base_qz", "base_vx", "base_vy", "base_vz"])
+            + ["base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "base_qz", "base_vx", "base_vy", "base_vz"]
+            + [f"qref_{l}_{j}" for l in LEGS for j in JOINTS])
 
 
 def write_run(out_dir: Path, df: pd.DataFrame, manifest: dict, config: dict) -> None:

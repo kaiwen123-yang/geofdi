@@ -11,7 +11,7 @@ sim:                              # base SimConfig (see geofdi.sim.env); duratio
   sim_dt: 0.0025
   # kp 80 / kd 2: the Sigma-symmetric trot orbit is stable here (at kp 60 with this lift the symmetric orbit
   # bifurcates into a chiral limit cycle -> H0 false although A1-A4 hold; documented in the rp003 MANIFEST).
-  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20}
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}   # S2: equivariant yaw damping on
   # measurement-noise-dominated baseline (NoiseConfig defaults): quiet actuators, realistic sensors; see D004
   noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
 registration: {N: 64, drop_first: 10}   # 10 warm-up cycles (5 s) discarded
