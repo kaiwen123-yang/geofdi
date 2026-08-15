@@ -35,7 +35,7 @@ def size_bars(table_rows: list[dict], out_png, title: str = ""):
     """table_rows: dicts with keys stat, alpha, size, ci_lo, ci_hi, band_lo, band_hi, label(optional)."""
     labels = sorted({(r.get("label", ""), r["stat"]) for r in table_rows})
     alphas = sorted({r["alpha"] for r in table_rows})
-    fig, ax = plt.subplots(figsize=(1.6 + 2.2 * len(alphas) * max(1, len(labels) / 2), 4.5))
+    fig, ax = plt.subplots(figsize=(min(12.0, 1.6 + 2.2 * len(alphas) * max(1, len(labels) / 2)), 4.5))
     w = 0.8 / max(1, len(labels))
     for j, (lab, st) in enumerate(labels):
         xs, ys, err_lo, err_hi = [], [], [], []
