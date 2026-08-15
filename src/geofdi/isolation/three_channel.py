@@ -73,30 +73,42 @@ def readout(Z, Zr, Zb, rep_raw, rep_res, K_cal, chans, res_names, use_residual_f
     js = joint_row_shift(Zr, K_cal); base_raw, base_z = base_row_shift(Zb, K_cal)
     share = leg_energy_share(js)
     leg, joint, lr = resolve_left_right(rminus["pair"], js)
+    # pair-level shift energy (F, H)
+    pair_energy = {"F": float(np.sum(js[:3] ** 2) + np.sum(js[3:6] ** 2)), "H": float(np.sum(js[6:9] ** 2) + np.sum(js[9:12] ** 2))}
+    # (pair, joint) cell energies: bilateral concentrates in one cell (both legs, one joint); drift spreads over cells
+    cell = {}
+    for p, (la, lb) in PAIR_LEGS.items():
+        for j in JOINTS:
+            cell[(p, j)] = js[3 * LEGS.index(la) + JOINTS.index(j)] ** 2 + js[3 * LEGS.index(lb) + JOINTS.index(j)] ** 2
+    tot = sum(cell.values()) + 1e-12; dom_share = max(cell.values()) / tot
     return {"rminus": rminus, "joint_shift": js, "base_shift_raw": base_raw, "base_shift_z": base_z, "leg_share": share,
             "resolved_leg": leg, "resolved_joint": joint, "left_right": lr, "max_leg_share": float(share.max()),
-            "base_fz_z": float(base_z[2]), "base_mx_z": float(base_z[3])}
+            "base_fz_z": float(base_z[2]), "base_mx_z": float(base_z[3]), "base_fz_raw": float(base_raw[2]), "base_mx_raw": float(base_raw[3]),
+            "pair_energy": pair_energy, "dominant_cell_share": float(dom_share)}
 
 
-def decide(reading, rminus_alarmed, base_z_thresh=3.0, share_thresh=0.5, signal_thresh=1.0):
-    """Pre-registered decision rules (e09), with the 'quiet' threshold quantified: `signal_thresh` is the smallest
-    standardized joint-row shift that counts as a signal (below it the joint rows are quiet). Returns (label, confidence,
-    why). Hierarchy: payload (base rows) -> nominal (nothing shifted) -> R- silent (drift / bilateral) -> R- alarmed
-    (single / pair)."""
-    fz, mx = reading["base_fz_z"], reading["base_mx_z"]; share = reading["max_leg_share"]
-    signal = float(np.max(np.abs(reading["joint_shift"])))                       # largest standardized joint-row shift
-    base_signal = max(abs(fz), abs(mx))
-    if abs(fz) >= base_z_thresh and abs(mx) >= base_z_thresh:
-        return "payload_lateral", "base fz & mx", f"base fz z={fz:.1f}, mx z={mx:.1f}"
-    if abs(fz) >= base_z_thresh and abs(mx) < base_z_thresh:
-        return "payload_symmetric", "base fz only", f"base fz z={fz:.1f}, mx z={mx:.1f}"
-    if not rminus_alarmed and signal < signal_thresh and base_signal < base_z_thresh:
-        return "nominal", "nothing shifted", f"max joint shift {signal:.2f} < {signal_thresh}, base < {base_z_thresh}"
+def decide(reading, rminus_alarmed, base_fz_thresh=2.0, base_mx_thresh=0.1, share_thresh=0.5, signal_thresh=1.0, concentration_thresh=0.7):
+    """Decision rules (e09). Payload uses the RAW base momentum-residual shift in physical units (a 1 kg payload = Δm·g ≈
+    9.8 N on f_z and Δm·g·offset on m_x, e05c) — the standardized z-score under-reads it because the base f_z row has a
+    large nominal variance (that was the pre-registered-threshold miss: 1 kg gave z ≈ 2.1 < 3). `signal_thresh` is the
+    smallest standardized joint-row shift that counts as a signal (quantifies 'quiet'); `pair_ratio` = the weaker mirror
+    pair's shift energy relative to the stronger below which the signal is confined to one pair (bilateral) vs spread
+    over both (drift). Hierarchy: payload (base) -> nominal -> R- silent (drift vs bilateral by pair spread) -> R-
+    alarmed (single / pair). Returns (label, confidence, why)."""
+    fzr, mxr = reading["base_fz_raw"], reading["base_mx_raw"]; share = reading["max_leg_share"]
+    signal = float(np.max(np.abs(reading["joint_shift"]))); dom = reading["dominant_cell_share"]
+    if abs(fzr) >= base_fz_thresh and abs(mxr) >= base_mx_thresh:
+        return "payload_lateral", "base fz & mx (raw)", f"base fz={fzr:.1f} N, mx={mxr:.2f} N m"
+    if abs(fzr) >= base_fz_thresh and abs(mxr) < base_mx_thresh:
+        return "payload_symmetric", "base fz only (raw)", f"base fz={fzr:.1f} N, mx={mxr:.2f} N m"
+    if not rminus_alarmed and signal < signal_thresh:
+        return "nominal", "nothing shifted", f"max joint shift {signal:.2f} < {signal_thresh}"
     if not rminus_alarmed:
-        # R- silent, something shifted: symmetric change (drift, spread) or mirror-symmetric bilateral fault (one pair)
-        if share < 0.4:
-            return "symmetric_drift_or_bilateral", "R- silent, spread joint rows", f"max leg share {share:.2f}, signal {signal:.2f}"
-        return "bilateral_mirror", "R- silent, mirror-symmetric joint rows", f"max leg share {share:.2f}, signal {signal:.2f}"
+        # R- silent, something shifted: concentrated in one (pair, joint) cell = mirror-symmetric bilateral fault; spread
+        # over cells (multiple joints, both pairs) = a common-mode change (symmetric torque/friction drift)
+        if dom >= concentration_thresh:
+            return "bilateral_mirror", "R- silent, one (pair,joint) cell", f"dominant cell share {dom:.2f}, share {share:.2f}"
+        return "symmetric_drift_or_bilateral", "R- silent, spread over cells", f"dominant cell share {dom:.2f}, share {share:.2f}"
     # R- alarmed
     if share >= share_thresh:
         return f"single_leg:{reading['resolved_leg']}-{reading['resolved_joint']}", "R- + one-leg joint row", f"leg share {share:.2f}, {reading['left_right']}"

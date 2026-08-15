@@ -227,7 +227,7 @@ def _maha(cfg, res_dir, quick):
 
 def _min_detectable(cfg, res_dir, tab):
     crit = cfg["grid"]["detect_criterion"]; rows = []
-    dets = [c[:-8] for c in tab.columns if c.endswith("_det100")]
+    dets = [c[:-len("_det100")] for c in tab.columns if c.endswith("_det100")]
     for ft in tab.fault.unique():
         for joint in tab.joint.unique():
             for ns in tab.noise_scale.unique():
@@ -368,7 +368,7 @@ def stage_gru(cfg, res_dir, quick=False):
         print(f"  [gru] seed {seed} done", flush=True)
     tab = pd.DataFrame(rows); tab.to_csv(res_dir / "e08_gru_spread.csv", index=False)
     spread = tab.groupby(["fault", "magnitude", "joint"]).det_rate.agg(["mean", "std", "min", "max"]).reset_index(); spread.to_csv(res_dir / "e08_gru_spread_summary.csv", index=False)
-    _conclude(res_dir, "[e08-gru] unseen-magnitude gain detection (5 seeds, rule eta<0.7): " + "; ".join(f"{r.fault} sev {r.magnitude} {r.joint}: {r['mean']:.2f}±{r['std']:.2f} [{r['min']:.2f},{r['max']:.2f}]" for r in spread.itertuples()))
+    _conclude(res_dir, "[e08-gru] unseen-magnitude gain detection (5 seeds, rule eta<0.7): " + "; ".join(f"{r['fault']} sev {r['magnitude']} {r['joint']}: {r['mean']:.2f}±{r['std']:.2f} [{r['min']:.2f},{r['max']:.2f}]" for _, r in spread.iterrows()))
     return tab
 
 

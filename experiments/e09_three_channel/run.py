@@ -173,7 +173,7 @@ def stage_iso(cfg, res_dir, quick=False):
                 Zr = o[Zr_key]; Zb = o["Zb_0.0"]
                 S, al = ecusum(o["pw_eq" if src == "equiv_rows" else "pw_an"], h["eq" if src == "equiv_rows" else "an"], start=w0); alarmed = al is not None
                 rd = readout(o["Z"], Zr, Zb, C2Rep(o["man"]), _RES_REP, K_cal, o["chans"], RES_COLS, use_residual_for_rminus=True)
-                label, conf, why = decide(rd, alarmed, base_z_thresh=iso["base_z_thresh"], share_thresh=iso["share_thresh"])
+                label, conf, why = decide(rd, alarmed, share_thresh=iso["share_thresh"])
                 conf_rows.append({"class": cl["name"], "truth": cl["truth"], "rep": r_i, "source": src, "label": label, "correct": _match(label, cl["truth"]), "alarmed": alarmed,
                                   "max_leg_share": rd["max_leg_share"], "base_fz_z": rd["base_fz_z"], "base_mx_z": rd["base_mx_z"], "resolved": f"{rd['resolved_leg']}-{rd['resolved_joint']}", "why": why})
             # contact-wrench sensitivity (analytic rows / base rows): re-decide at each scale
@@ -182,7 +182,7 @@ def stage_iso(cfg, res_dir, quick=False):
                     continue
                 rd = readout(o["Z"], o[f"Zr_an_{cs}"], o[f"Zb_{cs}"], C2Rep(o["man"]), _RES_REP, K_cal, o["chans"], RES_COLS, use_residual_for_rminus=True)
                 S, al = ecusum(o["pw_an"], h["an"], start=w0)
-                label, conf, why = decide(rd, al is not None, base_z_thresh=iso["base_z_thresh"], share_thresh=iso["share_thresh"])
+                label, conf, why = decide(rd, al is not None, share_thresh=iso["share_thresh"])
                 sens_rows.append({"class": cl["name"], "truth": cl["truth"], "rep": r_i, "contact_scale_err": cs, "label": label, "correct": _match(label, cl["truth"]), "base_fz_z": rd["base_fz_z"], "base_mx_z": rd["base_mx_z"], "max_leg_share": rd["max_leg_share"]})
     conf = pd.DataFrame(conf_rows); conf.to_csv(res_dir / "e09_confusion.csv", index=False)
     sens = pd.DataFrame(sens_rows); sens.to_csv(res_dir / "e09_contact_sensitivity.csv", index=False)
