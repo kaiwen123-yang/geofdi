@@ -40,9 +40,9 @@ Read this first in a new session; continue from the first unchecked item. Each i
 ## Block E — e03 external benchmark + sequential redesign
 - [x] E1-done `detect/sequential.py` (e-process / e-CUSUM / conformal-CUSUM; half-cycle elements; calibration ≥ 400 cycles); e04a κ=0.7: median delay ≤ 2 cycles, nominal ARL ≥ 1/α
 - [x] E2-done E2 pre-registration committed before the run (incl. diagonal class if present)
-- [ ] E2 e03 run: R⁻ half-cycle e-process (raw), R⁺ tracking + Mahalanobis, GRU regression (leave-one-file-out; η 0.4↔0.6; single→double; 3 seeds); per-episode + summary tables + four-class figure
-- [ ] E gate: mirrored-bilateral cell R⁻ ≈ α
-- [ ] Block E review pack
+- [x] e03-done E2 e03 run: R⁻ half-cycle e-process (raw), R⁺ tracking + Mahalanobis, GRU regression (leave-one-file-out; η 0.4↔0.6; single→double; 3 seeds); per-episode + summary tables + four-class figure
+- [~] e03-done E gate: mirrored-bilateral R⁻ reduced (straight 0.50, n=8) not clean ≈ α — reported
+- [x] rp018 Block E review pack
 
 ## Block T — theory Part 1 full text + Part 2 addenda (tags `theory-part1-v1`, `theory-part2-v1.1`)
 - [ ] `02_n1_theorems.tex` replaces the stand-in (labels kept): §1–§6 with proof / falsification / anchor triples
