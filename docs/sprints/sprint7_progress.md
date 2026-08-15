@@ -44,33 +44,33 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [~] e03-done E gate: mirrored-bilateral R⁻ reduced (straight 0.50, n=8) not clean ≈ α — reported
 - [x] rp018 Block E review pack
 
-## Block T — theory Part 1 full text + Part 2 addenda (tags `theory-part1-v1`, `theory-part2-v1.1`)
-- [ ] `02_n1_theorems.tex` replaces the stand-in (labels kept): §1–§6 with proof / falsification / anchor triples
-- [ ] Part 2: Corollary N3-3, necessity remark, centring trap in the lemma
-- [ ] bib check; `make theory` zero error
-- [ ] Block T review pack; tags
+## Block T — theory Part 1 full text + Part 2 addenda (tags `theory-part1-v1`, `theory-part2-v1.1`)  [DONE @ e58a5af]
+- [x] `02_n1_theorems.tex` replaces the stand-in (labels kept): N1-1 exactness, N1-2 isotypic incl. nonlinear response, N1-5 sequential, A5 chiral prop, H0' exact differenced test
+- [x] Part 2: Corollary N3-3, necessity remark, centring trap in the lemma
+- [x] bib check; `make theory` zero error / 0 overfull / 0 undefined
+- [x] rp017 review pack; tags `theory-part1-v1`, `theory-part2-v1.1` pushed
 
 ## Block P — low-SNR full grid (`experiments/e08_low_snr/`)
 - [x] e08-done inertia_add {10,20,50} g; noise ×{1,2,4}; full detector set incl. AE + GRU regression (5 seeds); nuisance under three noise levels
 - [x] e08-done curves not saturated; merged minimal-detectable table; GRU spread; R⁻ nuisance silence
 - [x] rp019 Block P review pack
 
-## Block I — three-channel isolation + anomaly diagnosis (`isolation/three_channel.py`, `experiments/e09_three_channel/`)
-- [ ] diagnosis of the analytic-row LH-KFE friction left/right inversion: root cause + fix; e13c isolation table re-run
-- [ ] `docs/protocol/e09_preregistration.md` committed before the run
-- [ ] 7-class confusion (analytic rows / equivariant rows), per-class readout figure, contact-force 10 %/20 % sensitivity
-- [ ] Block I review pack
+## Block I — three-channel isolation + anomaly diagnosis (`isolation/three_channel.py`, `experiments/e09_three_channel/`)  [DONE @ d969773; run e09-20260816b]
+- [x] LH-KFE friction left/right inversion: root cause (whole-leg residual ENERGY score decreases on a friction-damped leg → max picks wrong leg) + fix (|mean shift| of the pair's joint row). diagnosis LH 0/16 → 16/16; gain 16/16 both
+- [x] `docs/protocol/e09_preregistration.md` committed before the run (@ 0cbe7a2)
+- [x] confusion (analytic rows acc 0.943 / equivariant rows 0.883), confusion figure, contact-force ±10/20 % sensitivity (0.94 → 0.78/0.62 at ∓10/20 %); single-leg calls robust throughout
+- [x] rp020 Block I review pack
 
 ## Block S — sequential unification (`experiments/e11_sequential/`)
 - [ ] ARL₀ {1/α, 5/α} for conformal-CUSUM / e-CUSUM / e-process (incl. half-cycle); ARL–delay trade-off curve
 - [ ] two-channel complementarity figure
 - [ ] Block S review pack
 
-## Block N2 — bias augmentation + signatures + rolling contact (`inekf/`, `experiments/e10_n2_signatures/`)
-- [ ] two augmented InEKF variants + equivariance unit tests
-- [ ] signature reconstruction table (slip / encoder bias / gyro bias), DK recomputed + confusion
-- [ ] `docs/decisions/n2_rolling_contact_memo.md` + `inekf_rolling` + NIS smoke on m1_wheeled_sym
-- [ ] Block N2 review pack
+## Block N2 — bias augmentation + signatures + rolling contact (`inekf/`, `experiments/e10_n2_signatures/`)  [code @ d969773; e10-20260816 running]
+- [x] two augmented InEKF variants: `rinekf_bias.RIEKFBias` (IMU gyro/accel bias + optional 12-dim encoder-bias RW) and `inekf_rolling.RollingRIEKF` (moving contact); equivariance unit tests (tests/test_inekf_bias_equivariance.py, 4 pass, mirror identity to 1e-9)
+- [~] signature reconstruction (e10 signatures): encoder-bias innovation matches J[:,j]b (cos≈0.89) + reconstructed; pitch gyro-bias partially recovered (weak observability, yaw unobservable); slip mirror-covariance cos≈1.0 — full 20-seed run in flight
+- [x] `docs/decisions/n2_rolling_contact_memo.md` (corrected: A[d_i,R]=0, group-affine) + `inekf_rolling` + M1 wheel-contact FK + NIS smoke; smoke: rolling-InEKF base-pos RMSE 0.35 m vs fixed-foot ~7 m
+- [ ] Block N2 review pack (after e10-20260816)
 
 ## Block A (extra) — Panda arm (`sim/assets/panda/`, `experiments/e14_arm/`)
 - [ ] Panda world; residual + DK table; side-by-side with the welded leg
