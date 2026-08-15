@@ -121,10 +121,10 @@ class DeLaNQuadruped:
 
     def predict(self, leg: str, q, dq, ddq, a, batch: int = 8192) -> np.ndarray:
         """numpy in / numpy out: predicted joint torques (T, 3) for one leg."""
-        net = self.nets[leg]; dev = next(net.parameters()).device; out = []
+        net = self.nets[leg]; p = next(net.parameters()); dev, dt = p.device, p.dtype; out = []
         for i in range(0, len(q), batch):
-            tq = torch.as_tensor(q[i:i + batch], dtype=torch.float32, device=dev); tdq = torch.as_tensor(dq[i:i + batch], dtype=torch.float32, device=dev)
-            tddq = torch.as_tensor(ddq[i:i + batch], dtype=torch.float32, device=dev); ta = torch.as_tensor(a[i:i + batch], dtype=torch.float32, device=dev)
+            tq = torch.as_tensor(q[i:i + batch], dtype=dt, device=dev); tdq = torch.as_tensor(dq[i:i + batch], dtype=dt, device=dev)
+            tddq = torch.as_tensor(ddq[i:i + batch], dtype=dt, device=dev); ta = torch.as_tensor(a[i:i + batch], dtype=dt, device=dev)
             with torch.enable_grad():
                 tau = net(tq, tdq, tddq, ta)
             out.append(tau.detach().cpu().numpy())
