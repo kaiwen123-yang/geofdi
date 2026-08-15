@@ -1,0 +1,34 @@
+# e11 — sequential-layer unification (Sprint 7 Block S). Go2 go2_urdf_sym; R- half-cycle scores + R+ residual.
+experiment: e11_sequential
+workers: 22
+sim:
+  model: go2_urdf_sym
+  gait: trot
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+registration: {N: 64, drop_first: 20}
+observer: {backend: pin, cutoff_hz: 10.0, torque: tau_cmd, armature: 0.01, damping: 0.01, frictionloss: 0.2}
+delan: {equivariant: equiv_full}
+arl:
+  R: 40
+  seed_base: 77000
+  K_cal: 400
+  K_post: 60
+  arl0_targets: [20, 100]           # 1/alpha, 5/alpha (alpha 0.05)
+  faults:                           # mid-magnitude faults for the delay side of the tradeoff
+    - {name: gain_LF-KFE_0.8, type: actuator_gain, leg: LF, joint: KFE, magnitude: -0.2}
+    - {name: gain_LF-KFE_0.9, type: actuator_gain, leg: LF, joint: KFE, magnitude: -0.1}
+complementarity:                    # two-channel timeline figure
+  R: 30
+  seed_base: 78000
+  K_cal: 60
+  K_post: 100
+  conditions:
+    single_leg: {faults: [{type: actuator_gain, leg: LF, joint: KFE, magnitude: -0.2}]}
+    bilateral_mirror: {faults: [{type: actuator_gain, leg: LF, joint: KFE, magnitude: -0.2}, {type: actuator_gain, leg: RF, joint: KFE, magnitude: -0.2}]}
+    payload_lateral: {nuisance: [{type: payload_asymmetric, magnitude: 0.5, params: {offset_y: 0.05}}]}
+    drift_symmetric: {nuisance: [{type: drift_symmetric, magnitude: 0.10, params: {tau_s: 20.0}}]}
