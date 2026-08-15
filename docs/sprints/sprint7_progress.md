@@ -20,12 +20,12 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [x] rp015 Block 0 review pack
 
 ## Block W — dual hardware readiness → tag `hw-ready`
-- [ ] W1 wheeled M1 world (`m1_wheeled.xml` / `m1_wheeled_sym.xml`, ctrlrange/forcerange recorded, damping 0.05, IMU site)
-- [ ] W1 manifest `sim/manifests/m1_wheeled.yaml` (16 joints; WHEEL q excluded; c2 reuse)
-- [ ] W1 `io/m1_mapping.yaml` + `io/m1_sdk.py` (names reorder, NaN for missing, efforts_semantics)
-- [ ] W1 t01: sym world 1e-10; original world ε_dyn candidate
-- [ ] W1 rolling controller `sim/controller_wheeled.py` 0.5/1.0/2.0 m/s × 60 s smoke
-- [ ] W1 stepping mode tried (kept as `m1_stepping` or skipped with record)
+- [x] 97f4097 W1 wheeled M1 world (`m1_wheeled.xml` / `m1_wheeled_sym.xml`, ctrlrange/forcerange recorded, damping 0.05, IMU site)
+- [x] 97f4097 W1 manifest `sim/manifests/m1_wheeled.yaml` (16 joints; WHEEL q excluded; c2 reuse)
+- [x] 97f4097 W1 `io/m1_mapping.yaml` + `io/m1_sdk.py` (names reorder, NaN for missing, efforts_semantics)
+- [x] 97f4097 W1 t01: sym world 1e-10; original world ε_dyn candidate
+- [x] 97f4097 W1 rolling controller `sim/controller_wheeled.py` 0.5/1.0/2.0 m/s × 60 s smoke
+- [x] 97f4097 W1 stepping mode tried (kept as `m1_stepping` or skipped with record)
 - [ ] W2 `phase/registration.py mode: rolling`; H0′ two-sample construction
 - [ ] W2 e01-W (R=200): three speeds QQ + size table; L ∈ {0.5,1,2} s → minimal exchangeable L; original-world column; ε_ctrl → H0′ size recovery + δ doubling alarm
 - [ ] W2 nuisance/fault snapshot (R=30) R⁻ timelines
