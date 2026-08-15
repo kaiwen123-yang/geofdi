@@ -1,1 +1,1 @@
-"""Contact-aided invariant EKF and innovation monitoring (workstream N2)."""
+"""Contact-aided right-invariant EKF (Hartley et al. 2020) and a baseline quaternion ESKF, pure NumPy; see runner.run_filter."""
