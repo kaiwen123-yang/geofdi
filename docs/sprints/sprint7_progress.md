@@ -51,9 +51,9 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [ ] Block T review pack; tags
 
 ## Block P — low-SNR full grid (`experiments/e08_low_snr/`)
-- [ ] inertia_add {10,20,50} g; noise ×{1,2,4}; full detector set incl. AE + GRU regression (5 seeds); nuisance under three noise levels
-- [ ] curves not saturated; merged minimal-detectable table; GRU spread; R⁻ nuisance silence
-- [ ] Block P review pack
+- [x] e08-done inertia_add {10,20,50} g; noise ×{1,2,4}; full detector set incl. AE + GRU regression (5 seeds); nuisance under three noise levels
+- [x] e08-done curves not saturated; merged minimal-detectable table; GRU spread; R⁻ nuisance silence
+- [x] rp019 Block P review pack
 
 ## Block I — three-channel isolation + anomaly diagnosis (`isolation/three_channel.py`, `experiments/e09_three_channel/`)
 - [ ] diagnosis of the analytic-row LH-KFE friction left/right inversion: root cause + fix; e13c isolation table re-run
