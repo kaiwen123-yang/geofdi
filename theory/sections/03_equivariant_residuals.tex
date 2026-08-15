@@ -295,6 +295,22 @@ with $\delta_f^{(q)}$ in place of $\delta_f$, and total variation splits over
 the two events.
 \end{proof}
 
+\begin{remark}[Equivariance is necessary, not merely sufficient]
+\label{rem:necessity}
+Corollary~\ref{cor:contamination} bounds the contamination by $c\,\delta_f$;
+e13b shows there is no ``small enough'' $\delta_f$ for the residual $R^-$ in
+practice: the best plain per-leg DeLaN of Block~Q ($\delta_f^{(0.95)} =
+0.67$\,N\,m, $\delta_f^{(0.5)} = 0.21$\,N\,m against a validation RMSE of
+$0.42$\,N\,m) already gives size $1.00$ for a $10$-cycle residual flip test,
+and every plain model of the ladder saturates at $K \ge 10$. The energy
+statistic aggregates $d_r N = 768$ coordinates, so a systematic per-coordinate
+offset of a fraction of the fluctuation is a large noncentrality after ten
+cycles. For the residual $R^-$ channel, exact equivariance of the nominal
+model is therefore a \emph{necessary} condition, not a refinement; the
+$H_0'$ differenced construction (Lemma~\ref{lem:centring}(iv)) is the only
+alternative, at half the SNR.
+\end{remark}
+
 \paragraph{Falsification condition (N3-1).}
 Assumption~\ref{as:dyn} failing (the true dynamics not $G$-equivariant, e.g.\
 a manufacturing asymmetry above $\tau_{\mathrm{dyn}}$) breaks $H_0$ for
@@ -629,6 +645,46 @@ dynamics of $L_\sigma$. (iii) The reflection pairs LF$\leftrightarrow$RF and
 LH$\leftrightarrow$RH and nothing else (Section~\ref{sec:m1}); a shared
 template across the pairs would identify front and hind leg subsystems.
 \end{proof}
+
+\begin{corollary}[N3-3: equivariant model error is $\Pi^+$-only on the nominal orbit]
+\label{cor:n3-3}
+Let $\hat f$ be $G$-equivariant with systematic error $m(x,u) := \hat f(x,u)
+- f^*(x,u)$ ($f^*$ the true nominal map, itself equivariant under
+Assumption~\ref{as:dyn}). Then $m$ is $G$-equivariant, and along a
+$\symgrp$-symmetric nominal orbit the gait-locked systematic residual profile
+$\bar m(\theta) := m(x_{\mathrm{nom}}(\theta), u_{\mathrm{nom}}(\theta))$
+satisfies $\rho_R \bar m = \bar m$, i.e.\ $\Pi^-\bar m = 0$: the systematic
+model error lies entirely in the trivial component, and the sign component
+of the residual, $\Pi^- R_k = \Pi^- \Xi_k$, carries only the fluctuating
+part. Consequently the $R^-$ channel on the residual is insensitive to the
+\emph{quality} of an equivariant model (only its equivariance matters and
+its fluctuation variance $\operatorname{Var}(\Pi^-\Xi)$ enters the power),
+whereas the $R^+$ channel and the DK certificate pay for the model's error
+through $\beta_{\mathrm{op}}$ and the floor of the magnitude score.
+\end{corollary}
+
+\begin{proof}
+Difference of two equivariant maps is equivariant. On the symmetric nominal
+orbit $x_{\mathrm{nom}}(\theta + \tfrac12) = \repX(\gs)x_{\mathrm{nom}}(\theta)$
+and likewise for $u$ (Definition~\ref{def:gait-group} in the noise-free
+sense; in law for the stochastic orbit), so $\bar m(\theta + \tfrac12) =
+m(\repX x_{\mathrm{nom}}(\theta), \repU u_{\mathrm{nom}}(\theta)) = \repR(\gs)
+\bar m(\theta)$, which is $\rho_R\bar m = \bar m$; $\Pi^-$ of a
+$\rho_R$-fixed profile vanishes. With $R_k = \bar m + \Xi_k$ (Lemma~\ref{lem:centring})
+the sign component is $\Pi^-\Xi_k$.
+\end{proof}
+
+\paragraph{Anchor (N3-3).}
+e13a: the analytic residual and the equivariant DeLaN residual have the same
+minimal detectable severities under $R^-$ (bias $0.10$\,N\,m, gain
+$1 - \kappa$ $0.02$, friction $\times 1.5$) although the DeLaN's residual
+fluctuation is $3\times$ larger (nominal $\operatorname{Var}(\Pi^-r)/\operatorname{Var}(\Pi^-\tau_{\mathrm{cmd}})$
+$0.47$ vs $0.16$) and its systematic error is far larger; under $R^+$ the two
+differ by a factor $2$--$2.5$ in minimal detectable severity (gain $0.05$ vs
+$0.02$, bias $0.20$ vs $0.10$). The corollary is falsified if an
+equivariant model with a large systematic error inflates the residual
+$R^-$ size on nominal data (e13b: equivariant ladder $0.015$--$0.05$ at all
+sample sizes, incl.\ the $2$k-sample model with validation RMSE $3$\,N\,m).
 
 \begin{remark}[Exactly zero, also in floating point]
 \label{rem:exact-fp}

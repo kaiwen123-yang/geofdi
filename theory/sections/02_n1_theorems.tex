@@ -1,0 +1,507 @@
+\section{Part~1: exact tests, isotypic detectability, and the sequential layer}
+\label{sec:part1core}
+
+Part~0 stated the null hypothesis $H_0$ (Definition~\ref{def:h0}), the
+standing assumptions A1--A5 and the $\varepsilon$-budget. This part supplies
+the statistical machinery that turns $H_0$ into a test with an exact level
+and states what such a test can and cannot see. It replaces the Sprint-6
+stand-in and keeps its labels (Theorems~\ref{thm:n1-1} and~\ref{thm:n1-2}
+are cited by Part~2). Every result carries the Part~0 triple: proof,
+falsification condition, empirical anchor (experiment and figure/table id).
+Workstreams: N1-1 (data elements, exactness), N1-2 (isotypic detectability),
+N1-5 (sequential layer; the number is kept for continuity with the sprint
+plans), with N1-3/N1-4 (accumulation and metric refinement) left as the open
+list of Section~\ref{sec:p1-open}.
+
+\subsection{Data elements, the two actions, and block exchangeability}
+\label{sec:p1-elements}
+
+\paragraph{Sampled closed loop and half-cycles.}
+The telemetry stream $w(t) = (x(t),u(t),y(t)) \in W$ is sampled at the
+control period $\Delta$; the commanded gait has period $T = \Tc\Delta$
+(integer clock, $\Tc$ steps per cycle). Split time into half-periods and let
+$H_j \in \mathcal{W}_{\mathrm{h}} := \R^{d N/2}$ be the $j$-th half-cycle
+block, phase-registered on $N/2$ grid points ($j \ge 0$; $j$ even = the
+first half of cycle $k = j/2$, $j$ odd = its second half). The Part~0 cycle
+element is the pair
+\begin{equation}
+  \label{eq:z-of-h}
+  Z_k \;=\; (H_{2k}, H_{2k+1}) \;\in\; \mathcal{W} = \R^{dN}.
+\end{equation}
+For the trot, $\symgrp = \{e, \sigma_*\}$ with $\sigma_* = (\gs,\tfrac12)$,
+and $\rho_g := \repW(\gs)$ acts on half-cycles channel-wise (Section~\ref{sec:reps}).
+On $\mathcal{W}$ the wrapped action $\rho := \rho(\sigma_*)$ is a signed
+channel permutation composed with the half-grid cyclic shift; both factors
+are orthogonal involutions, hence
+\begin{equation}
+  \label{eq:rho-involution}
+  \rho^{2} = I, \qquad \rho^{\top} = \rho, \qquad
+  \Pi^{\pm} := \tfrac12 (I \pm \rho), \qquad
+  \mathcal{W} = \mathcal{W}^{+} \oplus \mathcal{W}^{-},
+\end{equation}
+with $\Pi^{\pm}$ complementary orthogonal projectors --- the isotypic
+decomposition into the trivial and sign components of $\symgrp \cong
+\mathbb{Z}_2$, used throughout Parts~1 and~2.
+
+\begin{definition}[Wrapped and unfolded actions]
+\label{def:wrapped-unfolded}
+(i) The \emph{wrapped} action is Part~0's \eqref{eq:cycle-action}, the phase
+shift taken on the circle: $\rho(\sigma_*) Z_k = (\rho_g H_{2k+1}, \rho_g H_{2k})$
+--- the second half of cycle $k$ is paired with the mirror of the first
+half of the \emph{same} cycle. (ii) The \emph{unfolded} action shifts along
+the time axis: on the half-cycle chain, $(\sigma_* H)_j := \rho_g H_{j+1}$;
+on cycle elements, $\tilde\rho(\sigma_*) Z_k := (\rho_g H_{2k+1}, \rho_g H_{2k+2})$.
+The unfolded chain $U_j := \rho_g^{\,j} H_j$ mirrors every other half-cycle
+so that all $U_j$ ``look like a first half''.
+\end{definition}
+
+\begin{proposition}[Process symmetry gives the unfolded invariance; the wrap is an approximation]
+\label{prop:wrap}
+Under Assumptions~\ref{as:dyn}--\ref{as:erg} and a $\symgrp$-symmetric gait
+command, the half-cycle chain satisfies
+\begin{equation}
+  \label{eq:unfolded-invariance}
+  \Law\bigl((H_j)_{j \ge j_0}\bigr) \;=\; \Law\bigl((\rho_g H_{j+1})_{j \ge j_0}\bigr)
+  \qquad \forall j_0,
+\end{equation}
+i.e.\ $(U_j)$ is a stationary sequence and $\Law(\tilde\rho(\sigma_*)Z_k) =
+\Law(Z_k)$ (unfolded invariance) holds exactly. The wrapped invariance
+$\Law(\rho(\sigma_*)Z_k) = \Law(Z_k)$ holds if and only if
+\begin{equation}
+  \label{eq:wrap-condition}
+  \Law(H_{2k+1}, H_{2k}) \;=\; \Law(H_{2k+1}, H_{2k+2}),
+\end{equation}
+that is, iff the half-cycle chain is time-reversible across the pair
+(the previous half given the present has the law of the next half given
+the present). Two sufficient conditions: (a) $(H_j)$ is a reversible
+stationary Markov chain; (b) \emph{measurement-noise domination}:
+$H_j = m_j + \xi_j$ with $(m_j)$ the deterministic (or slowly varying)
+symmetric orbit and $\xi_j$ i.i.d.\ noise, so that both sides of
+\eqref{eq:wrap-condition} are laws of independent perturbations of a
+symmetric pair. The failure mechanism is dynamics-driven fluctuation:
+process noise integrated by the closed loop makes the pair
+$(H_{2k+1}, H_{2k})$ carry the memory of the previous half in a way that its
+time reversal does not, and \eqref{eq:wrap-condition} fails at second order in
+the process-noise level.
+\end{proposition}
+
+\begin{proof}
+Definition~\ref{def:gait-group} (spatio-temporal symmetry \eqref{eq:st-symmetry})
+is exactly the statement that the process at time $t + T/2$ has the law of
+the mirrored process at time $t$; sampled on half-cycle blocks and iterated
+this is \eqref{eq:unfolded-invariance}, and mirroring every other block gives
+the stationarity of $(U_j)$; restricting to the pair $(H_{2k+1}, H_{2k+2})$
+gives $\Law(\rho_g H_{2k+1}, \rho_g H_{2k+2}) = \Law(H_{2k}, H_{2k+1}) =
+\Law(Z_k)$, the unfolded invariance. For the wrap: $\Law(\rho(\sigma_*)Z_k) =
+\Law(\rho_g H_{2k+1}, \rho_g H_{2k})$ equals $\Law(Z_k) = \Law(\rho_g H_{2k+1},
+\rho_g H_{2k+2})$ iff, applying $\rho_g^{-1}$ coordinatewise,
+\eqref{eq:wrap-condition} holds. Reversibility of a stationary Markov chain
+means $\Law(H_{j}, H_{j+1}) = \Law(H_{j+1}, H_{j})$, which with stationarity
+gives \eqref{eq:wrap-condition}; under (b) both sides are $\Law(m + \xi,
+m' + \xi')$ with the same deterministic pair (up to the mirror) and
+independent noise. The mechanism statement is Remark~\ref{rem:wrap} of
+Part~0.
+\end{proof}
+
+\paragraph{Falsification and anchor.}
+Anchor: e04d (rp005, \texttt{e04d\_noise\_sweep.png/.csv}, $R=200$, $K=60$):
+the wrapped flip test has size $0.060/0.065$, $0.075/0.070$, $0.070/0.065$,
+$0.095/0.095$ (paired energy / energy distance) at actuator process noise
+$0.02/0.05/0.1/0.2$\,N\,m (band $[0.02, 0.08]$), the unfolded test
+$0.055/0.060$, $0.060/0.060$, $0.060/0.065$, $0.040/0.040$ --- in band at every
+level; Sprint~1 (rp003 Finding~4): S1 baseline noise $0.050$, actuator noise
+$0.1$\,N\,m $0.075$--$0.09$ with lag-one cycle correlation $-0.02$ (block flips
+do not repair it: the defect sits within, not across, cycles). The
+proposition is falsified if the unfolded test itself leaves the band on a
+symmetric world (it did not, up to $0.2$\,N\,m). Protocol consequence
+(\texttt{protocol\_params.md}): the wrapped element is valid up to actuator
+noise $0.1$\,N\,m in the Go2 world; beyond, use the unfolded element (3 cycles
+per element in the Sprint-2 construction $X_j = Z_{3j}$, $Y_j = \rho_g(H_{6j+3},
+H_{6j+4})$).
+
+\begin{assumption}[E --- block exchangeability]
+\label{as:exch}
+The elements fed to a test --- cycles $Z_k$, unfolded pairs $(X_j, Y_j)$,
+rolling-mode blocks --- are exchangeable across the element index under
+$H_0$; more weakly, $m$-dependent, in which case sign flips constant on blocks
+of $\ge m$ elements are used. This is the maintained assumption of
+Remark~\ref{rem:exch}, kept outside $H_0$.
+\end{assumption}
+
+\emph{Audit and degradation.} Lag autocorrelation of the per-element
+antisymmetric energy $\|\Pi^-Z_k\|^2$ (e01-W: $+0.14$ at $L = 0.5$\,s and
+$1$\,m/s before the yaw damper was strengthened, $\approx 0$ afterwards);
+size vs block length. Degradation: block flips (e01b: a symmetric-in-law but
+autocorrelated lateral lean, $\tau = 2$ cycles, inflates naive flips to
+$0.355/0.41$; block $8$ gives $0.075$, block $16$ is in band), or the differenced
+construction of Section~\ref{sec:p1-h0prime}. Anchor for the rolling mode:
+e01-W stage a (size vs $L \in \{0.5, 1, 2\}$\,s at three speeds).
+
+\subsection{Theorem N1-1: exactness of the flip test}
+\label{sec:n1-1}
+
+Let $\mathcal{E} = (E_1,\dots,E_K)$ be the elements ($E_k = Z_k$ with the
+wrapped action $\rho$, or the unfolded pair $E_j = (X_j, Y_j)$ with the swap
+$\tilde\rho$), and let $\mathcal{G}_K = \{\rho^{\varepsilon_1} \times \dots
+\times \rho^{\varepsilon_K}\}$ be the flip group. For a statistic $T$ the
+Hemerik--Goeman random-subset test draws $g_2,\dots,g_M$ i.i.d.\ uniformly
+from $\mathcal{G}_K$, sets $g_1 = \mathrm{id}$, and reports
+\begin{equation}
+  \label{eq:hg-p}
+  p \;=\; \frac{1 + \#\{ j \ge 2 : T(g_j \mathcal{E}) \ge T(\mathcal{E}) \}}{M}.
+\end{equation}
+
+\begin{theorem}[N1-1, exactness]
+\label{thm:n1-1}
+Suppose Assumption~E holds with independent elements and each element is
+flip-invariant in law: $\Law(\rho E_k) = \Law(E_k)$ --- for wrapped cycles
+this is $H_0$ together with the wrap condition \eqref{eq:wrap-condition};
+for unfolded pairs it is process symmetry \eqref{eq:unfolded-invariance}
+together with the exchangeability of the pair $(X_j, Y_j)$ under Assumption~E
+(a gap between the two members that exceeds the mixing time). Then
+$\Law(g\mathcal{E}) = \Law(\mathcal{E})$ for every $g \in \mathcal{G}_K$, and
+the $p$-value \eqref{eq:hg-p} is super-uniform, $\mathbb{P}(p \le \alpha)
+\le \alpha$ for every $\alpha \in [0,1]$, with equality at $\alpha \in
+\{1/M, 2/M, \dots\}$ when $T$ has no ties; the statement holds for every
+statistic $T$ and uses no model of the data.
+\end{theorem}
+
+\begin{proof}
+Independence and per-element invariance give $\Law(g\mathcal{E}) =
+\bigotimes_k \Law(\rho^{\varepsilon_k}E_k) = \bigotimes_k \Law(E_k)$ for
+every $g \in \mathcal{G}_K$. Let $G$ be uniform on $\mathcal{G}_K$,
+independent of $\mathcal{E}$ and of $g_2,\dots,g_M$. Then $(G\mathcal{E},
+g_2 G\mathcal{E}, \dots, g_M G\mathcal{E})$ has the same law as
+$(\mathcal{E}, g_2\mathcal{E}, \dots, g_M\mathcal{E})$ (replace
+$\mathcal{E}$ by $G\mathcal{E}$, whose law is that of $\mathcal{E}$), and
+since $g_j G$ is again uniform and independent of everything else, the
+identity element occupies no special position: the multiset $\{T(g_1
+\mathcal{E}), \dots, T(g_M\mathcal{E})\}$ is exchangeable. The rank of
+$T(\mathcal{E})$ among $M$ exchangeable values is uniform on $\{1,\dots,M\}$
+(ties resolved conservatively by counting them against the observed value),
+which is \cite[Theorem~2]{hemerik2018exact}; \eqref{eq:hg-p} is that rank
+divided by $M$. Both the ``$+1$'' and the ``$/M$'' are needed: dropping the
+identity from either count breaks the exchangeability and yields an
+anti-conservative test (verified numerically in \texttt{tests/test\_permutation.py}).
+\end{proof}
+
+\begin{corollary}[Studentization keeps exactness]
+\label{cor:studentize}
+Let $s(\mathcal{E}) \in \R^{d}_{>0}$ be any per-channel scale that is a
+function of the flip-invariant multiset $\{E_k, \rho E_k\}_k$ (the pooled
+scale of the implementation), and let $T$ be evaluated on the elements
+standardized by $s$. Then $T \circ s$ is a statistic of $\mathcal{E}$ and
+Theorem~\ref{thm:n1-1} applies unchanged; in particular the standardized
+paired-energy statistic $\|K^{-1}\sum_k \varepsilon_k D_k / s\|^2$, $D_k =
+E_k - \rho E_k$, is exact. Standardization by a scale that is \emph{not}
+flip-invariant (e.g.\ the std of the observed elements alone) is not
+covered.
+\end{corollary}
+
+\begin{proof}
+$s(g\mathcal{E}) = s(\mathcal{E})$ for all $g \in \mathcal{G}_K$, so the
+statistic $\mathcal{E} \mapsto T(\mathcal{E}/s(\mathcal{E}))$ is a
+measurable function to which the theorem applies verbatim.
+\end{proof}
+
+\begin{remark}[Discreteness of short windows]
+\label{rem:discrete}
+The paired-energy statistic depends on the flip pattern $\varepsilon$ only
+through $\varepsilon D$ and is invariant under $\varepsilon \mapsto
+-\varepsilon$, so a window of $K$ elements has at most $2^{K-1}$ distinct
+values of $T$: the identity pattern is re-drawn on average $M/2^{K-1}$ times
+among the $M-1$ random draws, hence $p \ge (1 + (M-1)/2^{K-1})/M \approx
+2^{1-K}$. With $K = 5$ (16 patterns) $p \ge 1/16 > 0.05$: a single 5-cycle
+window can never reject at $\alpha = 0.05$, its e-value is at most $\tfrac12
+\sqrt{16} = 2$, and the plain e-process needs five consecutive floor windows
+--- an alarm floor of $25$ cycles (rp005 Finding~1, e04a/e04c). Windows of
+$K \ge 9$ elements ($256$ patterns, $p \ge 1/256$) admit single-window
+rejections at $0.05$ and e-values up to $8$; the sequential layer of
+Section~\ref{sec:n1-5} avoids the window altogether. Per-window rejection
+rates are therefore comparable with a binomial band only for $K \ge 9$;
+the pre-registered P2 criterion of e04c was inapplicable for this reason
+(rp005).
+\end{remark}
+
+\paragraph{Falsification and anchors (N1-1).}
+e01a (rp003; the QQ figure and the size table of that pack): $R = 200$, $K = 60$, $M = 512$, KS $p = 0.34/0.36$, sizes $0.015/0.055/0.085$
+and $0.020/0.055/0.095$ at $\alpha = 0.01/0.05/0.10$ (bands $[0, 0.025]$,
+$[0.02, 0.08]$, $[0.06, 0.145]$); the URDF world (Block~G, D005) is
+\emph{conservative} at damping $0.01$ (size $0.02$, KS $0$: an under-damped
+two-cycle pitch/knee mode gives negatively correlated consecutive
+elements --- an Assumption-E effect, valid but conservative); e13b: the flip
+test on the equivariant residual element $0.030$--$0.050$ at $K = 60$; e01-W
+(rolling blocks, $L \ge 1$\,s at $0.5$\,m/s and, after the yaw-damper change,
+at all speeds --- see the W pack). The theorem is falsified where the size
+leaves the band on a world that satisfies the hypotheses: the only such
+observations were traced to a broken hypothesis (Assumption~E through the
+wrap condition, e04d; a heading-dependent friction artefact of the pyramidal
+contact cone in the M1 world, W2), never to the test.
+
+\subsection{Theorem N1-2: isotypic detectability, nonlinear form}
+\label{sec:n1-2}
+
+Under $G = \mathbb{C}_2$ the element space splits into $\mathcal{W} =
+\mathcal{W}^+ \oplus \mathcal{W}^-$ by the orthogonal projectors $\Pi^\pm =
+\tfrac12(I \pm \rho)$ of \eqref{eq:rho-involution}. A fault
+$\varphi$ (Definition~\ref{def:h1}) changes the law of the element to
+$P_\varphi$; write $\mu(\varphi) := \mathbb{E}_{P_\varphi} Z$ for the mean
+profile and, for the leg-wise parametrization $\varphi = (\kappa_{\mathrm{L}},
+\kappa_{\mathrm{R}})$ of a joint pair, $\mu(\kappa_{\mathrm{L}}, \kappa_{\mathrm{R}})$.
+
+\begin{theorem}[N1-2, isotypic detectability]
+\label{thm:n1-2}
+\begin{enumerate}
+\item[(i)] \emph{(structural blindness)} If the fault pattern is fixed by
+$\symgrp$ (bilateral, synchronized, equal magnitude: $\varphi = (\kappa,
+\kappa)$ on a mirror pair, or any pattern with stabilizer $\symgrp_\varphi
+= \symgrp$), the faulty closed loop is still $\symgrp$-equivariant, $H_0$
+holds under $P_\varphi$, and every $\symgrp$-invariance test has power
+$\le$ its level, whatever the magnitude. Equivalently $\Pi^-\mu(\kappa,\kappa)
+= 0$ and all higher moments are $\rho$-invariant.
+\item[(ii)] \emph{(what is visible)} An alternative law $P_\varphi$ is
+detectable by some invariance test iff $\push{\rho}P_\varphi \neq P_\varphi$;
+for the paired-energy flip test the noncentrality after $K$ elements is
+$K\,\|\Pi^-\mu(\varphi)\|^2_{\Sigma}$ (standardized units), and the test is
+consistent iff $\Pi^-\mu(\varphi) \neq 0$ (location alternatives with
+$\rho$-invariant fluctuations, as in the Sprint-6 core).
+\item[(iii)] \emph{(nonlinear response; the difference heuristic is wrong)}
+For a mirror pair with leg-wise response $f$ (the mean profile of the leg's
+channels as a function of its own parameter, plus the equivariant coupling),
+$\Pi^-\mu(\kappa_{\mathrm{L}}, \kappa_{\mathrm{R}}) = \tfrac12\bigl(f(\kappa_{\mathrm{L}})
+- \rho f(\kappa_{\mathrm{R}})\bigr)$ in the leg-pair coordinates, so the
+antisymmetric content is $|f(\kappa_{\mathrm{L}}) - f(\kappa_{\mathrm{R}})|$
+in the \emph{response}, not $|\kappa_{\mathrm{L}} - \kappa_{\mathrm{R}}|$
+in the parameter: for a superlinear $f$ the unequal bilateral pair
+$(0.7, 0.5)$ has more antisymmetric energy than the single-leg fault
+$(1, 0.7)$ although its parameter difference is smaller. What is ordered
+independently of $f$ is the antisymmetric \emph{share}
+$\|\Pi^-\mu\|^2/\|\mu\|^2$: exactly $\tfrac12$ for a footprint supported on
+one leg (its mirror image is orthogonal to it), $0$ for the fixed pattern,
+strictly between for an unequal pair.
+\item[(iv)] \emph{(general alternatives)} If $P_\varphi$ is not $\rho$-invariant
+some bounded $h$ has $\mathbb{E}[h(Z) - h(\rho Z)] \neq 0$ and the flip test
+with $T = |K^{-1}\sum_k (h(Z_k) - h(\rho Z_k))|$ is consistent.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) A fault with $\symgrp_\varphi = \symgrp$ maps the closed loop to itself
+under every $\sigma \in \symgrp$: the faulty transition kernels are
+conjugation-invariant exactly as in A1--A4 (the fault is part of the
+equivariant plant), and A5 for the faulty loop gives \eqref{eq:h0} for
+$P_\varphi$; Theorem~\ref{thm:n1-1} makes every flip test level-$\alpha$
+under $P_\varphi$. (ii) If $\push{\rho}P_\varphi = P_\varphi$ then (i)
+applies; the noncentrality computation is that of the Sprint-6 core:
+$D_k = 2\Pi^-\mu + (\xi_k - \rho\xi_k)$, $\mathbb{E}\|\bar D\|^2 =
+4\|\Pi^-\mu\|^2 + \operatorname{tr}\operatorname{Var}(D_1)/K$ against a
+flip-null expectation of $\operatorname{tr}\operatorname{Var}(D_1)/K +
+O(\|\Pi^-\mu\|^2/K)$; consistency follows from the law of large numbers on
+both. (iii) In leg-pair coordinates $\mu = (f(\kappa_{\mathrm{L}}),
+f_{\mathrm{mir}}(\kappa_{\mathrm{R}}))$ with $f_{\mathrm{mir}} = \rho f$ by
+equivariance of the plant, so $\Pi^-\mu = \tfrac12(f(\kappa_{\mathrm{L}}) -
+\rho\,\rho f(\kappa_{\mathrm{R}}), \dots) = \tfrac12(f(\kappa_{\mathrm{L}}) -
+f(\kappa_{\mathrm{R}}), \dots)$ up to the mirror on the second block; for a
+one-sided footprint $s$ (nonzero on one leg's rows only) $\rho s$ has
+support on the mirror leg, $\langle s, \rho s\rangle = 0$, hence
+$\|\Pi^\pm s\|^2 = \tfrac12\|s\|^2$; for $\kappa_{\mathrm{L}} =
+\kappa_{\mathrm{R}}$ the profile is $\rho$-fixed, share $0$; for the unequal
+pair $\mu = s_{\mathrm{L}} + s_{\mathrm{R}}$ with $\rho s_{\mathrm{L}}
+\parallel s_{\mathrm{R}}$ and $\|\Pi^-\mu\|^2 = \tfrac12\|s_{\mathrm{L}} -
+\rho s_{\mathrm{R}}\|^2 < \tfrac12\|\mu\|^2$ unless $s_{\mathrm{R}} = 0$.
+(iv) is the standard characterization of distributional invariance by test
+functions.
+\end{proof}
+
+\begin{corollary}[Two channels are necessary]
+\label{cor:two-channel-necessity}
+No detector whose level is controlled by Theorem~\ref{thm:n1-1} can detect a
+$\symgrp$-fixed fault; a fault family that contains such patterns
+(bilateral synchronized degradation, symmetric wear) requires a second,
+magnitude channel that reads $\mathcal{W}^+$ (Part~0 Example~\ref{ex:bilateral};
+Part~2 Corollary~\ref{cor:two-channel} places both channels on one
+residual). The magnitude channel inherits no nuisance invariance from
+$\symgrp$ (D006: every magnitude channel inflates under a symmetric drift
+while $R^-$ is silent), so the guarantee of the two-channel design is
+asymmetric by construction.
+\end{corollary}
+
+\paragraph{Falsification and anchors (N1-2).}
+e04c (rp005; the isotypic figure and the projection-energy table of that
+pack): single $R^-$ $1.00$ / $R^+$ $1.00$; bilateral equal $R^-$ alarm $0.00$
+(blind), $R^+$ $1.00$; unequal $(0.7, 0.5)$: $R^-$ $1.00$ with \emph{more}
+antisymmetric energy than the single ($87.4$ vs $60.8$) --- the pre-registered
+``strictly between'' prediction was falsified, the share ordering
+$0.554 > 0.201 > 0.007$ held: (iii) is the corrected statement. e13c on the
+equivariant residual: shares $0.49 / 0.000 / 0.15$ (a one-joint footprint
+splits exactly $\tfrac12$--$\tfrac12$ on the residual; $0.43$ on the raw
+element because kinematic coupling spreads the footprint), bilateral-equal
+$R^-$ e-process $0.00$, $\Pi^+$-magnitude $1.00$. e03 (external Gazebo
+benchmark, Block~E): the mirror-double class is the pre-registered
+blindness test on data we did not generate. The theorem is falsified if a
+$\symgrp$-fixed fault is detected by an invariance test at a rate above its
+false-alarm rate on a world satisfying A1--A5 --- e03 reports this per
+class and per command condition (turning commands break the symmetry of
+the gait itself and are excluded from the blindness claim).
+
+\subsection{Proposition N1-5: the sequential layer}
+\label{sec:n1-5}
+
+\begin{proposition}[Anytime validity of the e-process; half-cycle elements]
+\label{prop:n1-5}
+Let $p_1, p_2, \dots$ be $p$-values that are super-uniform under $H_0$ and
+independent (window flip tests on disjoint windows; or conformal $p$-values
+of per-element scores against an independent calibration set), and let
+$e_t := \tfrac12 p_t^{-1/2}$. Then $\mathbb{E}[e_t] \le 1$, $E_t := \prod_{s
+\le t} e_s$ is a nonnegative supermartingale with $E_0 = 1$, and by Ville's
+inequality $\mathbb{P}(\sup_t E_t \ge 1/\alpha) \le \alpha$: the alarm rule
+$E_t \ge 1/\alpha$ has false-alarm probability at most $\alpha$ over an
+unbounded horizon \cite{vovk2021evalues,perezortiz2024estatistics}. With
+half-cycle elements (Definition~\ref{def:wrapped-unfolded}) and the
+per-half-cycle mirror score $s_j = \|(H_j - \rho_g H_{j-1})/s\|^2$, whose
+law under $H_0$ is stationary by \eqref{eq:unfolded-invariance}, the
+conformal $p$-value against $n_{\mathrm{cal}}$ nominal half-cycles is exact
+per element under exchangeability of the scores, its minimum is
+$1/(n_{\mathrm{cal}}+1)$, and the per-element e-value is at most
+$\tfrac12\sqrt{n_{\mathrm{cal}}+1}$: with $n_{\mathrm{cal}} \ge 400$ two
+extreme half-cycles reach $1/\alpha = 20$ --- a delay of one cycle is
+attainable, against the $25$-cycle floor of 5-cycle windows.
+\end{proposition}
+
+\begin{proof}
+$\int_0^1 \tfrac12 p^{-1/2}\,dp = 1$, so $\mathbb{E}[e_t] \le 1$ for
+super-uniform $p_t$ (the calibrator $\kappa p^{\kappa-1}$ at $\kappa =
+\tfrac12$ \cite{vovk2021evalues}); independence makes the running product a
+supermartingale and Ville's inequality gives the bound. Conformal
+$p$-values are exact under exchangeability of the calibration and test
+scores; the atom size is $1/(n_{\mathrm{cal}}+1)$; the rest is arithmetic.
+Successive half-cycle scores share a half-cycle and are therefore not
+independent: the product's validity for them is the empirical statement
+checked on nominal streams (E1 anchor), not a theorem; the exact statement
+holds for scores separated by at least one half-cycle.
+\end{proof}
+
+\begin{remark}[FAR-calibrated e-CUSUM]
+\label{rem:ecusum}
+The e-CUSUM $S_t = \max(0, S_{t-1} + \log e_t)$ with threshold $h$
+calibrated by block bootstrap on nominal $p$-values controls the false-alarm
+rate over a fixed horizon empirically and, unlike the product, forgets
+long stretches of nominal evidence (a restart property that gives it a
+faster response after a long calibration); it is not anytime-valid in
+Ville's sense. Sprint~2 (e04a): $h = 1.81/2.12$ (paired energy / energy
+distance), delay $15$ cycles at $\kappa \le 0.9$ against $25$ for the plain
+e-process. Block~E1 replaces the window by half-cycle elements; Block~S
+compares the three aggregators at equal ARL$_0$.
+\end{remark}
+
+\paragraph{Falsification and anchors (N1-5).}
+e01d (rp003): $20$ seeds $\times$ $3000$ cycles, windows of $30$: $0$ alarms
+in $2000$ windows (Ville frequency $0 \le 0.05$), censored ARL $\ge 16$
+windows; E1 (Block~E, \texttt{e1\_halfcycle\_validation.csv}): median
+$R^-$ delay at $\kappa = 0.7$ and $0.9$ with $400$ calibration cycles, and
+the nominal false-alarm probability over $400$ monitored cycles, for the
+e-process, e-CUSUM and conformal-CUSUM on half-cycle mirror scores. The
+proposition is falsified if the nominal false-alarm probability of the
+half-cycle e-process exceeds $\alpha$ by more than the binomial band on
+symmetric nominal streams (dependence between successive half-cycles would
+be the mechanism).
+
+\subsection{A5 as a proposition; \texorpdfstring{$H_0'$}{H0'} made exact}
+\label{sec:p1-h0prime}
+
+\begin{proposition}[Symmetry breaking is invisible to A1--A4 and visible to the test]
+\label{prop:chiral}
+Suppose A1--A4 hold and the $\symgrp$-symmetric periodic orbit of the
+nominal closed loop is unstable while a chiral orbit $\gamma$ is stable
+(equivariant bifurcation, \cite{golubitsky2002symmetry}). Then $\rho\gamma$
+is a second stable orbit, the realized law $P$ (started in the basin of
+$\gamma$) satisfies $\push{\rho}P \neq P$ although every transition kernel
+is exactly conjugation-invariant, and every invariance test detects the
+healthy chiral gait as if it were a fault; A5 (Assumption~\ref{as:erg}) is
+exactly the exclusion of this case, and Gate~1b (Section~\ref{sec:standing})
+its audit.
+\end{proposition}
+
+\begin{proof}
+Equivariance maps orbits to orbits and stability to stability, so
+$\rho\gamma$ is a stable orbit; it differs from $\gamma$ because $\gamma$
+is chiral ($\rho\gamma \neq \gamma$). $\push{\rho}P$ is the law of the
+process started in the basin of $\rho\gamma$, a different invariant law;
+Theorem~\ref{thm:n1-2}(iv) gives a consistent test.
+\end{proof}
+
+Anchor: Sprint~1 (rp003 Finding~1): at $k_p = 60$ the Go2 trot settles into a
+chiral gait (duty factors $0.63/0.64$ front, $0.85/0.87$ hind; half-period
+mirror residual $0.23$ standardized), at $k_p = 80$ the symmetric orbit is
+stable (residual $10^{-6}$); Part~0 Remark~\ref{rem:bifurcation}. On
+hardware the persistent lateral drift of an aged A1 during in-place stepping
+(Liu et al., \texttt{docs/theory\_intake.md}) is the same phenomenon in the
+$H_0'$ register.
+
+\begin{definition}[$H_0'$, differenced form]
+\label{def:h0prime-diff}
+Let $Z^{\mathrm{cal}}_1,\dots,Z^{\mathrm{cal}}_{K_{\mathrm{cal}}}$ be
+calibration elements and $Z^{\mathrm{mon}}_1, \dots$ monitored elements
+from the same robot. $H_0'$: the monitored elements have the law of the
+calibration elements (stationarity), \emph{whatever that law is}. The
+differenced element is $X_k := Z^{\mathrm{mon}}_k - Z^{\mathrm{cal}}_k$,
+$k \le \min(K_{\mathrm{cal}}, K_{\mathrm{mon}})$.
+\end{definition}
+
+\begin{proposition}[Exact $H_0'$ test]
+\label{prop:h0prime-exact}
+Under $H_0'$ with independent elements, $D_k := X_k - \rho X_k = A_k - B_k$
+with $A_k = Z^{\mathrm{mon}}_k - \rho Z^{\mathrm{mon}}_k$ and $B_k =
+Z^{\mathrm{cal}}_k - \rho Z^{\mathrm{cal}}_k$ i.i.d., hence $D_k \eqdist
+-D_k$ and $(D_k)$ independent: the flip test with any statistic of
+$(D_1,\dots,D_K)$ --- the paired-energy statistic --- is exact
+(Theorem~\ref{thm:n1-1} with the group $\{\pm1\}^K$ acting on $D$), for a
+robot of arbitrary stable asymmetry $\nu_0$; a change of asymmetry between
+calibration and monitoring appears as a mean of $D_k$. The cost is one
+calibration element per monitored element and a doubled fluctuation
+variance. Subtracting an \emph{estimated} mean profile instead is not
+exact (Part~2 Lemma~\ref{lem:centring}(iii): size $\approx 1$ at any
+practical $K_{\mathrm{cal}}$).
+\end{proposition}
+
+\begin{proof}
+$A_k \eqdist B_k$ and independence give $A_k - B_k \eqdist B_k - A_k$; the
+rest is Theorem~\ref{thm:n1-1}.
+\end{proof}
+
+Anchors: e01c(ii) (rp003): the two-sample energy-distance version of $H_0'$
+(Part~0 Definition~\ref{def:h0prime}) has size $0.061$ at a stable
+controller asymmetry $\delta = 0.02$ and alarm fraction $1.00$ when $\delta$
+doubles; e13b: differenced test $0.00$--$0.045$ for every residual model
+including the plain DeLaN with $\delta_f^{(0.95)} = 14.8$\,N\,m, naive
+centring $1.00$; e01-W stage b (rolling M1): a single-side wheel-rate gain
+$1.02$ inflates $H_0$ to $1.00$ and leaves the differenced $H_0'$ test at
+$0.00$--$0.18$, with the doubled asymmetry detected ($1.00$ for the wheel-rate
+case; the HIP-gain case is largely absorbed by the loaded loop, W pack).
+
+\subsection{Open list: N1-3 / N1-4}
+\label{sec:p1-open}
+
+\begin{enumerate}
+\item \emph{Second-order inflation for energy statistics}
+(Conjecture~\ref{conj:quadratic}): the e01c knees at $m \approx 300/100/30$
+for $\delta = 0.005/0.01/0.02$ move like $1/\delta^2$; the constant $c$ and its
+dependence on the residual covariance are open; the linear TV bound
+$\alpha + \tfrac{m}{2}\epsbar{tot}$ is vacuous beyond $m \approx 10$.
+\item \emph{IPM route} (Remark~\ref{rem:linear}): replace block total
+variation by an integral probability metric adapted to the deployed
+statistic class (energy / kernel discrepancies over mirror-paired phase
+marginals); expected cycle-level defect $\eps{\bullet}/(1-\delta)$ instead of
+$\Tc\eps{\bullet}$; the same conversion applies to $\epsbar{model}$
+(Part~2, \eqref{eq:c-delta}) whose Gaussian constant grows like $\sqrt N$.
+\item \emph{Accumulation over $n$ cycles}: how the per-cycle defect
+charges a sequential procedure that reads unboundedly many cycles
+(e-processes restart nothing; e-CUSUM forgets); a bound of the form
+$\alpha + c\,\mathrm{ARL}\cdot\epsbar{tot}$ vs.\ the empirical e01d/E1
+false-alarm counts.
+\item \emph{Residual generators with memory} (Part~2 Remark~\ref{rem:causal}):
+exact statement of the inheritance for causal filters whose memory is a
+fraction of the cycle.
+\item \emph{Half-cycle dependence}: the exact form of Proposition~\ref{prop:n1-5}
+for adjacent half-cycle scores (E1 checks it empirically).
+\end{enumerate}

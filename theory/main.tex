@@ -1,9 +1,9 @@
 \documentclass[11pt]{article}
 \input{preamble}
 
-\title{GeoFDI Theory Notes --- Parts 0--2:\\ Hypotheses and Assumptions; Exactness and Isotypic Detectability (core);\\ Residual Data Elements and Equivariant Nominal Models}
+\title{GeoFDI Theory Notes --- Parts 0--2:\\ Hypotheses and Assumptions; Exact Tests, Isotypic Detectability and the Sequential Layer;\\ Residual Data Elements and Equivariant Nominal Models}
 \author{GeoFDI project}
-\date{August 15, 2026 --- working notes: Part 0 v1.2, Part 1 core (Sprint-6 stand-in), Part 2 v1}
+\date{August 16, 2026 --- working notes: Part 0 v1.2, Part 1 v1, Part 2 v1.1}
 
 \begin{document}
 \maketitle
@@ -20,9 +20,12 @@ pseudovector transformation of gyroscope channels), states the standing
 assumptions A1--A5 with $\varepsilon$-approximate variants, audit procedures,
 and degradation paths, and derives the hypotheses $H_0$ and $H_1$, an
 $\varepsilon$-robustness lemma, and the recalibrated null $H_0'$ used when
-exact controller symmetry fails (Part~0). A minimal Part~1 core states the
-exactness of the flip test and the isotypic characterization of what an
-invariance test can detect. Part~2 makes the residual of a nominal model a
+exact controller symmetry fails (Part~0). Part~1 gives the exact flip test
+on wrapped and unfolded data elements, the isotypic characterization of
+what an invariance test can detect (including the nonlinear-response form
+that the pre-registered ``difference heuristic'' got wrong), the anytime-valid
+sequential layer on half-cycle elements, the chiral-attractor proposition
+behind A5, and the exact differenced form of $H_0'$. Part~2 makes the residual of a nominal model a
 legitimate data element: an equivariant nominal model (analytic observer or
 a Deep Lagrangian Network made exactly equivariant by mirror weight sharing)
 passes $H_0$ from the data to the residual, so the same exact test acts on
@@ -37,7 +40,7 @@ channel in power under an explicit signal-to-noise condition.
 
 \input{sections/00_notation}
 \input{sections/01_assumptions}
-\input{sections/02_part1_core}
+\input{sections/02_n1_theorems}
 \input{sections/03_equivariant_residuals}
 \input{counterexamples/product_kernel_counterexample}
 
