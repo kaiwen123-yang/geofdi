@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-sim = ["mujoco"]
+sim = ["mujoco==3.11.0"]
 dyn = ["pin"]
 dev = ["pytest", "ruff"]
 

@@ -1,0 +1,7 @@
+<mujoco model="go2 flat scene (headless)">
+  <!-- Flat-ground scene for GeoFDI simulation. Includes the symmetrized, mesh-free Go2 model. -->
+  <include file="go2_sym.xml"/>
+  <worldbody>
+    <geom name="floor" size="0 0 0.05" type="plane" friction="0.8 0.02 0.01"/>
+  </worldbody>
+</mujoco>
