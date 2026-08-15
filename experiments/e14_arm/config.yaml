@@ -1,0 +1,29 @@
+# e14 — the residual + N3 detectability certificate on a Franka Panda arm (Sprint 7 Block A, 加量).
+# Shows the model-residual (R+) and DK isolability machinery is SYMMETRY-FREE: it transfers to a 7-DoF serial
+# manipulator with no C2 mirror symmetry, side-by-side with the welded Go2 leg ("leg = arm", from e06).
+experiment: e14_arm
+workers: 14
+panda:
+  model_rel: assets/panda/panda.xml     # under $GEOFDI_DATA_ROOT (copied from the frozen menagerie franka model)
+  n_arm: 7
+  period_s: 2.0
+  amp_rad: 0.35                          # per-joint reference amplitude
+  kp: 120.0
+  kd: 12.0
+  ctrl_dt: 0.005
+  sim_dt: 0.001
+  noise: {enc_pos: 2.0e-3, enc_vel: 0.03, torque: 0.2}
+  K_cal: 60
+  K_post: 40
+  N: 64
+  drop_first: 4
+  R: 12
+  seed_base: 91000
+  faults:                               # per-joint gain / bias / friction, mid magnitude
+    types: [gain, bias, friction]
+    joints: [1, 2, 3, 4, 5, 6, 7]       # 1-indexed arm joints
+    gain_mag: 0.25                       # kappa = 0.75
+    bias_mag: 3.0                        # N m
+    friction_mag: 3.0                    # N m Coulomb
+# side-by-side reference (existing verified runs): e06 leg=arm bridge
+e06_ref: e06_n3_isolability/e06-20260815-2003/e06_leg_arm_bridge.csv
