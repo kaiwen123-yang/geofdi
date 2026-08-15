@@ -1,17 +1,51 @@
-# e02 — the "money figure": contact-aided InEKF innovation stream on a nominal
-# run vs. a run with an injected fault, with the symmetry-test alarm overlaid.
+# e02 — InEKF CFAR money figure (S3). Stages: run.py --stage a|b|c|all
 experiment: e02_inekf_money_figure
 seed: 0
-data:
-  source: sim
-  fault:
-    type: gain_loss
-    leg: LF
-    joint: knee
-    scale: 0.7
-    onset_cycle: 100
-detector:
-  statistic: mirror_pair_energy   # placeholder until N1-3 fixes the statistic
-  calibration_cycles: 50
-outputs:
-  figures: [innovation_timeline, alarm_overlay]
+workers: 20
+sim:                              # estimator world: closed-loop trot in place + slow yaw/pitch maneuvers, stiff feet,
+  gait: trot                      # force-thresholded contacts, integrating IMU (see rp006 MANIFEST for why)
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  foot_contact: stiff
+  contact_force_thresh: 10.0
+  imu_mode: integrating
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2,
+               maneuver_yaw_amp: 0.15, maneuver_pitch_amp: 0.25, maneuver_period_s: 30.0}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+filter:                           # identical for RIEKF and ESKF
+  sigma_gyro: 0.01
+  sigma_accel: 0.1
+  sigma_enc: 0.002
+  sigma_contact: 0.002
+  sigma_kin_floor: 0.001
+  init_yaw_error_deg: 30.0        # 'perturbed' initialisation variant: yaw error + 0.1 m position offset
+  init_pos_offset: [0.1, -0.05, 0.05]
+stage_a:
+  seeds: 20
+  seed_base: 21000
+  duration_s: 60.0
+  warmup_s: 5.0                   # NIS samples before this are dropped
+  n_bins: 8
+  chi2_dof: 3                     # per-foot NIS
+  cfar_quantile: 0.95
+  regimes:                        # small-error (dense corrections) vs large-error (sparse corrections + inconsistent kicks)
+    dense: {correct_every: 1}
+    kicked: {correct_every: 20, kick: {period_s: 6.0, jitter_s: 2.0, rot_deg: 30.0, vel: 0.3, start_s: 5.0}, gyro_noise_add: 0.0}
+stage_b:
+  seeds: 10
+  seed_base: 22000
+  duration_s: 60.0
+  warmup_s: 5.0
+  inject_std: 0.003               # m, anisotropic (single-axis) foot-position measurement noise injected in body / world / mixed frames
+  regime: {correct_every: 1}      # dense corrections (small-error regime)
+stage_c:
+  seeds: 10
+  seed_base: 23000
+  duration_s: 40.0
+  t_fault: 20.0
+  slip_velocity: [0.02, 0.01, 0.0]  # m/s, world frame, LF foot during contact
+  encoder_bias: {leg: LF, joint: KFE, rad: 0.05}
+  gyro_bias: [0.02, 0.0, 0.0]       # rad/s jump
+  window_s: 1.0                     # innovation-mean windows for the nearest-subspace classifier
