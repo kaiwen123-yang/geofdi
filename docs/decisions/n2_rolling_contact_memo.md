@@ -23,14 +23,25 @@ dynamics of X = [R v p d_1 … d_N] ∈ SE_{2+N}(3) must satisfy f(X) = X f(I) +
 block's rate must be a linear function of the state consistent with the group action. The fixed-foot model has ḋ_i = 0
 (trivially group-affine). The rolling model adds ḋ_i = R u_i.
 - If u_i is treated as a **known input** (computed from the measured wheel rate and leg kinematics, exactly as the IMU
-  ω, a are known inputs to the R and v blocks), then ḋ_i = R u_i has the **same form** as the position kinematics
-  ṗ = v = R (R^T v): a world-frame rate given by R times a body-frame input. This is the group-affine template of the
-  velocity/position blocks, so the augmented dynamics remain group-affine and the error ξ_d,i still satisfies a
-  linear ODE dξ_d,i/dt = (terms in ξ_R through the [u_i]_× coupling) + Ad noise. The propagation Jacobian gains a block
-    A[d_i, R] = −R [u_i]_×      (the world contact-rate depends on the attitude error through R),
-  analogous to A[v, R] = [g]_× and A[p, v] = I; A^k is still nilpotent (the added block does not create a cycle), so
-  Φ = Exp(AΔt) is still a finite polynomial. **Conclusion: the rolling contact is group-affine when u_i is a known input;
-  the InEKF's exact log-linear covariance propagation is preserved.**
+  ω, a are known inputs to the R and v blocks), then the d_i column rate R u_i = X · [u_i; 0] has the navigation-equation
+  form Barrau–Bonnabel (2017) prove **group-affine**. The consequence is the defining InEKF property: the right-invariant
+  error dynamics are trajectory- AND input-independent. Working the RI error ξ_{d_i} = d̂_i − R̂R^T d_i through with the
+  SAME measured ω, u_i in both truth and estimate gives (derived, and checked numerically in
+  scratchpad/roll_check.py to 1e-8):
+    dξ_{d_i}/dt = 0,   i.e.  A[d_i, R] = 0.
+  The cancellation is exact because, unlike the velocity block v̇ = R a + **g** whose world-CONSTANT gravity term
+  produces the A[v, R] = [g]_× coupling, the moving-contact rate R u_i has **no world-constant part** — u_i is a pure
+  body input rotated by the shared R, and R̂R^T is constant under the shared ω, so the R̂ u_i terms cancel.
+  **Correction to an earlier draft of this memo, which claimed A[d_i, R] = −R[u_i]_×: that is the *non-invariant* (plain-EKF,
+  world-position parameterisation) Jacobian for a moving landmark; in the RIEKF the group-affine structure annihilates it.**
+  So the propagation matrix A is UNCHANGED from the fixed-foot filter; the rolling contact changes only
+  (a) the **mean** propagation d̂_i+ = d̂_i + R̂ u_i Δt, and
+  (b) the d_i **process noise**: the wheel-rate/leg-encoder uncertainty in u_i enters the d_i block as a body-frame
+      covariance Cov(u_i), anisotropic in the wheel frame — large on the forward (rolling-odometry) axis σ_roll,
+      small on the lateral/vertical (no-slip / no-penetration) axes σ_slip — mapped by the same Ad_X̂ as every other
+      block. **Conclusion: the rolling contact is group-affine; the InEKF's exact log-linear covariance propagation is
+      preserved with the SAME A, and the no-slip constraint is realised as a low-σ_slip prior on the lateral/vertical
+      contact motion rather than a separate pseudo-measurement.**
 - The lateral-no-slip and vertical-no-penetration constraints are enforced as **pseudo-measurements** (below), not in
   the dynamics, so they do not affect group-affineness.
 
@@ -38,12 +49,14 @@ block's rate must be a linear function of the state consistent with the group ac
 Two measurements per rolling contact, both right-invariant (functions of X^{-1} times a fixed vector):
 1. **Foot-position kinematics** (as in the fixed-foot filter): y = h(q) = R^T(d_i − p), innovation z = R̂ h(q) + p̂ − d̂_i,
    H = [0 0 −I … I(i) …]. This ties the base to the (now moving) contact state.
-2. **Non-holonomic pseudo-measurement** (rolling constraint): the contact point's body-frame velocity has no lateral
-   (ŷ_leg) and no vertical (ẑ) component beyond r·ω_wheel: the measured wheel/leg kinematics predict u_i, and the filter's
-   implied contact velocity ḋ_i must match R u_i. Implemented as a velocity residual on the two constrained axes
-   (lateral, vertical) with a small covariance; the forward axis is left free (it carries r·ω_wheel, which is the odometry).
+2. **Non-holonomic no-slip constraint** (rolling): the contact point moves in the world at exactly R u_i with no
+   lateral or vertical drift. Rather than a separate pseudo-measurement, this is realised as the anisotropic d_i
+   process noise of point (b) above — small σ_slip on the lateral/vertical wheel axes (the contact cannot slide sideways
+   or sink) and larger σ_roll on the forward axis (the rolling-odometry uncertainty). Because the InEKF error is
+   group-affine, this soft constraint costs no extra measurement and preserves the exact covariance recursion.
 The odometry information enters through ḋ_i = R u_i in propagation (the contact state moves at the measured rolling rate),
-so the base velocity v is observable from the wheel odometry the way a fixed foot makes it observable from zero-velocity.
+so the base velocity v is observable from the wheel odometry the way a fixed foot makes it observable from zero-velocity:
+the foot-position innovation forces the base to keep pace with the known-moving contact.
 
 ## Fault relevance (why N2 cares)
 - A single-wheel encoder or motor fault changes ω_wheel,i and hence u_i: the innovation of contact i acquires a steady
@@ -54,10 +67,12 @@ so the base velocity v is observable from the wheel odometry the way a fixed foo
   channel for the rolling mode (Σ = G) even though there is no gait phase.
 
 ## Implementation (`geofdi.inekf.inekf_rolling`)
-`RollingRIEKF` extends `RIEKF`: `propagate` advances each contact state by R u_i Δt and adds the A[d_i, R] = −R[u_i]_×
-Jacobian block; `set_rolling_inputs(u_body_per_leg)` supplies u_i each step from the wheel rate and leg Jacobian;
-`correct` adds the lateral/vertical rolling pseudo-measurement. Equivariance unit test (S3 style): mirrored inputs give
-the mirrored state to 1e-9. NIS smoke on `m1_wheeled_sym`: InEKF vs ESKF per-bin FAR (realistic regime).
+`RollingRIEKF` extends `RIEKF`: `propagate` advances each contact state by R̂ u_i Δt (mean) with the SAME A as the base
+filter (A[d_i, R] = 0, verified) and an anisotropic wheel-frame d_i process noise (σ_roll forward, σ_slip lateral/
+vertical); `set_rolling_inputs(u_body_per_leg, wheel_frame_per_leg)` supplies u_i and the wheel axes each step (u_i =
+[r·ω_wheel, 0, 0] in the wheel frame for straight rolling); `correct` is inherited (the foot-position kinematic
+measurement), the no-slip being folded into σ_slip. NIS smoke on `m1_wheeled_sym`: RollingRIEKF (correct model) vs a
+fixed-foot RIEKF (wrong model for rolling — the stationary-foot assumption is violated, so its NIS inflates) and ESKF.
 
 ## Status
 Memo + `inekf_rolling` + NIS smoke this sprint (e10). The full outdoor validation (legacy M1 bags, `raw/m1/legacy-aug`)
