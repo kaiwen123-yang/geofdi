@@ -76,9 +76,9 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [ ] Panda world; residual + DK table; side-by-side with the welded leg
 - [ ] Block A review pack
 
-## Block F (extra) — figure factory (`scripts/make_paper_figures.py`)
-- [ ] one-shot regeneration of the 10 figures + 10 tables; figure_plan statuses updated
-- [ ] Block F review pack
+## Block F (extra) — figure factory (`scripts/make_paper_figures.py`)  [DONE @ HEAD]
+- [x] one-shot factory: tables T1–T5,T7–T9 (+T9b) as CSV + booktabs paper_tables.tex; figures F4b/F6b/F10b regen as PDF, F2/F3/F5–F12 registered; coverage.md; --check verifies 24 sources; figure_plan updated
+- [x] rp023 Block F review pack
 
 ## Wrap-up
 - [ ] tag `sim-milestone-5`; final report (anchor lists, confirmed limitations, hardware-only questions, two first commands, split option status)
