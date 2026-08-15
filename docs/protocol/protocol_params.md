@@ -36,3 +36,13 @@ deterministic given the seed (MuJoCo 3.11, integer phase clock).
 | low-SNR minimal detectable severity (det100 ≥ 0.9, R = 50) | residual R⁻: bias 0.10 N·m, gain 1−κ 0.02, friction ×1.5; raw R⁻: bias 0.5, gain 0.05/0.02, friction undetected on the grid; Mahalanobis (magnitude): 0.05 / 0.01 / ×1.5 | e13a `e13a_min_detectable.csv` |
 | R⁺ on residuals | conformal magnitude on Π⁺r (pure trivial component) or on the full residual energy; the full-energy score is more powerful for single-leg faults (half of a one-joint footprint is antisymmetric) | e13a: `Rplus_res_an_full` min-detectable gain 0.02 / bias 0.10 vs `Rplus_res_eq_sym` 0.10 / 0.5 |
 | three-channel isolation | pair–joint from the R⁻ projection energy on the residual element (swing conditioning, calibration scale) → left/right from the per-leg residual score deviation → payload if the base-row f_z shift ≥ 3σ | e13c: raw+tracking 0.57, analytic rows 0.86 (LH-KFE friction attributed to RH-KFE by the analytic rows), equivariant rows 1.00 (7 classes × R = 20) |
+
+## Sprint 7 Block 0 additions (2026-08-16)
+
+| parameter | value | justification |
+|---|---|---|
+| URDF-world damping 0.01 → conservative flip test | size 0.02–0.025 at α = 0.05 (KS 0), 2-cycle under-damped pitch/knee mode; `joint_damping: 2.0` restores uniform p | D005 / Block G; state which is used in every experiment (default: accept the conservative size, report the band) |
+| torque source for residuals | commanded torque τ_cmd (+ Jᵀf_c); τ_meas is physically consistent and blind to actuator gain/bias | Sprint 4 L1 Finding 1; Part 2 Prop N3-2 (a) |
+| floors of the sequential layer | e-process on per-cycle conformal p: ≥ 3 cycles (three e ≈ 61/… products to reach 1/α); R⁻ 5-cycle windows: alarm floor 25 cycles for the plain e-process, ~10 for the calibrated e-CUSUM; a per-window rejection rate is not usable below 9-cycle windows | e04a/e05b/e13c; Block E redesigns the layer (half-cycle elements, ≥ 400 calibration cycles) |
+| centring trap | never subtract an estimated calibration mean profile before the exact flip test (size ≈ 1); H₀′ = differencing monitored vs calibration cycles, or the two-sample construction | e13b; Part 2 Lemma centring (iii)/(iv) |
+| wheel-angle exclusion (M1 wheeled) | wheel joint angles are unbounded (rolling) and are excluded from the data element (`in_Z: false`); wheel rates and efforts stay, transformed as pitch-axis pseudovector rates (sign +) | D009; manifest `sim/manifests/m1_wheeled.yaml` |

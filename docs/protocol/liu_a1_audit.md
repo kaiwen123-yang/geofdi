@@ -1,6 +1,42 @@
 # Audit — Liu et al. (RA-L 2025) Unitree A1 joint-partial-failure dataset (`liu-a1-fault`)
 
-Date: 2026-08-15 · Auditor: Claude (session with K. Yang) · Status: **audited, ingested**
+Date: 2026-08-15 · Auditor: Claude (session with K. Yang) · Status: **audited, ingested; provenance RESOLVED 2026-08-16 (§0)**
+
+## 0. Resolution from the paper (2026-08-16; PDF at `$GEOFDI_DATA_ROOT/lit/liu2025_grufd_ftc.pdf`)
+
+Read from the full text (RA-L 10(10):10234–10241, 2025), superseding the "unresolved" verdict of §6 and the
+data-derived leg labels of §2:
+
+1. **Provenance: Gazebo simulation.** §III.B.1 (Data Collection): the expert policy is `legged_control` (NMPC + WBC);
+   "In Gazebo simulation, torque commands are directly sent to the motors under normal conditions. Partial joint failure
+   is simulated by scaling the torque commands with the torque retention rate"; §III.B.3: "we rely solely on
+   simulation data without incorporating physical measurements". The abstract's "real-world experiments" are the FTC
+   hardware runs (Table IV, in-place stepping on an A1), not the released CSVs. **e03 is therefore an "external public
+   simulation benchmark"** in every figure caption and table title.
+2. **Fault model:** τ_real = η · τ_cmd with η diagonal, sensors exact (eq. 2) — identical to our `actuator_gain`
+   injector (κ = η, magnitude κ − 1).
+3. **Official joint order:** 0–2 Left Front, 3–5 Left Hind, 6–8 Right Front, 9–11 Right Hind, each (Hip, Thigh, Calf).
+   The data-derived pairs of §2 stand — mirror pairs (0,2) = (LF,RF), (1,3) = (LH,RH); diagonal (trot) pairs (0,3) =
+   (LF,RH), (1,2) = (LH,RF) — only the side labels change (§2 wrote `[R_X, R_Y, L_X, L_Y]`; the hip-sign convention
+   inferred from the data is used solely as the sign convention, not as a side label).
+4. **Double faults, scanned from the η fields of all ten CSVs (2026-08-16):** every `*_Double_*` file carries all six
+   calf pairs, both joints at the same η ∈ {0.4, 0.6}, 20 episodes per pair in total: same-side (2,5)=(LF,LH),
+   (8,11)=(RF,RH); **mirror** (2,8)=(LF,RF), (5,11)=(LH,RH); **diagonal** (2,11)=(LF,RH), (5,8)=(LH,RF) — the paper's
+   Case 3 is η₅+η₈, i.e. diagonal. Singles: 125 episodes over the four calf joints (35/30/30/30). Episode lengths
+   100 or 200 rows (1 s / 2 s at 100 Hz). → e03 pre-registers **four fault classes**: single, same-side double,
+   mirror double (Σ-invariant, R⁻-blind by N1-2), diagonal double (mirror broken, R⁻ visible).
+5. **GRUFD spec (Table I):** input 57 (θ_B 3 + ω_B 3 + q 12 + q_des 12 + dq 12 + dq_des 12 + cmd 3 = 57; η is the target, not an input),
+   hidden 256, output 12 (regression of η̂, MSE loss), 100 epochs, batch 32, lr 1e-4; number of GRU layers not stated
+   (we use 1, marked "to verify"); inference 50 Hz; Algorithm 1: low-pass on η̂, joint faulty iff η̂_j < 0.7.
+   Implemented as `geofdi.baselines.gru.GRURegressor` (`mode: regression_eta`).
+6. **Latency benchmark:** the paper reports no FAR, delay distribution or ROC; Fig. 3 shows the GRUFD spike at
+   t ≈ 15.5 s for an onset at t = 15 s (humanoid), i.e. ~0.5–1 s. Episodes are 1–2 s ≈ 2–4 gait cycles → e03 must
+   detect within cycles/half-cycles (Block E sequential layer).
+7. **Real-robot remarks (theory intake):** in the hardware runs "motor aging and IMU drift were present … even with
+   no command input in a trot gait, the robot" drifted; a persistent lateral deviation during in-place stepping; the
+   threshold detector "was less effective in this scenario" because "the degradation was too subtle to fall below the
+   detection threshold" (§V.B, §VI). These are the H₀′ scenario (A2/A5 failing on hardware) and the low-SNR target of
+   Block P.
 
 ## 1. Source
 
@@ -96,7 +132,7 @@ from row ≈ 99 to the end of every file (no standing segments to speak of).
 * The paper's abstract states "simulations and real-world experiments"; neither the README nor
   the repo says which produced the CSVs.
 
-**Verdict on provenance: UNRESOLVED — most likely simulation-grade data** (exact η bookkeeping,
+**Verdict on provenance (2026-08-15): UNRESOLVED — most likely simulation-grade data** [resolved as simulation in §0] (exact η bookkeeping,
 mrad tracking, perfectly regular schedule, no contacts/torques/timestamps), but a hardware run
 with software-scaled torque commands would look the same at this level of logging. Action: get
 the paper's data-collection section (institutional access) and settle it before e03 results are

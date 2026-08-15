@@ -88,3 +88,37 @@ One entry per hard-to-reverse decision. Format: `D<nnn> — <title> — <date> �
   (conservative). Experiments that need nominal size in the URDF world either use `joint_damping: 2.0` explicitly or
   accept the conservative size — state which.
 - The generic converter (`urdf2mjcf.py`) is the path for the M1 URDF/MJCF (Block M).
+
+## D006 — e05a re-characterized: every magnitude channel inflates under symmetric drift; only R⁻ is silent — 2026-08-16 — accepted
+
+- e05a (rp008) showed rplus_resid (τ_cmd and τ_meas) at 0.14–0.16 per-cycle FAR under the S2 symmetric torque/friction
+  drift (0.09 with K_cal = 200), rplus_track 0.19–0.23; e07 (rp009) showed Mahalanobis / AE alarming under the same drift;
+  only the R⁻ mirror channel keeps its FAR. The L1 gate item "rplus_resid back in band under symmetric drift" is
+  therefore not a bug to fix but a property: magnitude channels calibrated on a short window are not nuisance-invariant
+  by construction, the invariance channel is. Deployment consequence: R⁻ is the FAR-guaranteed channel; every magnitude
+  channel needs recalibration per operating condition (or the H₀′-style two-sample comparison) and its FAR is reported
+  per nuisance (Block P re-runs the nuisance rows under three noise levels).
+
+## D007 — Hardware M1 is the wheeled-legged `zgws` platform; the point-foot candidate is retired — 2026-08-16 — accepted
+
+- The only M1 hardware available (August legacy bags, vendor SDK) is the wheeled-legged 16-joint robot (fl/fr/bl/br ×
+  hip_roll, hip_pitch, knee_pitch, wheel). The point-foot STEP-derived candidate model (`assets/m1`, rp010) is retired:
+  no further effort on the STEP, no point-foot M1 experiments. The M1 world of record is `m1_wheeled(_sym).xml` built
+  from the MATRiX `zgws` MJCF (Sprint 7 Block W1); meshes stay in `~/research/third_party` (not vendored).
+
+## D008 — Milestone numbering: sim-milestone-2/3 are folded into 4; no retroactive tags — 2026-08-16 — accepted
+
+- Sprints 2 and 4 ended without their milestone tags (gate misses documented in rp005/rp006 and rp008). Their delivered
+  content is covered by `sim-milestone-4` (Sprint 6). Tags 2 and 3 are not created retroactively; the next milestone is
+  `sim-milestone-5` at the end of Sprint 7. Theory tags continue per part (`theory-part1-v1`, `theory-part2-v1.1`).
+
+## D009 — Dual hardware programme: Go2 point-foot (trot) + M1 wheeled-legged (rolling / stepping) — 2026-08-16 — accepted
+
+- Go2: trot with Σ = {(e,0), (g_s, ½)} ⊂ G × S¹ — the spatio-temporal null of Part 0; data via CycloneDDS LowState
+  (Unitree joint order FR, FL, RR, RL × hip, thigh, calf); phase from the kinematic estimator (`phase/estimator.py`).
+- M1 wheeled: rolling mode with Σ = G (pure sagittal reflection, no phase; fixed-duration blocks as data elements,
+  `mode: rolling`) and, if the stepping gait is stable, a G × S¹ trot-like mode. Wheel angles are unbounded and excluded
+  from the data element (wheel rates and efforts stay). Legacy August bags (wheeled driving) become the first nominal
+  corpus for the rolling mode once the SDK channel semantics are fixed on Day 0.
+- Both robots run through one pipeline (`scripts/run_pipeline.sh --robot m1|go2 --mode rolling|trot`), each with its own
+  mapping yaml (`io/m1_mapping.yaml`, `io/go2_mapping.yaml`, both `unverified: true` until Day 0).

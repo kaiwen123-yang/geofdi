@@ -41,3 +41,33 @@ Sprint 6 (2026-08-15) — the file was referenced by the sprint instructions but
 - Part 0 M1 back-fill (joint count/order/signs from `docs/protocol/legacy_aug_inventory.md` §4a): still `\todo`.
 - e13d (wheeled M1 residual channel) needs the M1 world (Sprint 5 Block W, absent).
 - Second-order (variance) asymmetry of non-equivariant models after centring: quantify (Lemma centring (iii)).
+
+## Sprint 7 Block 0 (2026-08-16) — intake for Block T
+
+**From the Liu et al. paper (real-robot section):** the A1 hardware runs show motor aging and IMU drift, a persistent
+lateral deviation during in-place stepping with zero command, and the authors state that their threshold-based
+detector misses the degradation because it is "too subtle to fall below the detection threshold". Reading for the
+theory: (i) a stable nonzero asymmetry of a healthy-but-aged robot is exactly the H₀′ scenario (A2/A5 failing on
+hardware: nominal asymmetry level ν₀ > 0 to be calibrated, faults as changes of asymmetry); (ii) "subtle degradation"
+is the low-SNR regime of Block P where the residual R⁻ (Part 2, N3-2) and the sequential layer are supposed to win over
+threshold rules; (iii) the released dataset is Gazebo simulation (Part 0 audit table: e03 is an external *simulation*
+benchmark, hardware anchors stay with our own Go2/M1 sessions).
+
+**Sprint 6 leftovers (Block T to absorb):**
+1. **Corollary N3-3 candidate — equivariant model error is Π⁺-only.** For an equivariant nominal model the systematic
+   (gait-locked) model error m̄(θ) is itself an equivariant function of the nominal trajectory; on a Σ-symmetric nominal
+   trajectory it therefore satisfies m̄ = ρ_R m̄, i.e. Π⁻m̄ = 0 pointwise in phase: the mirror pairing cancels it
+   exactly and only the fluctuating part of the error remains in Π⁻r. Consequence: R⁻ on the residual is insensitive
+   to the model's *quality* (only to its equivariance), while R⁺ / the DK certificate pay for it through β_op.
+   Evidence (e13a): Rminus_res_eq ≈ Rminus_res_an at every grid cell (min-detectable bias 0.10 / gain 0.02 / friction
+   ×1.5 for both) whereas Rplus_res_eq_full ≪ Rplus_res_an_full (min-detectable gain 0.05 vs 0.02, bias 0.20 vs 0.10);
+   the DeLaN residual's Π⁻ variance is 3× the analytic one and its power at the smallest cells is lower — the residual
+   *fluctuation* still costs, the systematic error does not.
+2. **Contamination saturates on the best plain model.** e13b: the plain DeLaN with δ_f^{(0.95)} = 0.67 N·m (δ_f^{(0.5)}
+   0.21, val RMSE 0.42) already gives size 1.00 for a 10-cycle residual flip test; there is no "small enough" δ_f for an
+   energy statistic over d_r N coordinates → equivariance is a *necessary* condition for the residual R⁻ (Remark to add
+   to Cor. contamination).
+3. **Centring trap** (Lemma centring (iii)/(iv) already in Part 2 v1 text after e13b): subtracting the calibration mean
+   profile and re-running the exact flip test has size ≈ 1 for every model at K ≥ 60 (factor (K_cal+K)/(K_cal+1) shift vs
+   O((d_r N)^{-1/2}) spread); the valid H₀′ construction differences monitored vs calibration cycles. → protocol_params
+   entry (Block 0 item 10).

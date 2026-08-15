@@ -6,13 +6,14 @@
 | R⁻ (mirror channel, ours) | **none** (nominal calibration cycles only) | Hemerik–Goeman mirror-test p per 5-cycle window → FAR-calibrated e-CUSUM (h from the pooled nominal windows) |
 | rplus_resid (ours) | none (analytic nominal model; nominal calibration cycles) | phase-registered momentum-residual magnitude |
 | rplus_track (ours, S2 reference) | none | tracking-error magnitude (needs q_ref: sim-only) |
-| GRU classifier (Liu-style baseline) | **fault rollouts** of the *seen* magnitudes (gain 0.8, bias 1.0 N·m, friction ×2, +100 g) on LF-HFE/KFE + nominal; a second GRU trained *without* inertia faults | P(fault) of 50-step windows, averaged per cycle |
+| GRU classifier (e07 placeholder) | **fault rollouts** of the *seen* magnitudes (gain 0.8, bias 1.0 N·m, friction ×2, +100 g) on LF-HFE/KFE + nominal; a second GRU trained *without* inertia faults | P(fault) of 50-step windows, averaged per cycle |
+| GRUFD regressor (Liu et al. RA-L 2025, Table I; `mode: regression_eta`, Sprint 7) | fault + nominal sequences (Liu CSVs for e03; our sim for e08) | η̂ ∈ R¹² by MSE regression (input 57 = body angles/rates + q, q_des, dq, dq_des + cmd; hidden 256; 1 layer, to verify; 100 epochs, batch 32, lr 1e-4); deployment rule = low-pass η̂ then joint faulty iff η̂_j < 0.7 (Algorithm 1); our per-cycle score for the unified protocol = 1 − min_j η̂_j (also reported with the paper's own threshold rule) |
 | window autoencoder | nominal rollouts only | reconstruction error of 50-step windows, averaged per cycle |
 | Mahalanobis gate | nominal rollouts only (Ledoit–Wolf covariance of per-cycle channel means/stds) | squared Mahalanobis distance of the cycle's feature vector |
 
-GRU architecture (2 × 64 GRU + FC, window 50 steps = 0.25 s, stride 10) is a placeholder to be back-filled from Liu et
-al. (RA-L 2025) once the paper is available; the *protocol* (train on some fault magnitudes, test on unseen ones and on
-an unseen fault type) is what the table is about.
+The e07 GRU architecture (2 × 64 GRU + FC, window 50 steps = 0.25 s, stride 10) was a placeholder; the paper's GRUFD
+spec (Table I, read 2026-08-16) is now implemented as `GRURegressor` and is the baseline for e03/e08. The *protocol*
+(train on some fault magnitudes, test on unseen ones and on an unseen fault type) is what the table is about.
 
 ## Unified alarm rule (identical for every detector)
 1. Each run has K_cal = 60 nominal calibration cycles (after 20 warm-up cycles) followed by 100 monitored cycles;
