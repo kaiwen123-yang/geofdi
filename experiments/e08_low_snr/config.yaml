@@ -1,0 +1,53 @@
+# e08 — low-SNR separation grid, full version (Sprint 7 Block P). Extends e13a: inertia + noise-scaling + AE/GRU baselines.
+experiment: e08_low_snr
+workers: 22
+sim:
+  model: go2_urdf_sym
+  gait: trot
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+registration: {N: 64, drop_first: 20}
+observer: {backend: pin, cutoff_hz: 10.0, torque: tau_cmd, armature: 0.01, damping: 0.01, frictionloss: 0.2}
+delan: {equivariant: equiv_full, plain: full}
+detect: {alpha: 0.05, M: 512, window_rminus: 5, halfcycle_calib_cycles: 400, ecusum_horizon_windows: 20, ecusum_boot: 1000}
+grid:
+  R: 30
+  seed_base: 66000
+  K_cal: 60
+  K_post: 100
+  leg: LF
+  joints: [HFE, KFE]
+  noise_scales: [1, 2, 4]                        # multiply the whole NoiseConfig
+  faults:
+    actuator_gain: [0.99, 0.98, 0.95, 0.90]      # 1-kappa in {0.01,0.02,0.05,0.1}
+    actuator_bias: [0.05, 0.10, 0.20, 0.50]      # N m
+    friction_scale: [1.1, 1.2, 1.5]
+    inertia_add: [0.01, 0.02, 0.05]              # kg (10/20/50 g)
+  detect_criterion: 0.9
+baselines:
+  mahalanobis_train: {rollouts: 20, cycles: 100, seed_base: 67000}
+  ae: {win: 50, latent: 32, hidden: 256, epochs: 20, batch: 512, lr: 0.001, seed_base: 68000, nominal_rollouts: 16}
+  gru:                                            # Liu Table-I regressor (eta) trained on the two largest magnitudes, tested on the small ones
+    hidden: 256
+    layers: 1
+    epochs: 40
+    batch: 256
+    lr: 0.0001
+    window: 50
+    stride_train: 10
+    fs_hz: 200
+    seeds: [0, 1, 2, 3, 4]
+    train_magnitudes: {actuator_gain: [0.90, 0.95], actuator_bias: [0.50, 0.20], friction_scale: [1.5, 1.2]}
+    max_batches_per_epoch: 300
+nuisance:                                         # re-run under three noise levels
+  R: 50
+  seed_base: 69000
+  K_cal: 60
+  K_mon: 100
+  conditions:
+    drift_sym: {nuisance: [{type: drift_symmetric, magnitude: 0.10, params: {tau_s: 20.0}}]}
+    payload_sym_1kg: {nuisance: [{type: payload_symmetric, magnitude: 1.0}]}

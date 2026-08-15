@@ -1,0 +1,35 @@
+# e09 — three-channel isolation + the LH-KFE friction diagnosis/fix (Sprint 7 Block I). Go2 go2_urdf_sym.
+experiment: e09_three_channel
+workers: 22
+sim:
+  model: go2_urdf_sym
+  gait: trot
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+registration: {N: 64, drop_first: 20}
+observer: {backend: pin, cutoff_hz: 10.0, torque: tau_cmd, armature: 0.01, damping: 0.01, frictionloss: 0.2}
+delan: {equivariant: equiv_full}
+detect: {alpha: 0.05, M: 512, window_rminus: 5}
+iso:
+  R: 30
+  seed_base: 76000
+  K_cal: 60
+  K_post: 100
+  base_z_thresh: 3.0
+  share_thresh: 0.5
+  classes:
+    - {name: single_gain_LF-KFE, faults: [{type: actuator_gain, leg: LF, joint: KFE, magnitude: -0.2}], truth: "single_leg:LF-KFE"}
+    - {name: single_bias_LF-HFE, faults: [{type: actuator_bias, leg: LF, joint: HFE, magnitude: 0.5}], truth: "single_leg:LF-HFE"}
+    - {name: single_friction_LH-KFE, faults: [{type: friction_scale, leg: LH, joint: KFE, magnitude: 1.0}], truth: "single_leg:LH-KFE"}
+    - {name: bilateral_mirror_F-KFE, faults: [{type: actuator_gain, leg: LF, joint: KFE, magnitude: -0.2}, {type: actuator_gain, leg: RF, joint: KFE, magnitude: -0.2}], truth: "bilateral_mirror"}
+    - {name: payload_lateral_0.5kg, nuisance: [{type: payload_asymmetric, magnitude: 0.5, params: {offset_y: 0.05}}], truth: "payload_lateral"}
+    - {name: payload_lateral_1kg, nuisance: [{type: payload_asymmetric, magnitude: 1.0, params: {offset_y: 0.05}}], truth: "payload_lateral"}
+    - {name: payload_symmetric_1kg, nuisance: [{type: payload_symmetric, magnitude: 1.0}], truth: "payload_symmetric"}
+    - {name: calf_inertia_LF_100g, faults: [{type: inertia_add, leg: LF, joint: KFE, magnitude: 0.1}], truth: "single_leg:LF-KFE"}
+    - {name: drift_symmetric, nuisance: [{type: drift_symmetric, magnitude: 0.10, params: {tau_s: 20.0}}], truth: "symmetric_drift_or_bilateral"}
+    - {name: nominal, truth: "nominal"}
+  contact_sensitivity: [0.0, 0.1, 0.2, -0.1, -0.2]      # multiplicative error on the contact wrench fed to the observer

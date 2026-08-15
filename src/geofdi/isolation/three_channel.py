@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..detect.monitors import SWING, channel_projection_energy, rank_groups
+from ..detect.monitors import SWING, channel_projection_energy, rank_groups  # noqa: F401
 from ..detect.permutation import pooled_scale
 from ..groups.c2 import C2Rep
 
@@ -78,18 +78,25 @@ def readout(Z, Zr, Zb, rep_raw, rep_res, K_cal, chans, res_names, use_residual_f
             "base_fz_z": float(base_z[2]), "base_mx_z": float(base_z[3])}
 
 
-def decide(reading, rminus_alarmed, base_z_thresh=3.0, share_thresh=0.5):
-    """Pre-registered decision rules (e09). Returns (label, confidence, why)."""
+def decide(reading, rminus_alarmed, base_z_thresh=3.0, share_thresh=0.5, signal_thresh=1.0):
+    """Pre-registered decision rules (e09), with the 'quiet' threshold quantified: `signal_thresh` is the smallest
+    standardized joint-row shift that counts as a signal (below it the joint rows are quiet). Returns (label, confidence,
+    why). Hierarchy: payload (base rows) -> nominal (nothing shifted) -> R- silent (drift / bilateral) -> R- alarmed
+    (single / pair)."""
     fz, mx = reading["base_fz_z"], reading["base_mx_z"]; share = reading["max_leg_share"]
+    signal = float(np.max(np.abs(reading["joint_shift"])))                       # largest standardized joint-row shift
+    base_signal = max(abs(fz), abs(mx))
     if abs(fz) >= base_z_thresh and abs(mx) >= base_z_thresh:
         return "payload_lateral", "base fz & mx", f"base fz z={fz:.1f}, mx z={mx:.1f}"
     if abs(fz) >= base_z_thresh and abs(mx) < base_z_thresh:
         return "payload_symmetric", "base fz only", f"base fz z={fz:.1f}, mx z={mx:.1f}"
+    if not rminus_alarmed and signal < signal_thresh and base_signal < base_z_thresh:
+        return "nominal", "nothing shifted", f"max joint shift {signal:.2f} < {signal_thresh}, base < {base_z_thresh}"
     if not rminus_alarmed:
-        # R- silent + joint rows quiet: symmetric change (drift) or symmetric bilateral fault
+        # R- silent, something shifted: symmetric change (drift, spread) or mirror-symmetric bilateral fault (one pair)
         if share < 0.4:
-            return "symmetric_drift_or_bilateral", "R- silent, spread joint rows", f"max leg share {share:.2f}"
-        return "bilateral_mirror", "R- silent, mirror-symmetric joint rows", f"max leg share {share:.2f}"
+            return "symmetric_drift_or_bilateral", "R- silent, spread joint rows", f"max leg share {share:.2f}, signal {signal:.2f}"
+        return "bilateral_mirror", "R- silent, mirror-symmetric joint rows", f"max leg share {share:.2f}, signal {signal:.2f}"
     # R- alarmed
     if share >= share_thresh:
         return f"single_leg:{reading['resolved_leg']}-{reading['resolved_joint']}", "R- + one-leg joint row", f"leg share {share:.2f}, {reading['left_right']}"

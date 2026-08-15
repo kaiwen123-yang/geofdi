@@ -77,7 +77,7 @@ IMU_OFFSET = (-0.02557, 0.0, 0.04232)      # URDF imu link in the base frame (==
 
 def run_observer(df, dyn: Go2Dynamics, dt: float = 0.005, cutoff_hz: float = 10.0, torque: str = "tau_cmd",
                  base_velocity: str = "truth", use_contacts: bool = True, use_contact_torque: bool = True,
-                 imu_offset=IMU_OFFSET) -> np.ndarray:
+                 imu_offset=IMU_OFFSET, contact_scale: float = 1.0) -> np.ndarray:
     """Run the observer over an M1-schema telemetry frame; returns r (T, 18) in PIN coordinates (joints = r[:, 6:]).
 
     torque: 'tau_cmd' (commanded == current-based estimate; actuator faults become visible) | 'tau_meas' (measured
@@ -94,6 +94,10 @@ def run_observer(df, dyn: Go2Dynamics, dt: float = 0.005, cutoff_hz: float = 10.
     cp = np.stack([df[[f"cp_{a}_{l}" for a in "xyz"]].to_numpy() for l in LEGS], axis=1) if has_fc else None
     has_tc = f"tc_x_{LEGS[0]}" in df.columns
     tc = np.stack([df[[f"tc_{a}_{l}" for a in "xyz"]].to_numpy() for l in LEGS], axis=1) if (has_fc and has_tc and use_contact_torque) else None
+    if contact_scale != 1.0 and fc is not None:                  # emulate an estimated (imperfect) contact wrench: scale the force/torque
+        fc = fc * contact_scale
+        if tc is not None:
+            tc = tc * contact_scale
     # gate the contact term by the recorded (step-averaged) force itself, not by the end-of-step contact flag: the
     # lift-off step still carries force, the touchdown step's flag is already 1
     cflag = (np.linalg.norm(fc, axis=2) > 0).astype(float) if has_fc else df[[f"c_{l}" for l in LEGS]].to_numpy()
