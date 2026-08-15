@@ -72,13 +72,15 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [x] `docs/decisions/n2_rolling_contact_memo.md` (corrected: A[d_i,R]=0, group-affine — not −R[u_i]×) + `inekf_rolling` + M1 wheel-contact FK + NIS smoke; rolling-InEKF base-pos RMSE 0.71 m vs fixed-foot 13.4 m
 - [x] rp022 Block N2 review pack
 
-## Block A (extra) — Panda arm (`sim/assets/panda/`, `experiments/e14_arm/`)
-- [ ] Panda world; residual + DK table; side-by-side with the welded leg
-- [ ] Block A review pack
+## Block A (extra) — Panda arm (`experiments/e14_arm/`)  [DONE @ 5cf243d; run e14-20260816]
+- [x] Panda world ($GEOFDI_DATA_ROOT/assets/panda, no /mnt/g literal); residual r=τ_cmd−mj_inverse + N3 DK; class isolation 1.00, DK agreement 0.95, β² 0.47
+- [x] side-by-side table with the welded Go2 leg (arm 1.00 vs welded leg 0.91) + floating-base — symmetry-free R⁺+DK transfers to a 7-DoF manipulator
+- [x] rp024 Block A review pack
 
 ## Block F (extra) — figure factory (`scripts/make_paper_figures.py`)  [DONE @ HEAD]
 - [x] one-shot factory: tables T1–T5,T7–T9 (+T9b) as CSV + booktabs paper_tables.tex; figures F4b/F6b/F10b regen as PDF, F2/F3/F5–F12 registered; coverage.md; --check verifies 24 sources; figure_plan updated
 - [x] rp023 Block F review pack
 
-## Wrap-up
-- [ ] tag `sim-milestone-5`; final report (anchor lists, confirmed limitations, hardware-only questions, two first commands, split option status)
+## Wrap-up  [DONE]
+- [x] final report `docs/sprints/sprint7_report.md` (N1/N2/N3 anchor lists, confirmed limitations, hardware-only questions, two first commands, split-option status)
+- [x] tag `sim-milestone-5`
