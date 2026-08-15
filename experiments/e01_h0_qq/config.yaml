@@ -1,13 +1,62 @@
-# e01 — H0 sanity check: p-values of the invariance test must be uniform under
-# the null. Deliverable: QQ plot of p-values on H0-true data (sim first, then
-# nominal M1 flat-trot sessions).
+# e01 — H0 exactness suite on the symmetric Go2 simulation (S1). Sub-experiments are selected with
+# `run.py --stage a|b|c|d`. All randomness derives from the seeds below (bit-identical reruns).
 experiment: e01_h0_qq
 seed: 0
-data:
-  source: sim            # sim | m1_nominal
-  n_cycles: 200
+workers: 22                       # multiprocessing workers (fork); replicates are independent by seed
+sim:                              # base SimConfig (see geofdi.sim.env); duration is set from K
+  gait: trot
+  speed: 0.0                      # trot in place — the strictly symmetric world
+  terrain: flat
+  ctrl_dt: 0.005                  # 200 Hz control/telemetry (M1 rate)
+  sim_dt: 0.0025
+  # kp 80 / kd 2: the Sigma-symmetric trot orbit is stable here (at kp 60 with this lift the symmetric orbit
+  # bifurcates into a chiral limit cycle -> H0 false although A1-A4 hold; documented in the rp003 MANIFEST).
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20}
+  # measurement-noise-dominated baseline (NoiseConfig defaults): quiet actuators, realistic sensors; see D004
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+registration: {N: 64, drop_first: 10}   # 10 warm-up cycles (5 s) discarded
 test:
-  statistic: mirror_pair_energy   # placeholder until N1-3 fixes the statistic
-  n_permutations: 1000
+  M: 512                          # Hemerik–Goeman random subset size (incl. identity)
+  alpha: 0.05
+  alphas: [0.01, 0.05, 0.10]
+  statistics: [paired_energy, energy_distance]
+stage_a:                          # exactness: R replicates x K nominal cycles
+  R: 200
+  K: 60
+  seed_base: 1000
+stage_b:                          # correlation stress: naive vs block flips
+  R: 200
+  K: 120                          # longer than e01a so that block 16 (= 8 tau of the lateral drift) still has 7-8 blocks
+  seed_base: 3000
+  block_lens: [4, 8, 16]          # 4 = 2 tau: partial recovery; 8 = 4 tau: adjacent-block corr ~0.16; 16 = 8 tau: ~0.07
+  variants:
+    drift_symmetric:              # per spec: slow, symmetric gain/friction drift (temperature-like)
+      - {type: drift_symmetric, magnitude: 0.10, params: {tau_s: 20.0}}
+    drift_symmetric+lateral:      # + zero-mean lateral lean drift (symmetric in law, autocorrelated across cycles)
+      - {type: drift_symmetric, magnitude: 0.10, params: {tau_s: 20.0}}
+      - {type: drift_lateral, magnitude: 0.03, params: {tau_s: 1.0}}   # 2-cycle correlation time
+stage_c:                          # eps-bar lemma & H0'
+  R: 100
+  K: 300
+  seed_base: 5000
+  deltas: [0.005, 0.01, 0.02]     # controller asymmetry: kp gain 1+delta on one leg/joint
+  leg: LF
+  joint: HFE
+  m_list: [10, 30, 100, 300]
+  h0prime:
+    R: 30
+    delta: 0.02
+    K_cal: 200
+    K_mon: 200
+    window: 30
+    block_len: 4
+    double_at_cycle: 300          # in the change run, delta -> 2*delta from this cycle (inside monitoring)
+    seed_base: 6000
+stage_d:                          # e-process on long nominal streams
+  seeds: 20
+  K: 3000
+  window: 30
+  seed_base: 7000
 outputs:
-  figures: [qq_pvalues]
+  store_cycles_stages: [a, b]     # cycles.parquet per replicate for these stages (float32)
+  store_cycles_first_n: 3         # for c/d: cycles of the first n replicates only

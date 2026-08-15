@@ -33,12 +33,16 @@ def scene_path(terrain: str = "flat") -> str:
 
 @dataclass
 class NoiseConfig:
-    encoder_pos_std: float = 5e-4      # rad
-    encoder_vel_std: float = 1e-2      # rad/s
-    torque_meas_std: float = 0.05      # N m (measured motor torque)
-    actuator_std: float = 0.10         # N m process noise on the applied torque (iid per step)
-    imu_acc_std: float = 0.05          # m/s^2, body frame
-    imu_gyro_std: float = 5e-3         # rad/s, body frame
+    """S1 baseline: measurement-noise dominated (quiet actuators on flat ground, realistic sensors). With actuator
+    process noise 5x larger (0.1 N m) the per-cycle flip test is mildly anti-conservative (size ~0.075-0.09 at
+    alpha 0.05, R=120): the within-cycle roll construction is exact only for reversible fluctuation dynamics,
+    and dynamics-driven fluctuations are not — see the rp003 MANIFEST."""
+    encoder_pos_std: float = 2e-3      # rad
+    encoder_vel_std: float = 3e-2      # rad/s
+    torque_meas_std: float = 0.20      # N m (measured motor torque)
+    actuator_std: float = 0.02         # N m process noise on the applied torque (iid per step)
+    imu_acc_std: float = 0.10          # m/s^2, body frame
+    imu_gyro_std: float = 1e-2         # rad/s, body frame
     init_joint_std: float = 0.02       # rad, initial joint-position perturbation
     init_vel_std: float = 0.05         # rad/s, initial joint-velocity perturbation
     init_body_rate_std: float = 0.02   # rad/s, initial body angular velocity

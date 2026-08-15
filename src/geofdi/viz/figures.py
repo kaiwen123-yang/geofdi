@@ -63,7 +63,7 @@ def typeI_vs_m(curves: dict, bounds: dict, out_png, alpha: float, title: str = "
         ax.plot(ms, np.minimum(b, 1.05), ":", lw=1.5, label=k)
     ax.axhline(alpha, color="k", ls="--", lw=1, label=f"α={alpha}")
     ax.set_xscale("log"); ax.set_ylim(0, 1.08); ax.set_xlabel("monitoring window m (cycles)"); ax.set_ylabel("rejection rate")
-    ax.legend(fontsize=7); ax.set_title(title, fontsize=10)
+    ax.legend(fontsize=7); ax.set_title(title, fontsize=9, wrap=True)
     fig.tight_layout(); fig.savefig(out_png, dpi=DPI); plt.close(fig)
 
 
