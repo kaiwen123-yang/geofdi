@@ -202,7 +202,7 @@ differences, rank statistics, and kernel two-sample statistics are built. For
 the M1 trot: leg LF at phase $\theta$ pairs with leg RF at phase
 $\theta + \tfrac12$, and leg LH at $\theta$ with RH at $\theta + \tfrac12$.
 
-\subsection{Standing assumptions A1--A4}
+\subsection{Standing assumptions A1--A5}
 \label{sec:standing}
 
 Each assumption is stated in four registers: exact statement,
@@ -387,6 +387,60 @@ this audit.
 \emph{Degradation if falsified.} Per-channel standardization (studentized
 statistics), block permutations, detrending, and the e-process route.
 
+% ---------------------------------------------------------------- A5
+\begin{assumption}[Unique symmetric attractor (ergodicity)]
+\label{as:erg}
+Under Assumptions \ref{as:dyn}--\ref{as:noise} and a $\symgrp$-symmetric gait
+command, the nominal closed-loop process has a unique invariant probability
+measure; equivalently, the nominal periodic orbit is the unique attractor of
+the closed loop, and its basin of attraction is invariant under the action of
+$\symgrp$.
+\end{assumption}
+
+\begin{remark}[Symmetry breaking is compatible with A1--A4]
+\label{rem:bifurcation}
+A1--A4 only guarantee that $\symgrp$ maps invariant measures to invariant
+measures: if $\mu$ is invariant, so is $\push{\rho(\sigma)}\mu$. Uniqueness is
+what forces $\push{\rho(\sigma)}\mu = \mu$, i.e.\ \eqref{eq:h0}. If the
+symmetric periodic orbit loses stability, an equivariant dynamical system
+generically settles into a \emph{chiral} limit cycle whose mirror image is a
+second, distinct attractor (symmetry-breaking bifurcation of equivariant
+systems \cite{golubitsky2002symmetry}); which one is reached depends on the
+initial condition. Then A1--A4 hold in full while $H_0$ is false for the law
+actually realized. This is not hypothetical: in the Sprint-1 simulation world
+(review pack rp003, Finding~1) the $\symgrp$-symmetric trot of the Go2 model
+at proportional gain $k_p = 60$ converged to a chiral gait with left/right
+stance duty factors $0.63/0.64$ (front) and $0.85/0.87$ (hind) and a
+half-period mirror residual of $0.23$ standardized units, whereas at
+$k_p = 80$ the symmetric orbit is stable and the residual vanishes to
+$10^{-6}$.
+\end{remark}
+
+\emph{$\varepsilon$-variant (A5$'$).} The \emph{chirality} $\eps{chir}$ is
+the stable nonzero value of the mirror residual of the nominal gait
+descriptors --- left/right stance duty factors and touch-down/lift-off phases
+of mirror legs --- i.e.\ the size of the persistent asymmetry of the realized
+attractor. Unlike $\eps{dyn}, \dots, \eps{noise}$ it is a defect of the
+\emph{invariant measure}, not of a transition kernel: it does not enter the
+additive budget of Lemma~\ref{lem:eps} (which bounds the inflation relative
+to the law of the symmetric attractor) but appears directly as the nominal
+asymmetry level $\nu_0$ of the recalibrated null $H_0'$
+(Definition~\ref{def:h0prime}).
+
+\emph{Nature and audit --- Gate 1b.} On long flat-ground trot sessions in
+\texttt{raw/m1/nominal}, compute per cycle the mirror residual of the
+left/right stance duty factors and touch-down phases and test whether its
+running mean settles at a \emph{persistent nonzero constant} (chiral
+attractor) rather than fluctuating around zero (symmetric attractor plus
+noise): a mean/change-point test on the residual sequence with the same
+block-permutation machinery. Gate~1b passing licenses $H_0$; a stable
+nonzero residual switches deployment to $H_0'$.
+
+\emph{Degradation if falsified.} As for A2: switch the working null to
+$H_0'$, which only needs the realized attractor to be \emph{stable}, not
+symmetric --- a chiral healthy gait has a stable $\nu_0 > 0$ and faults are
+detected as changes of asymmetry.
+
 \begin{table}[ht]
 \centering
 \small
@@ -406,6 +460,9 @@ flat-only segments + paired directions + explicit $\epsbar{env}$ budget \\
 \ref{as:noise} noise &
 mirrored-channel noise mismatch; temperature drift &
 standardization, blocking, detrending, e-process route (N1-1) \\
+\ref{as:erg} attractor &
+Gate~1b: persistent nonzero mirror residual of duty factors / contact phases &
+switch working null to $H_0'$ (stable, not symmetric, attractor suffices) \\
 \bottomrule
 \end{tabular}
 \caption{Falsification--degradation map for the standing assumptions.}
@@ -417,7 +474,7 @@ standardization, blocking, detrending, e-process route (N1-1) \\
 
 \begin{definition}[Null hypothesis $H_0$]
 \label{def:h0}
-Under Assumptions \ref{as:dyn}--\ref{as:noise} and a $\symgrp$-symmetric gait
+Under Assumptions \ref{as:dyn}--\ref{as:erg} and a $\symgrp$-symmetric gait
 command, the phase-registered per-cycle data elements are
 distribution-invariant under the gait symmetry group:
 \begin{equation}
@@ -438,6 +495,36 @@ martingale condition) for their validity guarantees
 exchangeability across cycles while leaving each cycle's within-cycle mirror
 symmetry intact, and vice versa. It is deliberately \emph{not} folded into
 $H_0$; it is maintained and audited separately (workstream N1-1).
+\end{remark}
+
+\begin{remark}[Within-cycle wrap versus unfolded shift]
+\label{rem:wrap}
+The action \eqref{eq:cycle-action} shifts the phase on the circle $S^1$: for
+$\theta \ge \tfrac12$ the point $\theta + \tfrac12$ wraps to the \emph{same}
+cycle, so $\rho(\sigma_*) Z_k$ pairs the second half-period $B_k$ of cycle $k$
+with the mirror of the \emph{first} half $A_k$ of the same cycle,
+$Z_k = (A_k, B_k) \mapsto (\repW(\gs) B_k, \repW(\gs) A_k)$. Process symmetry
+(A1--A5) gives, however, $\Law(A_k, B_k) = \Law(\repW(\gs) B_k, \repW(\gs)
+A_{k+1})$: the second half is paired with the first half of the \emph{next}
+cycle. The two coincide when the ``unfolded'' half-period chain
+$U_j := \repW(\gs)^{\,j} H_j$ ($H_{2k} = A_k$, $H_{2k+1} = B_k$; a
+time-homogeneous Markov chain under A1--A5) is time-reversible, or when the
+within-cycle fluctuations are dominated by measurement noise. Otherwise the
+wrapped element and its flip are not exchangeable and the per-cycle flip test
+is not exact. Empirically (Sprint~1, rp003, Finding~4): with the S1 baseline
+noise (measurement-noise dominated) the empirical size at $\alpha = 0.05$ is
+$0.050$; with actuator process noise of $0.1$\,N\,m it is $0.075$--$0.09$
+($R = 120$), and block flips do not repair it (lag-one cycle correlation
+$\approx -0.02$) because the defect sits within, not across, cycles. The
+wrapped definition is therefore an \emph{engineering approximation} whose
+domain of validity is measured by the Sprint-2 noise sweep (e04d); the
+\emph{strict} definition uses the true shift on the unfolded chain --- the
+cycle element is a pair of half-period blocks and the flip acts on the
+unfolded sequence, so that the mirrored element $(\repW(\gs) B_k, \repW(\gs)
+A_{k+1})$ is a genuine sample of the mirrored process --- with elements
+taken far enough apart to be exchangeable. Its formal statement (group
+action, exactness conditions, and what it costs in cycles per element) is
+workstream N1-1.
 \end{remark}
 
 \begin{definition}[Alternative $H_1$]
@@ -661,6 +748,29 @@ Until N1-4 delivers that conversion, \eqref{eq:linear-bound} is the operative
 one.
 \end{remark}
 
+\begin{conjecture}[Second-order level inflation for quadratic statistics]
+\label{conj:quadratic}
+For test statistics that are quadratic in the mirror-paired residuals --- the
+paired-difference energy and the energy-distance statistics of the deployed
+tests --- the type-I inflation of a test reading $m$ cycles under a controller
+defect of size $\delta$ (per-transition equivariance defect
+$\eps{ctrl} = O(\delta)$) satisfies
+\[
+  \mathbb{E}[\varphi] - \alpha \;\lesssim\; c\, m\, \delta^{2}
+  \qquad\text{rather than}\qquad m\,\epsbar{tot} = O(m\,\delta),
+\]
+i.e.\ it is second order in the defect: total variation bounds the inflation of
+the \emph{worst} statistic, whereas an energy statistic responds to the mean
+defect only through its square. Evidence: in the Sprint-1 experiment e01c
+(rp003) the type-I curves against $m$ for $\delta \in \{0.005, 0.01, 0.02\}$
+(proportional gain $1+\delta$ on one joint) have their knee at
+$m \approx 300$, $100$, $30$ cycles respectively --- moving roughly as
+$1/\delta^{2}$, not $1/\delta$ --- while the linear bound
+$\alpha + m\,\epsbar{tot}$ is already vacuous at $m \approx 10$. Making this
+precise (the constant $c$ and its dependence on the residual covariance) is
+part of the IPM route of workstream N1-4.
+\end{conjecture}
+
 \begin{definition}[Recalibrated null $H_0'$: asymmetry-change detection]
 \label{def:h0prime}
 Fix an estimable asymmetry functional $\nu(P) \ge 0$ on laws of cycle
@@ -735,6 +845,11 @@ $\hat\varepsilon_{\mathrm{env}} \le \tau_{\mathrm{env}}$ \\
 mirrored-channel two-sample tests (KS/energy) with FDR control; PSD ratios;
 temperature-drift regression &
 no FDR rejection at $\alpha_{\mathrm{audit}}$ \\
+\ref{as:erg} (Gate~1b) &
+\texttt{raw/m1/nominal}: long flat-ground trot &
+running mean of the per-cycle mirror residual of duty factors / touch-down
+phases; mean/change-point block test &
+residual mean not significantly $\neq 0$ at $\alpha_{\mathrm{audit}}$ \\
 \bottomrule
 \end{tabular}
 \caption{Assumption audit checklist. Data batches refer to the raw-data layout
