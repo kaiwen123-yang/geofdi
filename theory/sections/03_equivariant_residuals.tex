@@ -465,46 +465,88 @@ mean trajectory) and $\Xi_k$ are i.i.d.\ zero-mean fluctuations with
 covariance $\Sigma_\Xi$; under a fault of magnitude $m$ with signature
 $s_c$, $R_k = \bar m + m\,s_c + \Xi_k$. Let $\hat{\bar m} :=
 K_{\mathrm{cal}}^{-1}\sum_{k \le K_{\mathrm{cal}}} R_k$ be the calibration
-mean. Then the centred profiles $\tilde R_k := R_k - \hat{\bar m}$ satisfy:
-(i) under nominal operation $\mathbb{E}\tilde R_k = 0$ and
+mean. Then:
+\begin{enumerate}
+\item[(i)] under nominal operation the centred profiles $\tilde R_k := R_k -
+\hat{\bar m}$ have $\mathbb{E}\tilde R_k = 0$ and
 $\operatorname{Var}(\tilde R_k) = \Sigma_\Xi (1 + K_{\mathrm{cal}}^{-1})$, so
 $\beta_{\mathrm{op}}^2 = \lambda_{\max}(\Sigma_\Xi)(1+K_{\mathrm{cal}}^{-1})$
-does not depend on $\bar m$; (ii) under the fault the population second
-moment of $\tilde R_k$ is $m^2 s_c s_c^\top + \Sigma_\Xi(1+K_{\mathrm{cal}}^{-1})$,
-which is the certificate's setting with $\beta_{\mathrm{op}}^2$ as in (i)
-and the fault signature intact; (iii) for the $R^{-}$ channel, centring
-removes the \emph{first-order} contamination of Corollary~\ref{cor:contamination}:
-$\Pi^{-}\tilde R_k = \Pi^{-}\Xi_k - \Pi^{-}(\hat{\bar m} - \bar m)$ has mean
-zero even if $\Pi^{-}\bar m \neq 0$ (non-equivariant $\hat f$), but the flip
-test on $\tilde R_k$ is exact only if $\Law(\rho_R \Xi_k) = \Law(\Xi_k)$
---- second-order asymmetries of a non-equivariant model (mirror-unequal
-variances of the fluctuation) survive centring --- and the estimation error
-$\hat{\bar m} - \bar m = O_p(K_{\mathrm{cal}}^{-1/2})$ is a common offset of
-all monitored cycles, so the size after centring is nominal only for
-$K \ll K_{\mathrm{cal}}$.
+does not depend on $\bar m$;
+\item[(ii)] under the fault the population second moment of $\tilde R_k$ is
+$m^2 s_c s_c^\top + \Sigma_\Xi(1+K_{\mathrm{cal}}^{-1})$ --- the certificate's
+setting with $\beta_{\mathrm{op}}^2$ as in (i) and the fault signature
+intact; for the $R^{+}$ conformal channel and the isolation classifier,
+which compare monitored profiles with the calibration distribution of the
+same quantity, the estimation error of $\hat{\bar m}$ is part of both sides
+and is harmless;
+\item[(iii)] \emph{(naive centring does not rescue the $R^{-}$ flip test)}
+$\Pi^{-}\tilde R_k = \Pi^{-}\Xi_k - o$ with the \emph{common} offset
+$o := \Pi^{-}(\hat{\bar m} - \bar m)$ of covariance $\Sigma^{-}_\Xi/K_{\mathrm{cal}}$,
+so the systematic asymmetry $\Pi^{-}\bar m$ of a non-equivariant model is
+removed in the mean; but the flip test on $\tilde R_k$ is not exact: for the
+paired-energy statistic of $K$ monitored cycles the observed value exceeds
+its flip-null counterpart in expectation by the factor
+$(K_{\mathrm{cal}} + K)/(K_{\mathrm{cal}} + 1) \approx 1 + K/K_{\mathrm{cal}}$,
+while the null statistic aggregates $d_r N$ coordinates and has relative
+spread $O((d_r N)^{-1/2})$; the size is nominal only if
+$K\sqrt{d_r N} \ll K_{\mathrm{cal}}$, which no practical calibration window
+satisfies ($K = K_{\mathrm{cal}} = 60$, $d_r N = 768$: a factor-2 shift
+against a $5\,\%$ spread, size $\approx 1$). Second-order asymmetries
+(mirror-unequal fluctuation laws of a non-equivariant model) survive
+centring in any case;
+\item[(iv)] \emph{(the $H_0'$ construction for $R^{-}$)} difference each
+monitored cycle with an independent calibration cycle,
+$X_k := R^{\mathrm{mon}}_k - R^{\mathrm{cal}}_k$, $k \le K \le K_{\mathrm{cal}}$.
+Under $H_0'$ (calibration and monitoring have the same law, whatever the
+model's defect) the paired differences $D_k = X_k - \rho_R X_k = A_k - B_k$
+with $A_k := R^{\mathrm{mon}}_k - \rho_R R^{\mathrm{mon}}_k$ and
+$B_k := R^{\mathrm{cal}}_k - \rho_R R^{\mathrm{cal}}_k$ i.i.d., are exactly
+sign-symmetric, $D_k \eqdist -D_k$, and independent across $k$; hence the
+flip test with any statistic of the tuple $(D_1,\dots,D_K)$ --- the
+paired-energy statistic in particular --- is exact under $H_0'$ by the argument of
+Theorem~\ref{thm:n1-1} (the flip group acts as $D_k \mapsto \varepsilon_k D_k$
+and $\Law(\varepsilon D) = \Law(D)$). The price is one calibration cycle per
+monitored cycle and a doubled fluctuation variance (halved SNR); a fault
+appears as a mean of $D_k$ equal to the change of the asymmetry between
+calibration and monitoring, which is Part~0's $H_0'$ reading. Statistics that
+flip the elements themselves (energy distance between $\{X_k\}$ and
+$\{\rho_R X_k\}$) are not covered, since $\Law(X_k)$ need not be
+$\rho_R$-invariant.
+\end{enumerate}
 \end{lemma}
 
 \begin{proof}
 (i)--(ii): $\hat{\bar m} = \bar m + \bar\Xi_{\mathrm{cal}}$ with
 $\bar\Xi_{\mathrm{cal}}$ independent of the monitored $\Xi_k$ and of
 covariance $\Sigma_\Xi/K_{\mathrm{cal}}$; the systematic profile cancels
-identically and the variances add. (iii): $\rho_R \tilde R_k \eqdist \tilde R_k$
-requires $\Law(\rho_R\Xi_k - \rho_R\bar\Xi_{\mathrm{cal}}) = \Law(\Xi_k -
-\bar\Xi_{\mathrm{cal}})$, which holds iff the fluctuation law is invariant;
-a common offset $-\Pi^-\bar\Xi_{\mathrm{cal}}$ of variance
-$\Sigma^-/K_{\mathrm{cal}}$ added to all $K$ paired differences enters the
-paired-energy statistic as a mean shift of that size, i.e.\ a noncentrality
-of order $K/K_{\mathrm{cal}}$ in standardized units.
+identically and the variances add. (iii): with $\bar D := K^{-1}\sum_k
+(\Pi^-\Xi_k - \rho_R\Pi^-\Xi_k)$ of per-coordinate variance $2\sigma^2/K$ and
+$o' := o - \rho_R o$ of per-coordinate variance $2\sigma^2/K_{\mathrm{cal}}$,
+$\mathbb{E}\|\bar D - o'\|^2 = d_r N\,(2\sigma^2/K + 2\sigma^2/K_{\mathrm{cal}})$,
+whereas for a uniform flip pattern $\varepsilon$ with $\bar\varepsilon :=
+K^{-1}\sum_k \varepsilon_k$ ($\mathbb{E}\bar\varepsilon^2 = 1/K$) the flipped
+statistic $\|K^{-1}\sum_k \varepsilon_k D_k - \bar\varepsilon o'\|^2$ has
+expectation $d_r N\,(2\sigma^2/K + 2\sigma^2/(K K_{\mathrm{cal}}))$; the
+ratio is $(K_{\mathrm{cal}}+K)/(K_{\mathrm{cal}}+1)$, and a sum of $d_r N$
+weakly dependent squared terms has relative standard deviation of order
+$(d_r N)^{-1/2}$. (iv): $A_k \eqdist B_k$ and independence give
+$A_k - B_k \eqdist B_k - A_k = -(A_k - B_k)$; independence across $k$ is
+inherited from the cycles; the rest is Theorem~\ref{thm:n1-1} with the group
+$\{\pm 1\}^K$ acting on $D$.
 \end{proof}
 
-This is the mechanism behind Sprint~4, Finding~4 (degrading a DeLaN by
-sample size raised $\hat\beta$ five-fold but $\beta_{\mathrm{op}}$ only by
-$1.7\times$: the systematic part was calibrated away), and it is Part~0's
-$H_0'$ route applied to residuals: centring is the calibration of
-$\nu_0$. Its limits --- second-order asymmetry, and the $K/K_{\mathrm{cal}}$
-term --- are why the equivariant model of the next proposition is preferable
-to centring a non-equivariant one for the $R^{-}$ channel: with
-$\delta_f = 0$ nothing needs to be calibrated away.
+(i)--(ii) are the mechanism behind Sprint~4, Finding~4 (degrading a DeLaN
+by sample size raised $\hat\beta$ five-fold but $\beta_{\mathrm{op}}$ only by
+$1.7\times$: the systematic part was calibrated away). (iii)--(iv) say how
+Part~0's $H_0'$ route applies to the $R^{-}$ channel: not by subtracting an
+estimated profile and re-running the exact test, but by differencing against
+calibration cycles --- exact for any model, at half the SNR. Empirical anchor
+(e13b, Section~\ref{sec:p2-anchors}): naive centring gives size $\approx 1$
+for every model, the differenced test is in band for every model including
+the plain DeLaN with $\delta_f^{(0.95)} = 15$\,N\,m. Both limits are why the
+equivariant model of the next proposition is preferable for the $R^{-}$
+channel: with $\delta_f = 0$ nothing needs to be calibrated away and the
+full-SNR exact test of Proposition~\ref{prop:residual-h0} applies.
 
 \begin{proposition}[Equivariant DeLaN by mirror weight sharing]
 \label{prop:equiv-delan}
@@ -663,8 +705,9 @@ flip-test size above the band on nominal data while the raw test is in band
 (e13b) &
 (1) replace $\hat f$ by its equivariant version (weight sharing,
 Proposition~\ref{prop:equiv-delan}): $\epsbar{model} = 0$;
-(2) calibration-centre the residual (Lemma~\ref{lem:centring}): first-order
-removal, $H_0'$ on residuals; (3) budget it: level
+(2) $H_0'$ on the residual by differencing against calibration cycles
+(Lemma~\ref{lem:centring}(iv); exact for any model, half the SNR --- naive
+mean-profile centring is \emph{not} valid for the flip test, (iii)); (3) budget it: level
 $\alpha + \tfrac12(\epsbar{tot} + \epsbar{model})$ with
 \eqref{eq:c-delta}--\eqref{eq:c-delta-q} \\
 $\epsbar{chir}$ ($\nu_0$) & Gate~1b & unchanged: $H_0'$ on the residual
@@ -724,34 +767,34 @@ the dashed path $\hat f \equiv 0$.}
 \subsection{Empirical anchors (Sprint~6, e13; back-filled from the run)}
 \label{sec:p2-anchors}
 
-\begin{table}[ht]
+\begin{table}[p]
 \centering
-\small
-\begin{tabular}{@{}p{0.20\linewidth}p{0.30\linewidth}p{0.42\linewidth}@{}}
+\footnotesize
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.15\linewidth}>{\raggedright\arraybackslash}p{0.24\linewidth}p{0.55\linewidth}@{}}
 \toprule
 statement & experiment & status / reading \\
 \midrule
 Prop.~\ref{prop:residual-h0}, Cor.~\ref{cor:contamination} &
 e13b: size of the residual flip test under $H_0$ vs $\delta_f^{(0.95)}$
 (plain DeLaN ladder, equivariant ladder, analytic) &
-\pending{back-fill from e13b} \\
+e13b, $R=200$ nominal runs (go2\_urdf\_sym), flip test on the residual element, $\alpha=0.05$, band $[0.02,0.08]$: plain DeLaN residual (uncentred) size $1.00$ at every $\delta_f^{(0.95)} \in \{0.67, 1.47, 3.64, 14.8\}$\,N\,m for $K=60$ and $K=200$; equivariant DeLaN $0.030$--$0.050$ ($K=60$), $0.015$--$0.050$ ($K=200$); analytic residual $0.035/0.060$; raw $Z$ $0.015/0.035$ (URDF world conservative, D005). Naive centring: $1.00$ for every variant (Lemma~\ref{lem:centring}(iii)); $H_0'$ differenced test: $0.00$--$0.045$ for every variant incl.\ the plain $\delta_f^{(0.95)}=14.8$ model (Lemma~\ref{lem:centring}(iv)). Supplement (same seeds, $K\in\{5,10,20,60,200\}$): plain residual size $1.00$ from $K=10$ on for every $\delta_f$ of the ladder; naive centring $0.3/0.7/1.0/1.0$ at $K=10/20/60/200$ (growing with $K/K_{\mathrm{cal}}$ as in (iii)); differenced test in band at all $K$. \textbf{Confirmed} (contamination total already at $K=10$; equivariant/analytic in band or conservative). \\
 Prop.~\ref{prop:power-gain} &
 e13a: residual vs raw $R^{-}$ power on the low-SNR grid; variance
 decomposition $\operatorname{Var}(\Pi^-y)$ vs $\operatorname{Var}(\Pi^-r)$;
 Mahalanobis reference &
-\pending{back-fill from e13a} \\
+e13a, $R=50$, e-CUSUM at FAR $0.05$, alarm within 100 cycles: minimal detectable severity (det$\ge 0.9$) residual $R^-$ (analytic / equivariant DeLaN) vs raw $R^-$: bias $0.10$ vs $0.50$\,N\,m (both joints), gain $1-\kappa$ $0.02$ vs $0.05$ (HFE) and $0.02$ vs $0.02$ (KFE), friction $\times 1.5$ vs undetected on the grid; nominal $\operatorname{Var}(\Pi^-r)/\operatorname{Var}(\Pi^-\tau_{\mathrm{cmd}})$ median over rows $0.16$ (analytic), $0.47$ (DeLaN); fault SNR ratio $>1$ in all 22 cells for the analytic residual and in all but the three KFE-gain cells for the DeLaN residual (response term, Remark~\ref{rem:residual-weaker}(i)); Mahalanobis magnitude reference: bias $0.05$, gain $0.01$, friction $\times 1.5$. \textbf{Confirmed} for (a)+(b); the KFE-gain DeLaN cells are the conditional case (c). \\
 Cor.~\ref{cor:two-channel} + Thm.~\ref{thm:n1-2} on residuals &
 e13c: e04c groups (single / bilateral equal / unequal) with $R^{-}$ on
 $\Pi^{-}r$ and $R^{+}$ on $\Pi^{+}r$; three-channel isolation confusion &
-\pending{back-fill from e13c} \\
+e13c, $R=50$, $\kappa$ groups of e04c on the equivariant residual: single --- $R^-$ on $\Pi^-r$ power $1.00$ (e-CUSUM median delay 15 cycles), $R^+$ on $\Pi^+r$ $1.00$ (3 cycles); bilateral equal --- $R^-$ e-process $0.00$, e-CUSUM $0.04$ (FAR level), $\Pi^-$-energy score $0.00$, $\Pi^+$ score $1.00$; unequal --- $R^-$ $1.00$; antisymmetric energy share of the residual signature $0.49 / 0.000 / 0.15$ (raw $Z$: $0.43/0.001/0.06$; a one-joint footprint splits exactly $1/2$--$1/2$). Three-channel isolation ($R=20$, 7 classes incl.\ lateral payload): raw+tracking $0.57$, analytic rows $0.86$, equivariant rows $1.00$. \textbf{Confirmed} (Theorem~\ref{thm:n1-2} verbatim on $R_k$). \\
 Prop.~\ref{prop:equiv-delan} &
 Block~Q: $\delta_f^{(0.95)}$ and validation RMSE, plain vs equivariant
 ladders &
-\pending{back-fill from Block~Q} \\
+Block~Q (rp012): $\delta_f^{(0.95)}$ of the plain per-leg DeLaN $0.67 / 1.47 / 3.64 / 14.8$\,N\,m at $400$k$/50$k$/10$k$/2$k samples per leg ($\delta_f^{(0.5)}$ $0.21/0.40/1.28/3.44$); mirror-shared model $0$ to the last bit; validation RMSE equivariant vs plain $0.351/0.415$, $0.539/0.559$, $0.80/1.08$, $3.04/2.42$ (2k: 40 gradient steps, seed spread $\pm 0.6$--$0.8$); single template $0.325$; welded trunk $0.573/0.625$. \textbf{Confirmed} ($\delta_f=0$; no accuracy cost except the under-trained 2k cell). \\
 \bottomrule
 \end{tabular}
-\caption{Empirical anchors of Part~2. Entries are filled from the e13 run
-and the Block~Q reports; wheeled-M1 anchors (e13d) are pending the M1
-world.}
+\caption{Empirical anchors of Part~2, filled from the e13 run
+\texttt{e13-20260815-2334} (rp013) and the Block~Q reports (rp012);
+wheeled-M1 anchors (e13d) are pending the M1 world.}
 \label{tab:anchors}
 \end{table}

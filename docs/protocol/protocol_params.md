@@ -24,3 +24,15 @@ values will be re-derived on M1 audit data (Gate 1) but the *structure* of the a
 
 Seeds: e04a 11000+, e04b 12000+, e04c 13000+, e04d 14000+, e04e 15000+ (replicate index added); the sim itself is
 deterministic given the seed (MuJoCo 3.11, integer phase clock).
+
+## Residual channel (Sprint 6, e13; theory Part 2)
+
+| parameter | value | justification |
+|---|---|---|
+| residual data element | 12 joint rows of r = τ_cmd + Jᵀf_c − f̂ (analytic momentum observer at 10 Hz, or DeLaN), phase-registered on the same N = 64 grid; ρ_R = torque signs/partners (`geofdi.residuals.mirror_pairs`) | Part 2 Def. def:residual-element; the same Hemerik–Goeman flip test acts on it (Prop N3-1) |
+| nominal model for R⁻ on residuals | **equivariant** (analytic observer under A1, or DeLaN with mirror weight sharing, δ_f = 0) | e13b: a plain per-leg DeLaN residual has size 1.00 at K = 60 already for δ_f^{(0.95)} = 0.67 N·m; equivariant / analytic residual sizes 0.015–0.06 (band [0.02, 0.08], URDF world conservative) |
+| H₀′ on residuals (non-equivariant model) | difference each monitored cycle with an independent calibration cycle and flip-test the paired-energy statistic; **never** subtract an estimated mean profile and re-run the exact test | e13b: naive centring size 1.00 for every model; differenced test 0.00–0.045 for every model incl. δ_f^{(0.95)} = 14.8 N·m (Part 2 Lemma centring (iii)/(iv)) |
+| e-CUSUM threshold per R⁻ variant | calibrated separately on the variant's own pooled nominal windows (raw 1.07–1.33, analytic residual 1.47–1.56, equivariant residual 1.37–1.53 in e13a/e13c) | the nominal p-value law differs per element; a plain-DeLaN residual calibrates to h ≈ 14 (its nominal windows already reject) — a diagnostic of contamination |
+| low-SNR minimal detectable severity (det100 ≥ 0.9, R = 50) | residual R⁻: bias 0.10 N·m, gain 1−κ 0.02, friction ×1.5; raw R⁻: bias 0.5, gain 0.05/0.02, friction undetected on the grid; Mahalanobis (magnitude): 0.05 / 0.01 / ×1.5 | e13a `e13a_min_detectable.csv` |
+| R⁺ on residuals | conformal magnitude on Π⁺r (pure trivial component) or on the full residual energy; the full-energy score is more powerful for single-leg faults (half of a one-joint footprint is antisymmetric) | e13a: `Rplus_res_an_full` min-detectable gain 0.02 / bias 0.10 vs `Rplus_res_eq_sym` 0.10 / 0.5 |
+| three-channel isolation | pair–joint from the R⁻ projection energy on the residual element (swing conditioning, calibration scale) → left/right from the per-leg residual score deviation → payload if the base-row f_z shift ≥ 3σ | e13c: raw+tracking 0.57, analytic rows 0.86 (LH-KFE friction attributed to RH-KFE by the analytic rows), equivariant rows 1.00 (7 classes × R = 20) |

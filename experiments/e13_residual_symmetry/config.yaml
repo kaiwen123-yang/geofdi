@@ -1,0 +1,72 @@
+# e13 — residual symmetry tests (Sprint 6, Block R): the R^- flip test moves from the raw signal to the residual data
+# element (analytic momentum-observer residual / equivariant-DeLaN residual), theory Part 2 anchors.
+#   e13a  residual R^- vs raw R^- power on the low-SNR grid (N3-2), variance decomposition, Mahalanobis reference
+#   e13b  size of the residual flip test under H0 vs the model's equivariance defect delta_f (N3-1 corollary)
+#   e13c  e04c isotypic groups on the residual (R^- on Pi^- r, R^+ on Pi^+ r) + three-channel isolation confusion
+experiment: e13_residual_symmetry
+workers: 22
+sim:
+  model: go2_urdf_sym                # D005 default world (URDF inertias, mirror-exact); the DeLaN models were trained here
+  gait: trot
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+registration: {N: 64, drop_first: 20}       # URDF world: 20 warm-up cycles (Block G)
+observer: {backend: pin, cutoff_hz: 10.0, torque: tau_cmd, armature: 0.01, damping: 0.01, frictionloss: 0.2}
+delan:
+  equivariant: equiv_full                    # tags under $GEOFDI_DATA_ROOT/models/delan/
+  plain: full
+  ladder_plain: [full, n50k, n10k, n2k]
+  ladder_equiv: [equiv_full, equiv_n50k, equiv_n10k, equiv_n2k]
+detect:
+  alpha: 0.05
+  M: 512
+  window_rminus: 5                           # S2/S4 protocol: 5-cycle windows, FAR-calibrated e-CUSUM (h from nominal windows)
+  ecusum_horizon_windows: 20
+  ecusum_boot: 1000
+stage_a:                                     # low-SNR grid (defined here; Sprint 5 Block P is not in the repo)
+  R: 50
+  seed_base: 61000
+  K_cal: 60
+  K_post: 100
+  leg: LF
+  joints: [HFE, KFE]
+  faults:
+    actuator_gain: [0.99, 0.98, 0.95, 0.90]  # kappa (1 - kappa in {0.01, 0.02, 0.05, 0.1})
+    actuator_bias: [0.05, 0.10, 0.20, 0.50]  # N m
+    friction_scale: [1.1, 1.2, 1.5]          # scale (magnitude = scale - 1)
+  mahalanobis_train: {rollouts: 20, cycles: 100, seed_base: 62000}
+  detect_criterion: 0.9                      # "minimal detectable magnitude" = smallest magnitude with det100 >= this
+stage_b:                                     # size under H0 vs delta_f
+  R: 200
+  seed_base: 63000
+  K_cal: 60                                  # calibration cycles (only used by the centred variants)
+  K_test: 200                                # test cycles
+  Ks: [5, 10, 20, 60, 200]                   # test lengths (first K test cycles): sizes vs K; main figure at 60 and 200
+stage_c:
+  R: 50
+  seed_base: 64000
+  K_cal: 60
+  K_post: 100
+  groups:                                    # e04c pre-registered groups
+    single: [{leg: LF, joint: KFE, kappa: 0.7}]
+    bilateral_equal: [{leg: LF, joint: KFE, kappa: 0.7}, {leg: RF, joint: KFE, kappa: 0.7}]
+    bilateral_unequal: [{leg: LF, joint: KFE, kappa: 0.7}, {leg: RF, joint: KFE, kappa: 0.5}]
+  isolation:
+    R: 20
+    seed_base: 65000
+    K_cal: 60
+    K_post: 100
+    base_z_payload: 3.0                      # |z(f_z base row)| >= this -> "payload" (fixed rule, no training)
+    classes:
+      - {name: gain_LF-HFE_0.8, type: actuator_gain, leg: LF, joint: HFE, magnitude: -0.2}
+      - {name: gain_LF-KFE_0.8, type: actuator_gain, leg: LF, joint: KFE, magnitude: -0.2}
+      - {name: bias_LF-KFE_1.0, type: actuator_bias, leg: LF, joint: KFE, magnitude: 1.0}
+      - {name: bias_RH-HFE_1.0, type: actuator_bias, leg: RH, joint: HFE, magnitude: 1.0}
+      - {name: friction_LH-KFE_x2, type: friction_scale, leg: LH, joint: KFE, magnitude: 1.0}
+      - {name: gain_RF-KFE_0.8, type: actuator_gain, leg: RF, joint: KFE, magnitude: -0.2}
+      - {name: payload_asym_1kg, type: payload_asymmetric, magnitude: 1.0, params: {offset_y: 0.05}}
+outputs: {}

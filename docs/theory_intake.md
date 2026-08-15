@@ -29,7 +29,8 @@ Sprint 6 (2026-08-15) — the file was referenced by the sprint instructions but
     Lagrangian structure inherited, two templates for front/hind; single template = ablation); Remark exact zero in
     floating point (S, E signed permutations); Remark why no soft PINN penalty.
   - §5 ε-budget table with the ε̄_model row; TikZ three-channel architecture (learned vs zero-parameter components).
-  - §6 anchors table (pending markers, back-filled after Block R).
+  - §6 anchors table — back-filled from e13 (run e13-20260815-2334) and Block Q; all four rows **confirmed** (e13d n/a).
+  - Lemma centring revised after e13b: (iii) naive mean-profile centring gives size ≈ 1 (factor (K_cal+K)/(K_cal+1) shift vs O((d_rN)^-1/2) spread); (iv) the H0′ route is differencing monitored vs calibration cycles (exact, half SNR).
 - New verified bib entries: lutter2019delan, cohen2016group, weiler2019general, finzi2021practical, deluca2003actuator,
   yu2015daviskahan, vovk2021evalues (publisher/PMLR/OpenReview pages checked 2026-08-15).
 
