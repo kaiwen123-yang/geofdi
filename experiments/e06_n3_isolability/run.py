@@ -180,7 +180,7 @@ def _analyse(results, models, res_dir, prefix, quick):
         sel = tab[(tab.ratio >= lo) & (tab.ratio < hi)]; acc_b.append(sel.correct.mean() if len(sel) else np.nan)
     ax.plot(mids, acc_b, "k-", lw=2, label="binned accuracy (all models)")
     ax.axvline(1.0, color="r", ls="--", label="DK threshold (ratio = 1)"); ax.set_xscale("log"); ax.set_xlabel("beta_op^2 / beta^2_threshold(class, magnitude)"); ax.set_ylabel("isolation correct")
-    ax.legend(fontsize=6); ax.grid(alpha=0.3); ax.set_title("nearest-subspace isolation vs DK certificate", fontsize=9)
+    ax.set_ylim(-0.08, 1.08); ax.legend(fontsize=6); ax.grid(alpha=0.3); ax.set_title("nearest-subspace isolation vs DK certificate", fontsize=9)
     ax = axes[1]
     ax.bar(np.arange(len(S)), S.accuracy_class, width=0.4, label="class accuracy"); ax.bar(np.arange(len(S)) + 0.4, S.accuracy_joint, width=0.4, label="joint accuracy")
     ax.set_xticks(np.arange(len(S)) + 0.2); ax.set_xticklabels(S.model, rotation=45, fontsize=7); ax.set_ylim(0, 1.05); ax.legend(fontsize=7); ax.set_title("isolation accuracy per residual model", fontsize=9)
