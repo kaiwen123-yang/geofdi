@@ -61,16 +61,16 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [x] confusion (analytic rows acc 0.943 / equivariant rows 0.883), confusion figure, contact-force ±10/20 % sensitivity (0.94 → 0.78/0.62 at ∓10/20 %); single-leg calls robust throughout
 - [x] rp020 Block I review pack
 
-## Block S — sequential unification (`experiments/e11_sequential/`)
-- [ ] ARL₀ {1/α, 5/α} for conformal-CUSUM / e-CUSUM / e-process (incl. half-cycle); ARL–delay trade-off curve
-- [ ] two-channel complementarity figure
-- [ ] Block S review pack
+## Block S — sequential unification (`experiments/e11_sequential/`)  [DONE @ aaf84d5; run e11-20260816]
+- [x] ARL₀ {1/α, 5/α} for conformal-CUSUM / e-CUSUM / decimated e-process; ARL–delay trade-off (conformal-CUSUM tightest: ARL0 233/delay 1.5; e-process parameter-free ARL0 383/delay 2)
+- [x] two-channel complementarity figure — discriminator is lateral payload (R⁻ 0.97 vs R⁺ 0.00); honest note: R⁻ fires on front-pair bilateral onset-transient (legs at different phases)
+- [x] rp021 Block S review pack
 
-## Block N2 — bias augmentation + signatures + rolling contact (`inekf/`, `experiments/e10_n2_signatures/`)  [code @ d969773; e10-20260816 running]
+## Block N2 — bias augmentation + signatures + rolling contact (`inekf/`, `experiments/e10_n2_signatures/`)  [DONE @ d969773; run e10-20260816]
 - [x] two augmented InEKF variants: `rinekf_bias.RIEKFBias` (IMU gyro/accel bias + optional 12-dim encoder-bias RW) and `inekf_rolling.RollingRIEKF` (moving contact); equivariance unit tests (tests/test_inekf_bias_equivariance.py, 4 pass, mirror identity to 1e-9)
-- [~] signature reconstruction (e10 signatures): encoder-bias innovation matches J[:,j]b (cos≈0.89) + reconstructed; pitch gyro-bias partially recovered (weak observability, yaw unobservable); slip mirror-covariance cos≈1.0 — full 20-seed run in flight
-- [x] `docs/decisions/n2_rolling_contact_memo.md` (corrected: A[d_i,R]=0, group-affine) + `inekf_rolling` + M1 wheel-contact FK + NIS smoke; smoke: rolling-InEKF base-pos RMSE 0.35 m vs fixed-foot ~7 m
-- [ ] Block N2 review pack (after e10-20260816)
+- [x] signature reconstruction (e10, 20 seeds): encoder-bias innovation matches J[:,j]b (cos 0.73) + reconstructed b̂ 0.085; pitch gyro-bias partial 0.010 (weak observability, yaw unobservable); slip mirror-covariance cos 0.993
+- [x] `docs/decisions/n2_rolling_contact_memo.md` (corrected: A[d_i,R]=0, group-affine — not −R[u_i]×) + `inekf_rolling` + M1 wheel-contact FK + NIS smoke; rolling-InEKF base-pos RMSE 0.71 m vs fixed-foot 13.4 m
+- [x] rp022 Block N2 review pack
 
 ## Block A (extra) — Panda arm (`sim/assets/panda/`, `experiments/e14_arm/`)
 - [ ] Panda world; residual + DK table; side-by-side with the welded leg

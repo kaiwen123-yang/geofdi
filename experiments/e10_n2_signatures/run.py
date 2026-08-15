@@ -8,7 +8,7 @@
   signatures : bias-augmented InEKF (geofdi.inekf.rinekf_bias.RIEKFBias) on Go2 go2_urdf_sym.
                (a) encoder bias +0.05 rad on LF-KFE: the fixed-foot innovation acquires a body-frame shift that matches
                    the analytic Jacobian prediction J[:,j] b (cosine), and the augmented filter RECONSTRUCTS b_hat -> b;
-               (b) gyro bias 0.02 rad/s about z: b_hat_g -> b;
+               (b) gyro bias 0.02 rad/s about y (pitch): b_hat_g -> b (partial; IMU bias weakly observable in flat trot);
                (c) slip on LF vs the mirror slip on RF: the estimator innovations are R-covariant (z_RF ~ E z_LF),
                    the same Sigma-equivariance the detection channel uses.
 
@@ -102,8 +102,7 @@ def _run_m1_filter(df, kin, kind, ns):
     return np.array(nis), np.array(dofs), np.array(perr)
 
 
-def _m1_worker(args):
-    seed, ns, quick = args
+def _m1_worker(seed, ns, quick):
     dur = 12.0 if quick else ns["duration_s"]
     cfg = SimConfigM1(model=ns["model"], speed=ns["speed"], duration_s=dur, warmup_s=ns["warmup_s"], seed=int(seed))
     df, _ = rollout_m1(cfg)
@@ -209,8 +208,7 @@ def _run_go2_bias(df, kin, sg, enc_bias=None, gyro_bias=None, slip=None, estimat
                 bg=(f.bg.copy() if estimate else np.zeros(3)), bg_pre=bg_pre)
 
 
-def _sig_worker(args):
-    seed, sg, quick = args
+def _sig_worker(seed, sg, quick):
     dur = 8.0 if quick else sg["duration_s"]
     base = dict(model=sg["model"], gait=sg["gait"], speed=0.0, duration_s=dur, seed=int(seed))
     df, _ = rollout(SimConfig(**base)); kin = Go2Kinematics()
