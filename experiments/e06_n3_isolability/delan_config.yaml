@@ -1,0 +1,32 @@
+# DeLaN nominal-model training configuration (Block L1). NOMINAL data only.
+sim:
+  model: go2_urdf_sym
+  gait: trot
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+data:
+  speeds: [0.0, 0.3, 0.5, 0.8]
+  terrains: [flat, "sagittal:5", "sagittal:-5", "lateral:5", "lateral:-5"]
+  rollouts_per_condition: 5          # 4 speeds x 5 terrains x 5 = 100 rollouts
+  duration_s: 25.0                   # 100 x 25 s x 200 Hz = 500k samples per leg
+  seed_base: 40000
+model:
+  hidden: 128
+  depth: 3
+  eps: 0.001
+  damping: 0.01                      # fixed nominal passive terms (URDF world)
+  frictionloss: 0.2
+train:
+  val_fraction: 0.2                  # by rollout (20 held-out rollouts)
+  epochs: 40
+  batch: 8192
+  lr: 0.002
+  weight_decay: 0.0
+  beta_bins: 6
+  beta_quantile: 0.95
+degraded:                            # e06 (iii): sample-size ladder and label noise
+  n_train: [50000, 10000, 2000]
+  label_noise: [0.5, 1.0, 2.0]

@@ -1,1 +1,1 @@
-"""Fault isolation via isotypic decomposition (workstreams N1/N3)."""
+"""Fault isolation: isotypic/geometric readings of residual signatures (N3 certificate)."""

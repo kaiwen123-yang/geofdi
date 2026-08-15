@@ -1,0 +1,35 @@
+# e06 — N3 isolability certificate: analytic (momentum-observer) and learned (DeLaN) residuals, DK certificate vs
+# nearest-subspace confusion, degraded-DeLaN ladder, welded-base "leg = arm" bridge.
+experiment: e06_n3_isolability
+workers: 22
+sim:
+  model: go2_urdf_sym
+  gait: trot
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+registration: {N: 64, drop_first: 20}
+observer: {backend: pin, cutoff_hz: 10.0, torque: tau_cmd, armature: 0.01, damping: 0.01, frictionloss: 0.2}
+delan_models: [full, n50k, n10k, n2k, noise0.5, noise1, noise2]      # tags under $GEOFDI_DATA_ROOT/models/delan/
+stage_iso:                           # (i) analytic, (ii) DeLaN full, (iii) degraded ladder — same runs
+  R: 3
+  seed_base: 51000
+  K_cal: 60
+  K_post: 40
+  joints: [LF-HAA, LF-HFE, LF-KFE, RH-KFE, LH-HFE]
+  faults:                            # magnitude semantics: gain m = 1-kappa, bias m = b [N m], friction m = dmu = 0.2*scale
+    gain: [0.1, 0.3]
+    bias: [0.5, 1.0]
+    friction: [0.5, 1.0]             # friction_scale magnitude s: damping & frictionloss *= 1+s -> dmu = 0.2 s
+stage_weld:                          # welded trunk, LF leg as a 3-dof arm: same pipeline (analytic + DeLaN-weld)
+  R: 3
+  seed_base: 52000
+  K_cal: 60
+  K_post: 40
+  joints: [LF-HAA, LF-HFE, LF-KFE]
+  delan_tag: weld_full
+  train: {rollouts: 40, duration_s: 25.0, seed_base: 53000, epochs: 30}
+outputs: {}

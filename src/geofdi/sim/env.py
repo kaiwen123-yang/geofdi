@@ -248,6 +248,9 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
             gyr0 = (axis / (2 * np.sin(ang)) * ang / cfg.ctrl_dt) if ang > 1e-12 else np.zeros(3)
             R_mid = R_prev @ _exp_so3(0.5 * gyr0 * cfg.ctrl_dt)
             acc0 = R_mid.T @ ((v_new - v_prev) / cfg.ctrl_dt - m.opt.gravity)
+        if cfg.weld_base:                       # static base: MuJoCo's accelerometer on a jointless body reads 0; report the
+            Rw = np.zeros(9); mujoco.mju_quat2Mat(Rw, d.sensordata[sadr["base_quat"][0]:sadr["base_quat"][0] + 4]); Rw = Rw.reshape(3, 3)
+            acc0 = Rw.T @ (-m.opt.gravity)       # physical specific force (+g in the body frame at rest)
         acc = acc0 + rng.normal(0.0, noise.imu_acc_std, 3)
         gyr = gyr0 + rng.normal(0.0, noise.imu_gyro_std, 3)
         gyr_prev = gyr
@@ -305,6 +308,7 @@ def load_model(cfg: "SimConfig") -> mujoco.MjModel:
     if not cfg.weld_base:
         return mujoco.MjModel.from_xml_path(path)
     spec = mujoco.MjSpec.from_file(path)
+    spec.compiler.fusestatic = False              # keep 'base' as a (static) body: telemetry/IMU/observer refer to it by name
     base = spec.body("base")
     for j in list(base.joints):
         if j.type == mujoco.mjtJoint.mjJNT_FREE:

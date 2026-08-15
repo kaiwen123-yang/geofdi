@@ -1,0 +1,87 @@
+# e06 small-magnitude sweep: pushes beta^2/beta^2_threshold across 1 (the DK certificate boundary) — the sample-size /
+# label-noise ladder alone did not move the (calibration-centred) beta^2 enough (see e06 MANIFEST)
+experiment: e06_n3_isolability
+workers: 22
+sim:
+  model: go2_urdf_sym
+  gait: trot
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller:
+    period_s: 0.5
+    kp:
+    - 80
+    - 80
+    - 80
+    kd:
+    - 2.0
+    - 2.0
+    - 2.0
+    lift_kfe: 0.45
+    lift_hfe: 0.2
+    stab_k_wz: 0.2
+  noise:
+    actuator_std: 0.02
+    encoder_pos_std: 0.002
+    encoder_vel_std: 0.03
+    torque_meas_std: 0.2
+    imu_acc_std: 0.1
+    imu_gyro_std: 0.01
+registration:
+  N: 64
+  drop_first: 20
+observer:
+  backend: pin
+  cutoff_hz: 10.0
+  torque: tau_cmd
+  armature: 0.01
+  damping: 0.01
+  frictionloss: 0.2
+delan_models:
+- full
+- n50k
+- n10k
+- n2k
+- noise0.5
+- noise1
+- noise2
+stage_iso:
+  R: 2
+  seed_base: 54000
+  K_cal: 60
+  K_post: 40
+  joints:
+  - LF-KFE
+  - RH-KFE
+  - LF-HFE
+  faults:
+    gain:
+    - 0.01
+    - 0.02
+    - 0.05
+    bias:
+    - 0.03
+    - 0.06
+    - 0.12
+    friction:
+    - 0.03
+    - 0.06
+    - 0.12
+stage_weld:
+  R: 3
+  seed_base: 52000
+  K_cal: 60
+  K_post: 40
+  joints:
+  - LF-HAA
+  - LF-HFE
+  - LF-KFE
+  delan_tag: weld_full
+  train:
+    rollouts: 40
+    duration_s: 25.0
+    seed_base: 53000
+    epochs: 30
+outputs: {}
