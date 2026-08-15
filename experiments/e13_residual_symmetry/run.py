@@ -625,7 +625,7 @@ def wr_num(g, k, tab):
 def _plot_c(cfg, res_dir, tab, en, conf, alpha):
     import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
     groups = list(cfg["stage_c"]["groups"].keys()); x = np.arange(len(groups))
-    fig, axes = plt.subplots(1, 3, figsize=(13, 3.8))
+    fig, axes = plt.subplots(1, 3, figsize=(11.4, 3.8))
     dets = [("Rminus_raw_ecusum", "R⁻ raw (S1)", "C3"), ("Rminus_res_an_ecusum", "R⁻ analytic residual", "C1"), ("Rminus_res_eq_ecusum", "R⁻ equivariant residual (Π⁻r)", "C0"),
             ("Rplus_track", "R⁺ tracking (S2)", "0.5"), ("Rplus_res_eq_sym", "R⁺ equivariant residual (Π⁺r)", "C2")]
     w = 0.16
