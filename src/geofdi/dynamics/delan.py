@@ -200,14 +200,16 @@ def delan_residuals(df, quad: "DeLaNQuadruped", jt_all: np.ndarray, dt: float = 
 
 
 def train_leg(net: LegDeLaN, data: dict, epochs: int = 30, batch: int = 4096, lr: float = 1e-3, device="cpu",
-              weight_decay: float = 0.0, log=print, seed: int = 0):
+              weight_decay: float = 0.0, log=print, seed: int = 0, q_sd_floor: float = 0.0):
     """data: dict of numpy arrays q, dq, ddq, a, y (target torque = tau_cmd + J^T f_c, the leg-inertial part) split into train/val.
-    Returns history (list of dicts) and the validation residual array."""
+    Returns history (list of dicts) and the validation residual array. `q_sd_floor` (rad) floors the input scale of q: when
+    the joints barely move (wheeled M1 rolling: q std 0.002 rad) the standardized derivative dM/dq blows up by 1/std and the
+    Christoffel term explodes at initialisation — floor it at ~0.1 rad for such data (Go2 trot: q std ~0.3, floor 0 = off)."""
     torch.manual_seed(seed)
     net.to(device)
     tr = {k: torch.as_tensor(data["train"][k], dtype=torch.float32, device=device) for k in ("q", "dq", "ddq", "a", "y")}
     va = {k: torch.as_tensor(data["val"][k], dtype=torch.float32, device=device) for k in ("q", "dq", "ddq", "a", "y")}
-    net.q_mu.copy_(tr["q"].mean(0)); net.q_sd.copy_(tr["q"].std(0) + 1e-6); net.a_mu.copy_(tr["a"].mean(0)); net.a_sd.copy_(tr["a"].std(0) + 1e-6)
+    net.q_mu.copy_(tr["q"].mean(0)); net.q_sd.copy_(torch.clamp(tr["q"].std(0), min=float(q_sd_floor)) + 1e-6); net.a_mu.copy_(tr["a"].mean(0)); net.a_sd.copy_(tr["a"].std(0) + 1e-6)
     opt = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=weight_decay)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
     n = tr["q"].shape[0]; hist = []

@@ -18,3 +18,15 @@ sha256 of the session's `checksums.sha256` (a stable payload fingerprint).
 | 2026-08-15 | legkilo_slope | public/legkilo-go1 | trot | outdoor slope, >6 m height change | eb5b196c | Leg-KILO 311.9 s; no GT |
 | 2026-08-15 | m1_outdoor_20260811_111052 | m1/legacy-aug | wheeled driving (no gait) | outdoor, unknown | 61da3dc7 | legacy pre-project rosbag2 (copied from G: trash); 530.5 s, 22.2 GiB; joint_states 16 joints (12 leg + 4 wheel) q/dq/effort 200 Hz, IMU 200 Hz, lidars; rolling 518/530 s, no leg stepping; inventory: docs/protocol/legacy_aug_inventory.md |
 | 2026-08-15 | m1_outdoor_20260811_112129 | m1/legacy-aug | wheeled driving (no gait) | outdoor, unknown | 36cd69c9 | legacy pre-project rosbag2 (copied from G: trash); 954.7 s, 40.0 GiB; same topics; rolling 937/955 s (up to 2 m/s), no leg stepping; inventory: docs/protocol/legacy_aug_inventory.md |
+| 2026-08-16 | 20260816_trot_0.3_flat_out_rep01 | sim/go2_rehearsal | trot 0.3 m/s (out) | flat (sim) | 9fb9a228 | synthetic rehearsal session (Sprint 7 W3): LowState CSV layout, 30 s |
+| 2026-08-16 | 20260816_trot_0.3_flat_back_rep01 | sim/go2_rehearsal | trot 0.3 m/s (back) | flat (sim) | f2bc9cd2 | synthetic rehearsal session (Sprint 7 W3): LowState CSV layout, 30 s |
+| 2026-08-16 | 20260816_trot_0.5_flat_out_rep01 | sim/go2_rehearsal | trot 0.5 m/s (out) | flat (sim) | 7a19c015 | synthetic rehearsal session (Sprint 7 W3): LowState CSV layout, 30 s |
+| 2026-08-16 | 20260816_trot_0.5_flat_back_rep01 | sim/go2_rehearsal | trot 0.5 m/s (back) | flat (sim) | bf9e9665 | synthetic rehearsal session (Sprint 7 W3): LowState CSV layout, 30 s |
+| 2026-08-16 | 20260816_trot_0.8_flat_out_rep01 | sim/go2_rehearsal | trot 0.8 m/s (out) | flat (sim) | 217a41ed | synthetic rehearsal session (Sprint 7 W3): LowState CSV layout, 30 s |
+| 2026-08-16 | 20260816_trot_0.8_flat_back_rep01 | sim/go2_rehearsal | trot 0.8 m/s (back) | flat (sim) | 3f855bc7 | synthetic rehearsal session (Sprint 7 W3): LowState CSV layout, 30 s |
+| 2026-08-16 | 20260816_rolling_0.5_flat_out_rep01 | sim/m1_rehearsal | rolling 0.5 m/s (out) | flat (sim) | 9a65440b | synthetic rehearsal session (Sprint 7 W3): GENISOM SDK CSV layout, 30 s |
+| 2026-08-16 | 20260816_rolling_0.5_flat_back_rep01 | sim/m1_rehearsal | rolling 0.5 m/s (back) | flat (sim) | aa126442 | synthetic rehearsal session (Sprint 7 W3): GENISOM SDK CSV layout, 30 s |
+| 2026-08-16 | 20260816_rolling_1.0_flat_out_rep01 | sim/m1_rehearsal | rolling 1.0 m/s (out) | flat (sim) | f40af61d | synthetic rehearsal session (Sprint 7 W3): GENISOM SDK CSV layout, 30 s |
+| 2026-08-16 | 20260816_rolling_1.0_flat_back_rep01 | sim/m1_rehearsal | rolling 1.0 m/s (back) | flat (sim) | e5760d12 | synthetic rehearsal session (Sprint 7 W3): GENISOM SDK CSV layout, 30 s |
+| 2026-08-16 | 20260816_rolling_2.0_flat_out_rep01 | sim/m1_rehearsal | rolling 2.0 m/s (out) | flat (sim) | 6874db33 | synthetic rehearsal session (Sprint 7 W3): GENISOM SDK CSV layout, 30 s |
+| 2026-08-16 | 20260816_rolling_2.0_flat_back_rep01 | sim/m1_rehearsal | rolling 2.0 m/s (back) | flat (sim) | 6ae26567 | synthetic rehearsal session (Sprint 7 W3): GENISOM SDK CSV layout, 30 s |

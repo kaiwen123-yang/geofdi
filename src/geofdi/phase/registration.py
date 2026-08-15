@@ -32,15 +32,26 @@ def register_cycles(df: pd.DataFrame, channels: list[str], N: int = 64, theta_co
     t = df["t"].to_numpy() if "t" in df else np.arange(len(df), dtype=float)
     starts = cycle_boundaries(theta)
     grid = np.arange(N) / N
+    # unwrapped phase over the whole record (cycle index + theta): each cycle is interpolated on the GLOBAL (phi, X)
+    # record, so that the grid point at the cycle start uses the neighbouring samples across the boundary instead of a
+    # clamped edge value. With a controller-clock phase whose sample rows hit theta = 0 exactly this is identical to the
+    # per-cycle interpolation; with an estimated phase (fractional offset) the clamped edge produced a systematic
+    # one-grid-point asymmetry between the two half-cycles that the flip test detected (Sprint 7 W3 finding).
+    cyc = np.zeros(len(theta), dtype=int)
+    for a in starts:
+        cyc[a:] += 1
+    phi = theta + cyc
+    # enforce strict monotonicity for np.interp (repeated theta values within a cycle are nudged)
+    phi_m = np.maximum.accumulate(phi + np.arange(len(phi)) * 1e-12)
     Zs, t0s, idx = [], [], []
     for a, b in itertools.pairwise(starts):
         th = theta[a:b]
         if len(th) < 4 or th[0] > 0.1 or th[-1] < 0.9:
             continue          # incomplete cycle
-        # make theta strictly increasing (it is, up to the wrap) and interpolate each channel
+        k = cyc[a]; g = k + grid
         Zk = np.empty((X.shape[1], N))
         for c in range(X.shape[1]):
-            Zk[c] = np.interp(grid, th, X[a:b, c], left=X[a, c], right=X[b - 1, c])
+            Zk[c] = np.interp(g, phi_m, X[:, c])
         Zs.append(Zk); t0s.append(t[a]); idx.append(a)
     K = len(Zs)
     lo, hi = drop_first, K - drop_last
@@ -71,3 +82,52 @@ def read_cycles(run_dir: Path):
     K = df["cycle"].nunique()
     Z = df[chans].to_numpy().reshape(K, N, len(chans)).transpose(0, 2, 1)
     return Z, meta
+
+
+# ----------------------------------------------------------------------------- rolling mode (Sprint 7 Block W2)
+def register_blocks(df: pd.DataFrame, channels: list[str], L_s: float = 1.0, N: int = 64, t_col: str = "t",
+                    mask: np.ndarray | None = None, t_start: float | None = None, drop_first: int = 0, max_blocks: int | None = None):
+    """Rolling-mode data elements (Σ = G, no phase): cut the telemetry into consecutive FIXED-DURATION blocks of L_s
+    seconds and resample each block onto an N-point grid of normalized block time u = (t - t0)/L in [0, 1); only rows
+    with `mask` True (e.g. straight-command segments after warm-up) are used — a block must be entirely inside one masked
+    run. Returns Z (K, d, N) and meta; the pairing shift is 0 (C2Rep with delta_theta = 0 applies the pure reflection).
+    """
+    t = df[t_col].to_numpy(); X = df[list(channels)].to_numpy()
+    m = np.ones(len(t), dtype=bool) if mask is None else np.asarray(mask, dtype=bool)
+    if t_start is not None:
+        m &= t >= t_start
+    # contiguous masked runs
+    idx = np.where(m)[0]
+    if len(idx) == 0:
+        return np.empty((0, X.shape[1], N)), {"N": N, "L_s": L_s, "channels": list(channels), "n_cycles": 0, "t_start": [], "row_start": []}
+    breaks = np.where(np.diff(idx) > 1)[0]
+    runs = np.split(idx, breaks + 1)
+    grid = np.arange(N) / N
+    Zs, t0s, rows = [], [], []
+    for r in runs:
+        ta, tb = t[r[0]], t[r[-1]]
+        nb = int(np.floor((tb - ta) / L_s))
+        for b in range(nb):
+            t0 = ta + b * L_s; t1 = t0 + L_s
+            sel = r[(t[r] >= t0) & (t[r] < t1)]
+            if len(sel) < 4:
+                continue
+            u = (t[sel] - t0) / L_s
+            Zk = np.empty((X.shape[1], N))
+            for c in range(X.shape[1]):
+                Zk[c] = np.interp(grid, u, X[sel, c], left=X[sel[0], c], right=X[sel[-1], c])
+            Zs.append(Zk); t0s.append(float(t0)); rows.append(int(sel[0]))
+    Zs = Zs[drop_first:]; t0s = t0s[drop_first:]; rows = rows[drop_first:]
+    if max_blocks is not None:
+        Zs = Zs[:max_blocks]; t0s = t0s[:max_blocks]; rows = rows[:max_blocks]
+    Z = np.stack(Zs) if Zs else np.empty((0, X.shape[1], N))
+    meta = {"N": N, "L_s": L_s, "channels": list(channels), "n_cycles": int(Z.shape[0]), "dropped_first": drop_first,
+            "t_start": t0s, "row_start": rows, "mode": "rolling"}
+    return Z, meta
+
+
+def straight_mask(df: pd.DataFrame, v_col: str = "v_cmd", warmup_s: float = 0.0, tol: float = 1e-6, t_col: str = "t") -> np.ndarray:
+    """Rows where the commanded speed is at its (nonzero) plateau — i.e. steady straight driving — after warm-up."""
+    v = df[v_col].to_numpy(); t = df[t_col].to_numpy()
+    plateau = np.nanmax(np.abs(v)) if np.isfinite(v).any() else 0.0
+    return (np.abs(np.abs(v) - plateau) <= tol) & (t >= warmup_s) & (plateau > 0)

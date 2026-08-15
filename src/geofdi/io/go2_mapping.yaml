@@ -1,0 +1,28 @@
+# Unitree Go2 (CycloneDDS LowState) channel mapping — Sprint 7 Block W3. unverified: true until the first real recording.
+robot: go2
+unverified: true
+lowstate:
+  motor_state_count: 20                       # LowState.motor_state[20]; the first 12 are the leg motors
+  motor_order: [FR_hip, FR_thigh, FR_calf, FL_hip, FL_thigh, FL_calf, RR_hip, RR_thigh, RR_calf, RL_hip, RL_thigh, RL_calf]   # index 0..11 (Unitree)
+  fields: {q: q, dq: dq, tau_est: tau_est, temperature: temperature}
+  imu: {quaternion: [w, x, y, z], gyroscope: [x, y, z], accelerometer: [x, y, z], frame: body}
+  foot_force_order: [FR, FL, RR, RL]          # foot_force[4]
+  rate_hz: 500
+geofdi:
+  legs: [LF, RF, LH, RH]
+  joints: [HAA, HFE, KFE]
+  leg_from_unitree: {FL: LF, FR: RF, RL: LH, RR: RH}
+  joint_from_unitree: {hip: HAA, thigh: HFE, calf: KFE}
+  motor_index_in_geofdi_order: [3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8]      # GeoFDI joint i <- LowState motor_state[idx[i]]
+  foot_index_in_geofdi_order: [1, 0, 3, 2]
+signs:                                          # relative to the GeoFDI uniform-axis convention (the go2_description URDF, which the sim uses)
+  convention: urdf_uniform_axis_candidate
+  per_leg_sign: {LF: [1, 1, 1], RF: [1, 1, 1], LH: [1, 1, 1], RH: [1, 1, 1]}
+  note: "the LowState joint angles are assumed to follow the URDF joint conventions (all hip axes +x, thigh/calf +y); verify on Day 0 with the sign test (docs/protocol/go2_day0.md)"
+torque:
+  tau_est_semantics: motor_torque_estimate      # LowState.motor_state.tau_est: estimated output torque (NOT the command) -> tau_meas; tau_cmd from LowCmd if recorded
+session_files:
+  lowstate: lowstate.csv                        # t, q_0..q_11, dq_0..dq_11, tau_est_0..tau_est_11, temp_0..temp_11, imu_qw, imu_qx, imu_qy, imu_qz, gyro_x, gyro_y, gyro_z, acc_x, acc_y, acc_z, foot_force_0..3
+  lowcmd: lowcmd.csv                            # optional: t, tau_0..tau_11 (feed-forward torque command), or q_des/dq_des/kp/kd per motor
+  cmd: cmd.csv                                  # optional: t, vx, vy, wz (high-level velocity command)
+  meta: meta.yaml

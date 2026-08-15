@@ -45,24 +45,27 @@ TEMPLATE_MAPS = {
 
 def mirror_maps(manifest: dict | None = None) -> dict:
     """Signs and partners of the sagittal reflection, read from the channel manifest via groups.c2 (single source of
-    truth): partner[leg], S[leg] (3,) joint signs (order JOINTS), E (3,) accelerometer (polar) signs, Eg (3,) gyro
-    (axial) signs. (rho(g_s) Z)[partner] = sign * Z[channel]."""
+    truth): partner[leg], S[leg] (n_joints,) joint signs (manifest joint order), E (3,) accelerometer (polar) signs,
+    Eg (3,) gyro (axial) signs. (rho(g_s) Z)[partner] = sign * Z[channel]. Works for any leg/joint layout that follows
+    the telemetry naming (Go2: 3 joints; wheeled M1: 4 joints, wheel angle excluded from Z -> the signs are read from
+    the dq channels, which carry the same signs)."""
     man = build_manifest() if manifest is None else manifest
     rep = C2Rep(man)
     by_name = {c["name"]: c for c in man["channels"]}
+    legs = tuple(man.get("leg_order", LEGS)); joints = tuple(man.get("joint_order", JOINTS))
     partner, S = {}, {}
-    for leg in LEGS:
-        c0 = by_name[f"q_{leg}_{JOINTS[0]}"]
+    for leg in legs:
+        c0 = by_name[f"dq_{leg}_{joints[0]}"]
         partner[leg] = c0["partner"].split("_")[1]
         s = []
-        for j in JOINTS:
-            c = by_name[f"q_{leg}_{j}"]
+        for j in joints:
+            c = by_name[f"dq_{leg}_{j}"]
             i, k = rep.index[c["name"]], rep.index[c["partner"]]
             s.append(float(rep.P[k, i]))
         S[leg] = np.array(s)
     E = np.array([float(rep.P[rep.index[f"imu_a_{ax}"], rep.index[f"imu_a_{ax}"]]) for ax in "xyz"])
     Eg = np.array([float(rep.P[rep.index[f"imu_w_{ax}"], rep.index[f"imu_w_{ax}"]]) for ax in "xyz"])
-    return {"partner": partner, "S": S, "E": E, "Eg": Eg}
+    return {"partner": partner, "S": S, "E": E, "Eg": Eg, "legs": legs, "joints": joints}
 
 
 def _to_dev(x, ref):
@@ -79,15 +82,17 @@ class EquivariantDeLaN:
     # -- construction / (de)serialisation ------------------------------------------------------------
     @staticmethod
     def build(n_templates: int = 2, hidden: int = 128, depth: int = 3, eps: float = 1e-3, damping: float = 0.01,
-              frictionloss: float = 0.2, device: str = "cpu", manifest: dict | None = None) -> EquivariantDeLaN:
+              frictionloss: float = 0.2, device: str = "cpu", manifest: dict | None = None, n_joints: int | None = None,
+              robot: str = "go2") -> EquivariantDeLaN:
         if n_templates not in TEMPLATE_MAPS:
             raise ValueError("n_templates must be 1 or 2")
+        maps = mirror_maps(manifest); nj = int(n_joints or len(maps["joints"]))
         leg_map = TEMPLATE_MAPS[n_templates]
         keys = sorted({k for k, _ in leg_map.values()})
-        templates = {k: LegDeLaN(3, hidden, depth, eps, damping, frictionloss).to(device) for k in keys}
-        meta = {"equivariant": True, "n_templates": n_templates, "hidden": hidden, "depth": depth, "eps": eps,
+        templates = {k: LegDeLaN(nj, hidden, depth, eps, damping, frictionloss).to(device) for k in keys}
+        meta = {"equivariant": True, "n_templates": n_templates, "n_joints": nj, "robot": robot, "hidden": hidden, "depth": depth, "eps": eps,
                 "damping": damping, "frictionloss": frictionloss, "leg_map": {l: list(v) for l, v in leg_map.items()}}
-        return EquivariantDeLaN(templates, dict(leg_map), mirror_maps(manifest), meta)
+        return EquivariantDeLaN(templates, dict(leg_map), maps, meta)
 
     def save(self, path: Path):
         path = Path(path); path.mkdir(parents=True, exist_ok=True)
@@ -96,14 +101,18 @@ class EquivariantDeLaN:
         (path / "meta.json").write_text(json.dumps(self.meta, indent=1))
 
     @staticmethod
-    def load(path: Path, device: str = "cpu") -> EquivariantDeLaN:
+    def load(path: Path, device: str = "cpu", manifest: dict | None = None) -> EquivariantDeLaN:
         path = Path(path); meta = json.loads((path / "meta.json").read_text())
         leg_map = {l: (v[0], bool(v[1])) for l, v in meta["leg_map"].items()}
+        nj = int(meta.get("n_joints", 3))
+        if manifest is None and meta.get("robot", "go2") == "m1_wheeled":
+            from ..sim.telemetry_m1 import build_manifest as build_manifest_m1
+            manifest = build_manifest_m1()
         keys = sorted({k for k, _ in leg_map.values()}); templates = {}
         for k in keys:
-            net = LegDeLaN(3, meta["hidden"], meta["depth"], meta["eps"], meta["damping"], meta["frictionloss"]).to(device)
+            net = LegDeLaN(nj, meta["hidden"], meta["depth"], meta["eps"], meta["damping"], meta["frictionloss"]).to(device)
             net.load_state_dict(torch.load(path / f"template_{k}.pt", map_location=device)); net.eval(); templates[k] = net
-        return EquivariantDeLaN(templates, leg_map, mirror_maps(), meta)
+        return EquivariantDeLaN(templates, leg_map, mirror_maps(manifest), meta)
 
     @property
     def nets(self) -> dict:
@@ -224,7 +233,7 @@ def template_datasets(quad: EquivariantDeLaN, data_by_leg: dict) -> dict:
 
 def train_equivariant(quad: EquivariantDeLaN, data_by_leg: dict, epochs: int = 40, batch: int = 8192, lr: float = 2e-3,
                       device: str = "cpu", weight_decay: float = 0.0, seed: int = 0, log=print, n_bins: int = 6,
-                      quantile: float = 0.95) -> dict:
+                      quantile: float = 0.95, q_sd_floor: float = 0.0) -> dict:
     """Train every template on its pooled (mirrored-union) data; report per-template histories and PER-LEG validation
     RMSE / beta_hat on each leg's own validation arrays (comparable with the plain per-leg reports)."""
     tds = template_datasets(quad, data_by_leg)
@@ -232,7 +241,7 @@ def train_equivariant(quad: EquivariantDeLaN, data_by_leg: dict, epochs: int = 4
     for key, d in tds.items():
         log(f"  [equiv] template {key}: train {len(d['train']['q'])} val {len(d['val']['q'])}")
         hist, res = train_leg(quad.templates[key], d, epochs=epochs, batch=batch, lr=lr, device=device,
-                              weight_decay=weight_decay, seed=seed, log=log)
+                              weight_decay=weight_decay, seed=seed, log=log, q_sd_floor=q_sd_floor)
         report["templates"][key] = {"history": hist, "final_val_mse": hist[-1]["val_mse"],
                                     "final_val_rmse_per_joint": hist[-1]["val_rmse_per_joint"], "n_train": int(len(d["train"]["q"]))}
     for leg in LEG_ORDER:
