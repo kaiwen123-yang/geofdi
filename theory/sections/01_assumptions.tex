@@ -556,8 +556,7 @@ more natural choice --- the equivariance defect of the $\Tc$-fold
 with the conditioning trajectory held fixed --- is \emph{not} sufficient:
 with the controller interleaved in the loop, the closed-loop displacement can
 strictly exceed it, so a lemma stated in that quantity would be false (worked
-two-step example in the companion note
-\texttt{theory/counterexamples/product\_kernel\_gap.pdf}). Definition
+two-step example in Appendix~\ref{app:counterexample}). Definition
 \eqref{eq:cycle-eps} is the closed-loop quantity, for which the lemma below
 is a triangle inequality by construction.
 \end{definition}
@@ -642,9 +641,9 @@ linear bound
 At the level of total variation between whole-cycle (block) laws this
 linear bound is essentially tight: a defect that shows up as a rare transient
 signature at each step is detectable from the trajectory with probability of
-order $\Tc\,\eps{\bullet}$, and the two-step example of the companion note
-\texttt{theory/counterexamples/product\_kernel\_gap.pdf} comes arbitrarily
-close to $\Tc\,\eps{ctrl}$. Contraction does not change this: if the one-step
+order $\Tc\,\eps{\bullet}$, and the two-step example of
+Appendix~\ref{app:counterexample} comes arbitrarily close to
+$\Tc\,\eps{ctrl}$. Contraction does not change this: if the one-step
 closed-loop state kernel (conditionally on the environment draw) is a
 Dobrushin contraction with coefficient $\delta<1$, the perturbation injected
 at step $t$ is damped by $\delta^{\,s-t}$ at step $s$, so the \emph{phase

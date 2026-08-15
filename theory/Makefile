@@ -1,14 +1,9 @@
-.PHONY: all main counterexamples clean
+.PHONY: all clean
 
-all: main counterexamples
-
-main:
+# main.tex inputs sections/*.tex and counterexamples/*.tex (appendix sections).
+all:
 	latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build main.tex
-
-# Companion notes (one standalone .tex each) share ../preamble.tex.
-counterexamples:
-	cd counterexamples && latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build product_kernel_gap.tex
 
 clean:
 	latexmk -C -outdir=build main.tex || true
-	rm -rf build counterexamples/build
+	rm -rf build

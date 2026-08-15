@@ -1,0 +1,59 @@
+% Appendix section of theory Part 0 (input from main.tex). Companion to Definition def:cycle-eps.
+\section{Appendix: why the product-kernel defect does not imply Lemma~\ref{lem:eps}}
+\label{app:counterexample}
+
+Two cycle-level definitions of the controller defect compete. (P)~The
+\emph{product-kernel defect}
+$\epsbar{ctrl}^{\mathrm{prod}} := \sup_{x_{0:\Tc-1}} \dtv\bigl(\bigotimes_t
+P_{\mathrm{ctrl}}(\cdot\mid x_{t-1},\theta_t),\ \bigotimes_t
+P^{\sigma}_{\mathrm{ctrl}}(\cdot\mid x_{t-1},\theta_t)\bigr)$ --- the
+equivariance defect of the $\Tc$-fold product kernel with the conditioning
+trajectory held \emph{fixed}; (H)~the \emph{closed-loop hybrid displacement}
+of \eqref{eq:cycle-eps}. Only (H) bounds the left-hand side of
+\eqref{eq:eps-bound}: (P) can be strictly smaller than the closed-loop
+displacement, so a lemma stated in (P) would be false.
+
+\paragraph{Setting.}
+$\Tc=2$, binary inputs $u_1,u_2\in\{0,1\}$, perfect-memory dynamics
+$x_1=u_1$ ($x_0$ fixed), and, with $0<\varepsilon\le\eta<\tfrac12$, nominal
+and conjugated controller kernels
+$A_1=\mathrm{Bern}(\tfrac12)$, $A_1'=\mathrm{Bern}(\tfrac12+\varepsilon)$,
+$A_2(\cdot\mid x)=\mathrm{Bern}(p_x)$, $A_2'(\cdot\mid x)=\mathrm{Bern}(p_x+\varepsilon)$
+with $p_1=1-\eta$, $p_0=\eta$. Every per-transition defect equals
+$\varepsilon$, so $\eps{ctrl}=\varepsilon$ and the coarse bound
+\eqref{eq:linear-bound} reads $\epsbar{ctrl}\le\Tc\,\eps{ctrl}=2\varepsilon$.
+
+\paragraph{What the two definitions compute.}
+With $r_t=A_t'/A_t$ and
+$D(u_1,x):=\sum_{u_2}A_2(u_2\mid x)\,\lvert 1-r_1(u_1)\,r_2(u_2\mid x)\rvert$,
+uniformity of $A_1$ gives
+$\epsbar{ctrl}^{\mathrm{prod}}=\max_{x}\tfrac14[D(1,x)+D(0,x)]$ for (P) and
+$\Delta_{\mathrm{cl}}=\tfrac14[D(1,x{=}1)+D(0,x{=}0)]$ for (H), because in
+the loop branch $u_1$ is evaluated at \emph{its own} state $x_1=u_1$.
+Enumerating the four outcomes (verified exactly by brute force):
+$D(1,1)=4\varepsilon(1-\eta)+4\varepsilon^2$, $D(0,1)=D(1,0)=2\varepsilon$,
+$D(0,0)=4\varepsilon(1-\eta)-4\varepsilon^2$, hence
+\[
+  \epsbar{ctrl}^{\mathrm{prod}}=\tfrac32\varepsilon-\varepsilon\eta+\varepsilon^2
+  \qquad\text{versus}\qquad
+  \Delta_{\mathrm{cl}}=2\varepsilon(1-\eta)\;>\;\epsbar{ctrl}^{\mathrm{prod}}
+  \quad\text{whenever }\eta+\varepsilon<\tfrac12
+\]
+(e.g.\ $\varepsilon=\eta=0.1$: $0.150$ versus $0.180$, linear bound $0.20$;
+$\varepsilon=\eta=0.01$: $0.0150$ versus $0.0198$, bound $0.02$).
+
+\paragraph{Why the closed loop exceeds the product defect.}
+$\Delta_{\mathrm{cl}}$ is a \emph{mixture of branch-wise maxima},
+$\tfrac14\sum_{u_1}\max_x D(u_1,x)$, whereas (P) is the \emph{maximum of the
+mixture}, $\max_x\tfrac14\sum_{u_1}D(u_1,x)$; the former dominates, strictly
+when the worst-case conditioning differs across branches --- here the step-2
+defect that aligns with the step-1 likelihood ratio sits at $x{=}1$ for
+$u_1{=}1$ and at $x{=}0$ for $u_1{=}0$, and the loop delivers exactly that
+state to each branch. Holding the trajectory fixed in (P) discards the
+input--state correlation that makes defects add up. As $\eta\to0$,
+$\Delta_{\mathrm{cl}}\to2\varepsilon=\Tc\,\eps{ctrl}$: the coarse linear
+bound is attained, consistent with Remark~\ref{rem:linear}. Part~0 therefore
+defines $\epsbar{\bullet}$ as the closed-loop hybrid displacement (H), for
+which Lemma~\ref{lem:eps} is a triangle inequality by construction, and treats
+(P)-type quantities only as what the state-matched audits estimate per
+transition.
