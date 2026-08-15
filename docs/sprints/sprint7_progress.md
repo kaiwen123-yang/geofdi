@@ -1,0 +1,84 @@
+# Sprint 7 progress (gate checklist)
+
+Read this first in a new session; continue from the first unchecked item. Each item: `[ ]` open / `[x] <commit>` done /
+`[~] <commit>` done with a documented miss. Update and push at the end of every Block. Spec: `sprint7_spec.md`.
+
+## Anti-loss
+- [ ] spec + progress file committed (`docs: sprint7 spec and progress file`)
+
+## Block 0 — backfills (`chore: liu/sprint6 backfills, decisions D006–D009`)
+- [ ] 0.1 Liu PDF in `$GEOFDI_DATA_ROOT/lit/liu2025_grufd_ftc.pdf`; provenance = Gazebo simulation in `liu_a1_audit.md`
+- [ ] 0.2 fault model τ_real = η τ_cmd = `actuator_gain` recorded
+- [ ] 0.3 official joint order (0–2 LF, 3–5 LH, 6–8 RF, 9–11 RH) corrected in the audit doc
+- [ ] 0.4 CSV η fields scanned for diagonal double faults; e03 pre-registration class 4 decided
+- [ ] 0.5 GRU spec (Table I) → `baselines/gru.py` `mode: regression_eta`; `baseline_protocol.md` updated
+- [ ] 0.6 latency benchmark (~1 s) and the episode-length consequence recorded
+- [ ] 0.7 real-robot arguments (drift/aging/threshold limitation) → `theory_intake.md`
+- [ ] 0.8 theory_intake: N3-3 candidate, contamination saturation, centring trap
+- [ ] 0.9 decisions D006–D009
+- [ ] 0.10 protocol_params additions (URDF damping conservativeness, torque source, floors, centring trap, wheel-angle exclusion)
+- [ ] Block 0 review pack
+
+## Block W — dual hardware readiness → tag `hw-ready`
+- [ ] W1 wheeled M1 world (`m1_wheeled.xml` / `m1_wheeled_sym.xml`, ctrlrange/forcerange recorded, damping 0.05, IMU site)
+- [ ] W1 manifest `sim/manifests/m1_wheeled.yaml` (16 joints; WHEEL q excluded; c2 reuse)
+- [ ] W1 `io/m1_mapping.yaml` + `io/m1_sdk.py` (names reorder, NaN for missing, efforts_semantics)
+- [ ] W1 t01: sym world 1e-10; original world ε_dyn candidate
+- [ ] W1 rolling controller `sim/controller_wheeled.py` 0.5/1.0/2.0 m/s × 60 s smoke
+- [ ] W1 stepping mode tried (kept as `m1_stepping` or skipped with record)
+- [ ] W2 `phase/registration.py mode: rolling`; H0′ two-sample construction
+- [ ] W2 e01-W (R=200): three speeds QQ + size table; L ∈ {0.5,1,2} s → minimal exchangeable L; original-world column; ε_ctrl → H0′ size recovery + δ doubling alarm
+- [ ] W2 nuisance/fault snapshot (R=30) R⁻ timelines
+- [ ] W2 e13d: equivariant DeLaN on M1 rolling nominal data; residual R⁻ size + wheel motor κ=0.8 power; nuisance readings
+- [ ] W3 `io/go2_mapping.yaml` + `io/go2_lowstate.py`; synthetic Go2 session ingested to `raw/sim/go2_rehearsal/`
+- [ ] W3 `phase/estimator.py` (< 5 % cycle error on Go2 sim)
+- [ ] W4 `scripts/run_pipeline.sh` — M1 synthetic rolling and Go2 synthetic trot sessions run with zero manual steps
+- [ ] W4 Gate 1 estimator rehearsal (< 30 % error)
+- [ ] W4 `docs/protocol/m1_day0_wheeled.md` + `docs/protocol/go2_day0.md`; protocol_params L boundary + phase-estimator error
+- [ ] Block W review pack; tag `hw-ready`
+
+## Block E — e03 external benchmark + sequential redesign
+- [ ] E1 `detect/sequential.py` (e-process / e-CUSUM / conformal-CUSUM; half-cycle elements; calibration ≥ 400 cycles); e04a κ=0.7: median delay ≤ 2 cycles, nominal ARL ≥ 1/α
+- [ ] E2 pre-registration committed before the run (incl. diagonal class if present)
+- [ ] E2 e03 run: R⁻ half-cycle e-process (raw), R⁺ tracking + Mahalanobis, GRU regression (leave-one-file-out; η 0.4↔0.6; single→double; 3 seeds); per-episode + summary tables + four-class figure
+- [ ] E gate: mirrored-bilateral cell R⁻ ≈ α
+- [ ] Block E review pack
+
+## Block T — theory Part 1 full text + Part 2 addenda (tags `theory-part1-v1`, `theory-part2-v1.1`)
+- [ ] `02_n1_theorems.tex` replaces the stand-in (labels kept): §1–§6 with proof / falsification / anchor triples
+- [ ] Part 2: Corollary N3-3, necessity remark, centring trap in the lemma
+- [ ] bib check; `make theory` zero error
+- [ ] Block T review pack; tags
+
+## Block P — low-SNR full grid (`experiments/e08_low_snr/`)
+- [ ] inertia_add {10,20,50} g; noise ×{1,2,4}; full detector set incl. AE + GRU regression (5 seeds); nuisance under three noise levels
+- [ ] curves not saturated; merged minimal-detectable table; GRU spread; R⁻ nuisance silence
+- [ ] Block P review pack
+
+## Block I — three-channel isolation + anomaly diagnosis (`isolation/three_channel.py`, `experiments/e09_three_channel/`)
+- [ ] diagnosis of the analytic-row LH-KFE friction left/right inversion: root cause + fix; e13c isolation table re-run
+- [ ] `docs/protocol/e09_preregistration.md` committed before the run
+- [ ] 7-class confusion (analytic rows / equivariant rows), per-class readout figure, contact-force 10 %/20 % sensitivity
+- [ ] Block I review pack
+
+## Block S — sequential unification (`experiments/e11_sequential/`)
+- [ ] ARL₀ {1/α, 5/α} for conformal-CUSUM / e-CUSUM / e-process (incl. half-cycle); ARL–delay trade-off curve
+- [ ] two-channel complementarity figure
+- [ ] Block S review pack
+
+## Block N2 — bias augmentation + signatures + rolling contact (`inekf/`, `experiments/e10_n2_signatures/`)
+- [ ] two augmented InEKF variants + equivariance unit tests
+- [ ] signature reconstruction table (slip / encoder bias / gyro bias), DK recomputed + confusion
+- [ ] `docs/decisions/n2_rolling_contact_memo.md` + `inekf_rolling` + NIS smoke on m1_wheeled_sym
+- [ ] Block N2 review pack
+
+## Block A (extra) — Panda arm (`sim/assets/panda/`, `experiments/e14_arm/`)
+- [ ] Panda world; residual + DK table; side-by-side with the welded leg
+- [ ] Block A review pack
+
+## Block F (extra) — figure factory (`scripts/make_paper_figures.py`)
+- [ ] one-shot regeneration of the 10 figures + 10 tables; figure_plan statuses updated
+- [ ] Block F review pack
+
+## Wrap-up
+- [ ] tag `sim-milestone-5`; final report (anchor lists, confirmed limitations, hardware-only questions, two first commands, split option status)
