@@ -1,9 +1,9 @@
 \documentclass[11pt]{article}
 \input{preamble}
 
-\title{GeoFDI Theory Notes --- Part 0:\\ Hypotheses and Assumptions}
+\title{GeoFDI Theory Notes --- Parts 0--2:\\ Hypotheses and Assumptions; Exactness and Isotypic Detectability (core);\\ Residual Data Elements and Equivariant Nominal Models}
 \author{GeoFDI project}
-\date{August 15, 2026 --- working notes v1.2}
+\date{August 15, 2026 --- working notes: Part 0 v1.2, Part 1 core (Sprint-6 stand-in), Part 2 v1}
 
 \begin{document}
 \maketitle
@@ -20,7 +20,16 @@ pseudovector transformation of gyroscope channels), states the standing
 assumptions A1--A5 with $\varepsilon$-approximate variants, audit procedures,
 and degradation paths, and derives the hypotheses $H_0$ and $H_1$, an
 $\varepsilon$-robustness lemma, and the recalibrated null $H_0'$ used when
-exact controller symmetry fails.
+exact controller symmetry fails (Part~0). A minimal Part~1 core states the
+exactness of the flip test and the isotypic characterization of what an
+invariance test can detect. Part~2 makes the residual of a nominal model a
+legitimate data element: an equivariant nominal model (analytic observer or
+a Deep Lagrangian Network made exactly equivariant by mirror weight sharing)
+passes $H_0$ from the data to the residual, so the same exact test acts on
+$\Pi^{-}r$ while the magnitude channel reads $\Pi^{+}r$; a non-equivariant
+model contaminates $H_0$ by a fifth $\varepsilon$-term controlled by its
+equivariance defect; and the residual channel dominates the raw-signal
+channel in power under an explicit signal-to-noise condition.
 \end{abstract}
 
 \tableofcontents
@@ -28,6 +37,8 @@ exact controller symmetry fails.
 
 \input{sections/00_notation}
 \input{sections/01_assumptions}
+\input{sections/02_part1_core}
+\input{sections/03_equivariant_residuals}
 \input{counterexamples/product_kernel_counterexample}
 
 \bibliographystyle{ieeetr}

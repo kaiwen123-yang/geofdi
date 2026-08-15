@@ -1,0 +1,757 @@
+\section{Part~2: residual data elements and equivariant nominal models}
+\label{sec:part2}
+
+Part~0 stated $H_0$ for the raw data element $Z_k$; Part~1 (core,
+Section~\ref{sec:part1core}) gives the exact test and the isotypic reading.
+Sprint~4 introduced a second reading of the same telemetry: a nominal model
+$\hat f$ (the analytic generalized-momentum observer
+\cite{deluca2003actuator,haddadin2017robot,evangelisti2024datadriven}, or a
+learned Deep Lagrangian Network \cite{lutter2019delan}) and the residual
+$r = y - \hat f(x,u)$, read by a magnitude channel $R^{+}$ (Block~L1). Until
+now the two channels were asymmetric: $R^{-}$ tested the raw signal, $R^{+}$
+the residual. This part removes the asymmetry. Its content is: (\S\ref{sec:p2-defs})
+what an \emph{equivariant} nominal model is and how its defect is measured;
+(\S\ref{sec:p2-n31}) the residual inherits $H_0$ from the data, so
+Theorems~\ref{thm:n1-1} and~\ref{thm:n1-2} apply to the residual data element
+verbatim, and a non-equivariant model contaminates $H_0$ by a fifth term
+$\epsbar{model}$ in the $\varepsilon$-budget; (\S\ref{sec:p2-n32}) when the
+residual channel has more power than the raw channel; (\S\ref{sec:p2-learning})
+where the learned model sits --- the calibration-centring lemma, and an
+equivariant DeLaN obtained by mirror weight sharing, with $\delta_f = 0$ and
+the Lagrangian structure intact; (\S\ref{sec:p2-budget}) the updated
+$\varepsilon$-budget table and the three-channel architecture. Every
+proposition carries the Part~0 triple: proof (or complete skeleton),
+falsification condition, empirical anchor. Anchors point to the Sprint~6
+experiment family e13 (Section~\ref{sec:p2-anchors}); the numbers are
+back-filled from the e13 run.
+
+\subsection{Equivariant nominal models and the residual data element}
+\label{sec:p2-defs}
+
+\paragraph{Nominal model.}
+A nominal model is a map $\hat f : X \times U \to Y_r$ from (state, input)
+to a torque-valued output space $Y_r$ (for the Go2/M1: $Y_r = \R^{n_j}$, one
+row per actuated joint; the momentum observer adds six floating-base rows,
+Section~\ref{sec:p2-budget}). The measured counterpart of $\hat f$ is a
+known signal $y \in Y_r$ built from the telemetry --- for the joint rows,
+$y = \tau_{\mathrm{cmd}} + J(q)^{\top} f_{\mathrm{c}}$, commanded torque
+plus the contact-wrench term (Sprint~4, Finding~1: the \emph{commanded}
+torque is the right source; the measured output torque makes the residual
+physically consistent and blind to actuator gain/bias faults). The
+representation of $G$ on $Y_r$ is the torque representation,
+$\repR := \repU$ on the joint block (torques are conjugate to joint
+coordinates, Section~\ref{sec:reps}), extended by the polar/axial rules on
+any base rows.
+
+\begin{definition}[$G$-equivariant nominal model]
+\label{def:equiv-model}
+$\hat f$ is $G$-equivariant if
+\begin{equation}
+  \label{eq:equiv-model}
+  \hat f\bigl(\repX(g)\,x,\; \repU(g)\,u\bigr) \;=\; \repR(g)\, \hat f(x,u)
+  \qquad \forall g \in G,\ (x,u) \in X \times U .
+\end{equation}
+\end{definition}
+
+\begin{definition}[Equivariance defect]
+\label{def:defect}
+The (sup) defect of $\hat f$ on the operating region $\mathcal{K}$ is
+\begin{equation}
+  \label{eq:defect}
+  \delta_f \;:=\; \sup_{g \in G,\ (x,u) \in \mathcal{K}}
+  \bigl\| \hat f(\repX(g)x, \repU(g)u) - \repR(g)\hat f(x,u) \bigr\| ,
+\end{equation}
+and, writing $\delta_f(x,u) := \max_g \|\hat f(\repX(g)x,\repU(g)u) -
+\repR(g)\hat f(x,u)\|$ for the pointwise defect, the \emph{quantile defect}
+under the nominal per-sample law $P_{\mathrm{nom}}$ of $(x,u)$ is
+\begin{equation}
+  \label{eq:defect-q}
+  \delta_f^{(q)} \;:=\; \inf\bigl\{ t : P_{\mathrm{nom}}\bigl(\delta_f(x,u) \le t\bigr) \ge q \bigr\},
+  \qquad 0 < q \le 1 .
+\end{equation}
+Then $\delta_f^{(q)} \le \delta_f^{(1)} \le \delta_f$ for all $q$;
+$\delta_f^{(1)}$ is the essential supremum under $P_{\mathrm{nom}}$, and
+$\delta_f$ is finite for any continuous $\hat f$ on the compact
+$\mathcal{K}$. The sup version is not computable for a network; the
+experiments report $\delta_f^{(0.95)}$ estimated on held-out nominal
+validation samples (Sprint~6, Block~Q), and the corollaries below are stated
+in both currencies. Equivariant models have $\delta_f = 0$ by
+construction; for the mirror-shared DeLaN of \S\ref{sec:p2-learning} the
+defect is exactly zero even in floating point (Remark~\ref{rem:exact-fp}).
+\end{definition}
+
+\begin{definition}[Residual and residual data element]
+\label{def:residual-element}
+The residual is $r(t) := y(t) - \hat f(x(t), u(t)) \in Y_r$. Its per-cycle
+element is the phase-registered residual profile
+$R_k : S^1 \to Y_r$, $R_k(\theta) = r(t_k(\theta))$ --- in implementation an
+element of $\R^{d_r N}$ ($d_r$ residual rows on the $N$-point grid) ---
+obtained from $Z_k$ by the \emph{residual map} $\mathfrak{r}$,
+$(\mathfrak{r} Z)(\theta) := y(\theta) - \hat f(x(\theta), u(\theta))$,
+applied pointwise in phase. $\symgrp$ acts on residual elements as on data
+elements,
+\begin{equation}
+  \label{eq:res-action}
+  (\rho_R(\sigma) R)(\theta) \;=\; \repR(g)\, R(\theta + \Delta\theta),
+  \qquad \sigma = (g,\Delta\theta) \in \symgrp,
+\end{equation}
+so that for the trot $\rho_R := \rho_R(\sigma_*)$ is again an orthogonal
+involution and $R = \Pi^{+}R + \Pi^{-}R$ with $\Pi^{\pm} = \tfrac12(I \pm
+\rho_R)$, exactly as in \eqref{eq:rho-involution}. Wrapped and unfolded
+versions of the element are defined as for $Z_k$ (Remark~\ref{rem:wrap}) ---
+$\mathfrak{r}$ acts pointwise in phase and therefore commutes with both
+constructions.
+\end{definition}
+
+\begin{remark}[Causal residual generators]
+\label{rem:causal}
+The analytic momentum observer is not a pointwise map: $r = K_O(p - \hat p)$
+is a causal first-order filter of the data with cut-off $K_O$ (10\,Hz in
+Sprint~4, i.e.\ a memory of $\approx 16$\,ms against a $500$\,ms cycle).
+Everything below applies to a causal, time-invariant residual generator
+$\mathfrak{r}$ that is $G$-equivariant, with two bookkeeping caveats: the
+half-period shift commutes with a time-invariant filter, so
+$\rho_R(\sigma)\mathfrak{r} = \mathfrak{r}\rho(\sigma)$ holds up to the
+filter transient (negligible after a few time constants), and cross-cycle
+independence of $(R_k)$ is inherited only up to that memory --- the same
+exchangeability caveat that the raw data already carry
+(Remark~\ref{rem:exch}). Under Assumption~\ref{as:dyn} the observer built
+from the true model is $G$-equivariant: the equivariance of $M, C, g$ and of
+the contact Jacobians is the statement of A1 for the rigid-body model
+\cite{ordonez2025morphological}, and the observer is a fixed function of
+them.
+\end{remark}
+
+\begin{remark}[The model-free channel is the special case $\hat f \equiv 0$]
+\label{rem:model-free}
+With $\hat f \equiv 0$ the residual is the torque block of the raw data,
+$r = y$, and $R_k$ is the corresponding block of $Z_k$; the residual map is
+a coordinate projection, trivially equivariant. Every statement of Part~1
+about $Z_k$ is therefore the $\hat f \equiv 0$ instance of the statements
+below --- the model-free $R^{-}$ channel of Sprints~1--2 is the degenerate
+member of the family, and ``adding a model'' means replacing the projection
+by $y - \hat f$.
+\end{remark}
+
+\subsection{Proposition N3-1: the residual inherits \texorpdfstring{$H_0$}{H0}}
+\label{sec:p2-n31}
+
+\begin{proposition}[N3-1, residual inherits $H_0$]
+\label{prop:residual-h0}
+Suppose the residual generator $\mathfrak{r}$ is $\symgrp$-equivariant on
+cycle elements,
+\begin{equation}
+  \label{eq:r-equiv}
+  \mathfrak{r}\bigl(\rho(\sigma) Z\bigr) \;=\; \rho_R(\sigma)\, \mathfrak{r}(Z)
+  \qquad \forall \sigma \in \symgrp,
+\end{equation}
+which holds whenever $\hat f$ is $G$-equivariant \eqref{eq:equiv-model}
+(pointwise generators), or is the observer of Remark~\ref{rem:causal} under
+Assumption~\ref{as:dyn}. Then $H_0$ for the data element implies $H_0$ for
+the residual element:
+\begin{equation}
+  \label{eq:h0-residual}
+  \Law\bigl(\rho(\sigma) Z_k\bigr) = \Law(Z_k)\ \ \forall \sigma
+  \quad\Longrightarrow\quad
+  \Law\bigl(\rho_R(\sigma) R_k\bigr) = \Law(R_k)\ \ \forall \sigma \in \symgrp .
+\end{equation}
+Consequently Theorem~\ref{thm:n1-1} (exactness of the flip test) and
+Theorem~\ref{thm:n1-2} (isotypic detectability) hold verbatim for the
+sequence $(R_k)$ in place of $(Z_k)$: the flip test on residual elements is
+exact under $H_0$, and a fault is visible to it iff its residual signature
+has a nonzero sign component $\Pi^{-}\Delta_r \neq 0$.
+\end{proposition}
+
+\begin{proof}
+Equivariance of the residual map: for a pointwise generator,
+$(\mathfrak{r}\rho(\sigma)Z)(\theta) = \repY(g) y(\theta+\Delta\theta) -
+\hat f(\repX(g)x(\theta+\Delta\theta), \repU(g)u(\theta+\Delta\theta)) =
+\repR(g)\bigl[y - \hat f(x,u)\bigr](\theta+\Delta\theta) =
+(\rho_R(\sigma)\mathfrak{r}Z)(\theta)$ by \eqref{eq:equiv-model} (the
+$y$-block of $\repW$ restricted to $Y_r$ is $\repR$); compositions of
+equivariant maps are equivariant. Distributional invariance passes through
+an equivariant map: $\Law(\rho_R(\sigma)R_k) = \Law(\rho_R(\sigma)\mathfrak{r}(Z_k))
+= \Law(\mathfrak{r}(\rho(\sigma)Z_k)) = \push{\mathfrak{r}}\Law(\rho(\sigma)Z_k)
+= \push{\mathfrak{r}}\Law(Z_k) = \Law(R_k)$. Theorems~\ref{thm:n1-1}
+and~\ref{thm:n1-2} assume only invariance of each element and independence
+across elements; a measurable function of independent elements is
+independent, so both hypotheses transfer.
+\end{proof}
+
+\begin{corollary}[Unified two-channel structure]
+\label{cor:two-channel}
+Under the hypotheses of Proposition~\ref{prop:residual-h0}, decompose
+$R_k = \Pi^{+}R_k + \Pi^{-}R_k$. The $R^{-}$ statistic is a function of
+$\Pi^{-}R_k$ only ($D_k = R_k - \rho_R R_k = 2\Pi^{-}R_k$), the magnitude
+channel $R^{+}$ is a mirror-invariant function of $R_k$ whose informative
+part under bilateral faults is $\Pi^{+}R_k$ (Theorem~\ref{thm:n1-2}(i)), and
+$\|R_k\|^2 = \|\Pi^{+}R_k\|^2 + \|\Pi^{-}R_k\|^2$. The two channels are the
+two isotypic components of \emph{one} residual read by two rules ---
+symmetry breaking on $\Pi^{-}r$, magnitude on $\Pi^{+}r$ --- not two
+statistics on two signals.
+\end{corollary}
+
+\begin{proof}
+$\Pi^\pm$ are the orthogonal projectors of \eqref{eq:rho-involution} for
+$\rho_R$; the identities are algebra. That $R^{-}$ ignores $\Pi^{+}R$ is
+Theorem~\ref{thm:n1-2}(i) applied to $R_k$.
+\end{proof}
+
+\begin{remark}[Correction to the Part~0/1 asymmetry]
+Part~0 (Example~\ref{ex:bilateral}) and the Sprint~2/4 pipelines paired an
+$R^{-}$ test on the \emph{raw} signal with an $R^{+}$ score on the
+\emph{residual}. Corollary~\ref{cor:two-channel} shows the natural object is
+the residual for both: $R^{-}$ on $\Pi^{-}r$ inherits exactness from
+Proposition~\ref{prop:residual-h0} and, by Proposition~\ref{prop:power-gain},
+generally more power than on $y$; the raw-signal $R^{-}$ remains available
+as the $\hat f \equiv 0$ member (Remark~\ref{rem:model-free}), and it is the
+only member that needs no model at all --- which is why it stays the
+deployment fallback when no nominal model is trusted.
+\end{remark}
+
+\begin{corollary}[A non-equivariant model contaminates $H_0$]
+\label{cor:contamination}
+Let $\hat f$ have defect $\delta_f > 0$ and let $\hat f^{\mathrm{sym}} :=
+|G|^{-1}\sum_{g\in G} \repR(g)^{-1}\hat f(\repX(g)\cdot,\repU(g)\cdot)$ be its
+group average, which is $G$-equivariant. Then $\hat f = \hat f^{\mathrm{sym}}
++ \Delta\hat f$ with $\|\Delta \hat f(x,u)\| \le \tfrac{|G|-1}{|G|}\,\delta_f(x,u)$
+($=\tfrac12\delta_f(x,u)$ for $\mathbb{C}_2$), and the residual splits as
+$R_k = R_k^{\mathrm{sym}} - \Delta F(Z_k)$, where $R^{\mathrm{sym}}_k :=
+\mathfrak{r}^{\mathrm{sym}}(Z_k)$ satisfies $H_0$ exactly under the
+hypotheses of Proposition~\ref{prop:residual-h0} and $\Delta F(Z)(\theta) =
+\Delta\hat f(x(\theta),u(\theta))$. For the actual residual,
+\begin{equation}
+  \label{eq:eps-model}
+  \begin{aligned}
+  \dtv\bigl(\Law(\rho_R R_k), \Law(R_k)\bigr) \;&\le\;
+  \epsbar{model} + \epsbar{tot},\\
+  \epsbar{model} \;&:=\; \sup_{\sigma\in\symgrp}
+  \dtv\bigl(\Law(\mathfrak{r}(\rho(\sigma)Z_k)),\ \Law(\rho_R(\sigma)\mathfrak{r}(Z_k))\bigr),
+  \end{aligned}
+\end{equation}
+so $\epsbar{model}$ enters Lemma~\ref{lem:eps} as a fifth additive term and
+the level bound becomes $\mathbb{E}[\varphi] \le \alpha + \tfrac12
+(\epsbar{tot} + \epsbar{model})$ for the trot. It is controlled by the
+defect: writing $e(Z) := \mathfrak{r}(\rho Z) - \rho_R\mathfrak{r}(Z)$, one has
+$\|e(Z)(\theta)\| = \delta_f(x(\theta),u(\theta))$ pointwise, and
+\begin{equation}
+  \label{eq:c-delta}
+  \epsbar{model} \;\le\; c\,\delta_f,
+  \qquad
+  c \;:=\; \sup_{0 < \|v\|_{\infty} \le \delta_f}
+  \frac{\dtv\bigl(\Law(R_k^{\mathrm{sym}} + v),\ \Law(R_k^{\mathrm{sym}})\bigr)}{\|v\|_{\infty}} ,
+\end{equation}
+the total-variation modulus of the nominal residual law under bounded
+deterministic shifts (norm $\|v\|_\infty := \max_\theta \|v(\theta)\|$). If
+the residual carries an additive noise component $\zeta \sim
+\mathcal{N}(0, s^2 I_{d_r N})$ independent of the rest (e.g.\ torque
+measurement or actuator noise passed through the residual map), then
+$c \le \sqrt{N}/(s\sqrt{2\pi})$ and $\epsbar{model} \le \sqrt{N}\,\delta_f/(s\sqrt{2\pi})$.
+In the quantile currency, with $\delta_f^{(q)}$ of \eqref{eq:defect-q},
+\begin{equation}
+  \label{eq:c-delta-q}
+  \epsbar{model} \;\le\; N(1-q) + c\,\delta_f^{(q)} ,
+\end{equation}
+and if the quantile is taken over cycle elements ($\max_\theta$ of the
+pointwise defect) the first term is $(1-q)$. Equivariant models have
+$\epsbar{model} = 0$ by construction.
+\end{corollary}
+
+\begin{proof}
+Group averaging: by re-indexing the sum,
+\[
+  \repR(h)^{-1}\hat f^{\mathrm{sym}}(\repX(h)\cdot,\repU(h)\cdot)
+  = |G|^{-1}\sum_g \repR(hg)^{-1}\hat f(\repX(hg)\cdot,\repU(hg)\cdot) = \hat f^{\mathrm{sym}},
+\]
+and $\Delta\hat f = |G|^{-1}\sum_{g \neq e}[\hat f -
+\repR(g)^{-1}\hat f(\repX(g)\cdot,\repU(g)\cdot)]$ has $|G|-1$ terms each
+bounded by $\delta_f(x,u)$ (orthogonality of $\repR(g)$). The split of $R_k$
+is linearity of $\mathfrak{r}$ in $\hat f$, and $R^{\mathrm{sym}}_k$
+inherits $H_0$ by Proposition~\ref{prop:residual-h0}. For
+\eqref{eq:eps-model}: $\dtv(\Law(\rho_R R), \Law(R)) \le \dtv(\Law(\rho_R
+\mathfrak{r}Z), \Law(\mathfrak{r}\rho Z)) + \dtv(\Law(\mathfrak{r}\rho Z),
+\Law(\mathfrak{r} Z))$; the second term is at most $\dtv(\Law(\rho Z),
+\Law(Z)) \le \epsbar{tot}$ by the data-processing inequality and
+Lemma~\ref{lem:eps}, the first is $\epsbar{model}$ by definition. The level
+statement is Lemma~\ref{lem:eps}(ii) with the enlarged budget. For
+\eqref{eq:c-delta}: $\mathfrak{r}(\rho Z) = \rho_R \mathfrak{r}(Z) + e(Z)$
+with $e(Z)(\theta) = \repR\hat f(x,u) - \hat f(\repX x,\repU u)$ evaluated at
+$\theta + \Delta\theta$, of norm $\delta_f(x,u) \le \delta_f$; conditioning
+on the value of $e$ (a bounded, $Z$-measurable shift) and using
+$\Law(\rho_R\mathfrak{r} Z) = \Law(\rho_R R^{\mathrm{sym}} - \rho_R\Delta F(Z))$
+together with the definition of $c$ as the worst-case modulus over shifts of
+sup-norm at most $\delta_f$ gives $\epsbar{model} \le c\,\delta_f$ (the
+shift $-\rho_R \Delta F(Z)$ has sup-norm $\le \tfrac12\delta_f$ and $e$ at
+most $\delta_f$; the modulus is monotone in the shift). The Gaussian
+constant: for $\zeta \sim \mathcal{N}(0,s^2 I_n)$ and any $v \in \R^n$,
+$\dtv(\mathcal{N}(v,s^2 I), \mathcal{N}(0,s^2 I)) = 2\Phi(\|v\|_2/2s) - 1 \le
+\|v\|_2/(s\sqrt{2\pi})$, and $\|v\|_2 \le \sqrt{N}\,\|v\|_\infty$ for a
+profile of $N$ phase samples; conditioning on everything but $\zeta$ and
+averaging (convexity of $\dtv$) gives the bound. For \eqref{eq:c-delta-q}:
+the event $\{\exists\theta : \delta_f(x(\theta),u(\theta)) > \delta_f^{(q)}\}$
+has probability at most $N(1-q)$ by a union bound over the $N$ grid points
+(each marginal is nominal); on its complement the previous argument applies
+with $\delta_f^{(q)}$ in place of $\delta_f$, and total variation splits over
+the two events.
+\end{proof}
+
+\paragraph{Falsification condition (N3-1).}
+Assumption~\ref{as:dyn} failing (the true dynamics not $G$-equivariant, e.g.\
+a manufacturing asymmetry above $\tau_{\mathrm{dyn}}$) breaks $H_0$ for
+$Z_k$ and hence for $R_k$ --- with an \emph{equivariant} $\hat f$ the
+residual then carries the plant asymmetry, which no model choice can remove
+(the observer built from the symmetrized model is equivariant, the plant is
+not). The degradation path is Part~0's: $H_0'$ on the residual (calibration
+of the nominal asymmetry level $\nu_0$; for the residual this is the
+centring of Lemma~\ref{lem:centring}). Empirical anchor: e13b (size of the
+residual flip test under $H_0$ against $\delta_f^{(0.95)}$ of the model:
+plain DeLaN ladder vs equivariant DeLaN vs analytic residual;
+Section~\ref{sec:p2-anchors}). What would falsify the corollary's mechanism
+is a plain model with large measured $\delta_f^{(0.95)}$ whose residual flip
+test keeps nominal size at all $K$; what would falsify
+Proposition~\ref{prop:residual-h0} is an equivariant residual whose flip
+test inflates although the raw-signal test does not.
+
+\subsection{Proposition N3-2: power gain of the residual channel}
+\label{sec:p2-n32}
+
+\paragraph{Setting.}
+Write the torque-block of the data as $y = f^{*}(x,u) + \zeta$ with $f^{*}$
+the true nominal map and $\zeta$ the fluctuation not explained by the state
+(measurement and actuator noise, unmodelled contact softness), and the model
+as $\hat f = f^{*} + m$ with model error $m$. A fault $\varphi$ shifts the
+nominal mean trajectory of the data element by $\Delta_y(\varphi)$ (torque
+block) and of the residual element by $\Delta_r(\varphi)$; both are profiles
+in $\R^{d_r N}$ and both decompose isotypically. Two channel-wise scalars
+summarize what a standardized energy statistic sees:
+\begin{equation}
+  \label{eq:snr}
+  \mathrm{SNR}_y \;:=\; \sum_{c} \frac{(\Pi^{-}\Delta_y)_c^{2}}{\operatorname{Var}(\Pi^{-}y)_c},
+  \qquad
+  \mathrm{SNR}_r \;:=\; \sum_{c} \frac{(\Pi^{-}\Delta_r)_c^{2}}{\operatorname{Var}(\Pi^{-}r)_c},
+\end{equation}
+sums over the residual rows $c$ (phase samples included in the index), where
+$\operatorname{Var}(\Pi^{-}\cdot)_c$ is the nominal per-channel variance of
+the sign component --- the per-channel standardization of the deployed
+statistic (Section~\ref{sec:audit}: pooled flip-invariant scale of the
+calibration cycles).
+
+\begin{proposition}[N3-2, power gain of the residual channel]
+\label{prop:power-gain}
+Consider location alternatives as in Theorem~\ref{thm:n1-2}(ii) with
+Gaussian fluctuations, the standardized paired-energy statistic, and $K$
+cycles. Then:
+\begin{enumerate}
+\item[(a)] \emph{(fault-model commutation)} If the fault acts \emph{after}
+the command in the actuation chain --- gain $\kappa$, bias $b$, or a
+friction change on joint $j$, with $y$ built from the \emph{commanded}
+torque --- and the closed-loop state trajectory is unchanged to first order,
+then
+\begin{equation}
+  \label{eq:delta-r}
+  \Delta_r \;=\; \Delta_y \;-\; \bigl[\hat f(x_{\varphi},u_{\varphi}) - \hat f(x_{\mathrm{nom}},u_{\mathrm{nom}})\bigr]
+  \;=\; \Delta_y \quad\text{(response term zero)},
+\end{equation}
+and the residual signature is the fault's own torque footprint:
+$\Delta_r = (1-\kappa)\,\bar\tau_j(\theta)\,e_j$, $\Delta_r = -b\,e_j$,
+$\Delta_r = -\Delta\mu\,\operatorname{sign}\bar{\dot q}_j(\theta)\,e_j$
+respectively (the rank-1 dictionary of the N3 certificate, Sprint~4).
+\item[(b)] \emph{(variance removal)} If the model explains part of the
+nominal antisymmetric fluctuation, $\operatorname{Var}(\Pi^{-}r)_c \le
+\operatorname{Var}(\Pi^{-}y)_c$ for every row $c$ --- which holds when
+$m + \zeta$ has less antisymmetric variance than $f^{*}(x,u) + \zeta$, i.e.\
+when the state-driven part of the torque fluctuation dominates the model
+error --- then, under (a),
+\begin{equation}
+  \label{eq:snr-ratio}
+  \frac{\mathrm{SNR}_r}{\mathrm{SNR}_y}
+  \;=\;
+  \frac{\sum_c (\Pi^-\Delta_y)_c^2 / \operatorname{Var}(\Pi^-r)_c}
+       {\sum_c (\Pi^-\Delta_y)_c^2 / \operatorname{Var}(\Pi^-y)_c}
+  \;\ge\; \min_{c : (\Pi^-\Delta_y)_c \neq 0} \frac{\operatorname{Var}(\Pi^-y)_c}{\operatorname{Var}(\Pi^-r)_c}
+  \;\ge\; 1 ,
+\end{equation}
+and since the power of the standardized paired-energy flip test is
+increasing in the noncentrality $K \cdot \mathrm{SNR}$
+(Theorem~\ref{thm:n1-2}(ii)), the residual channel is at least as powerful
+as the raw torque channel at every $K$, with the gain given by the share of
+nominal antisymmetric variance that $\hat f$ explains.
+\item[(c)] \emph{(general faults, conditional)} Without (a) the response term
+in \eqref{eq:delta-r} is present, $\Pi^-\Delta_r = \Pi^-\Delta_y -
+\Pi^-\Delta_{\hat f}$, and \eqref{eq:snr-ratio} holds with
+$(\Pi^-\Delta_y)_c^2$ replaced by $(\Pi^-\Delta_r)_c^2$ in the numerator: the
+residual channel wins iff the response term does not cancel the fault
+footprint by more than the variance factor,
+$\sum_c (\Pi^-\Delta_r)_c^2/\operatorname{Var}(\Pi^-r)_c \ge
+\sum_c (\Pi^-\Delta_y)_c^2/\operatorname{Var}(\Pi^-y)_c$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(a) With $y = \tau_{\mathrm{cmd}} + J^\top f_{\mathrm{c}}$ and the physics
+$\tau_{\mathrm{app}} + J^\top f_{\mathrm{c}} = f^{*}(x,u) + \zeta$, the
+residual is $r = \tau_{\mathrm{cmd}} - \tau_{\mathrm{app}} - m(x,u) + \zeta$;
+gain and bias act on $\tau_{\mathrm{app}} = \kappa\tau_{\mathrm{cmd}} + b$
+and a friction change adds $-\Delta\mu\operatorname{sign}\dot q_j$ to the
+torque balance, so their footprint enters $r$ additively and $\Delta_r$ is
+their mean profile; $\Delta_y$ is the same footprint (the torque block of
+$Z$ shifts by the same amount when the state is unchanged) and
+$\hat f(x_\varphi,u_\varphi) = \hat f(x_{\mathrm{nom}},u_{\mathrm{nom}})$
+by the first-order assumption. (b) is a termwise comparison of the two sums
+in \eqref{eq:snr}: each term of $\mathrm{SNR}_r$ is the corresponding term
+of $\mathrm{SNR}_y$ times $\operatorname{Var}(\Pi^-y)_c/\operatorname{Var}(\Pi^-r)_c
+\ge 1$; monotonicity of power in the noncentrality is the Gaussian
+noncentral-$\chi^2$ (or its permutation analogue) monotonicity in the
+location model. (c) is the same computation without the identification
+$\Delta_r = \Delta_y$.
+\end{proof}
+
+\begin{remark}[When the residual is \emph{not} better]
+\label{rem:residual-weaker}
+Three mechanisms make the residual channel weaker than the raw channel, and
+each is a case of (c): (i) \emph{closed-loop response} --- a gain fault
+changes the tracking error, the controller changes $\tau_{\mathrm{cmd}}$ and
+the trajectory, and $\hat f$ responds; if $\Pi^-\Delta_{\hat f}$ is aligned
+with $\Pi^-\Delta_y$ the footprint is partly cancelled (the residual sees the
+\emph{unexplained} torque, and a compensating controller moves part of the
+fault into explained torque); (ii) \emph{faults outside the torque balance}
+--- an encoder bias shifts the raw $q$-channel by $b$ directly, while it
+reaches the residual only through $\hat f(q+b) - \hat f(q) \approx
+\partial_q\hat f\, b$, typically much smaller after standardization; (iii)
+\emph{channel count} --- the raw element carries $q,\dot q$, IMU and contact
+rows that respond to the fault kinematically, the residual only its $d_r$
+torque rows, so the system-level comparison of the two channels (all raw
+channels vs all residual rows, as run in e13a) is not the row-wise
+comparison of \eqref{eq:snr-ratio}. Any grid cell in which the residual
+version is weaker is to be reported as an instance of this remark with the
+mechanism identified, not tuned away.
+\end{remark}
+
+\paragraph{Falsification condition and empirical anchor (N3-2).}
+Anchor: e13a --- residual $R^{-}$ (analytic and equivariant DeLaN) versus
+raw-signal $R^{-}$ on the low-SNR grid (gain $1-\kappa \in \{0.01, 0.02,
+0.05, 0.1\}$, bias $\{0.05, 0.1, 0.2, 0.5\}$\,N\,m, friction $\times\{1.1,
+1.2, 1.5\}$ on LF-HFE/KFE, $R = 50$), with the nominal variance
+decomposition $\operatorname{Var}(\Pi^-y)_c$ vs $\operatorname{Var}(\Pi^-r)_c$
+row by row and the Mahalanobis magnitude reference
+(Section~\ref{sec:p2-anchors}). The proposition is falsified in a cell if
+the variance condition (b) holds, the fault is of type (a), and the residual
+channel is nevertheless less powerful; a residual loss with the variance
+condition violated, or for a fault of type (c), is the conditional case of
+Remark~\ref{rem:residual-weaker}.
+
+\subsection{Where the learned model sits (N3 updated)}
+\label{sec:p2-learning}
+
+The DK isolability certificate of Sprint~4 (\texttt{geofdi.isolation.n3};
+\cite{yu2015daviskahan}) reads the residual through a rank-1 signature
+dictionary and a perturbation constant $\beta_{\mathrm{op}}^2$, the top
+eigenvalue of the second moment of the \emph{calibration-centred} nominal
+residual profiles. Corollary~\ref{cor:two-channel} places this constant: it
+is measured on the fluctuating part of $R_k$ --- both isotypic components,
+since the certificate reads profiles, not tests --- and it is at once the
+width of the $R^{+}$ conformal calibration (the nominal residual magnitude
+the conformal $p$-value is compared with) and the perturbation term of the
+certificate. Two things must be said about it: why systematic model error
+does not enter it (Sprint~4, Finding~4), and how the learned model is made
+equivariant so that Proposition~\ref{prop:residual-h0} applies to it.
+
+\begin{lemma}[Calibration centring removes systematic model error]
+\label{lem:centring}
+Let the residual element decompose as $R_k = \bar m + \Xi_k$ where
+$\bar m \in \R^{d_r N}$ is a deterministic gait-locked profile (systematic
+model error and observer floor: a function of phase through the nominal
+mean trajectory) and $\Xi_k$ are i.i.d.\ zero-mean fluctuations with
+covariance $\Sigma_\Xi$; under a fault of magnitude $m$ with signature
+$s_c$, $R_k = \bar m + m\,s_c + \Xi_k$. Let $\hat{\bar m} :=
+K_{\mathrm{cal}}^{-1}\sum_{k \le K_{\mathrm{cal}}} R_k$ be the calibration
+mean. Then the centred profiles $\tilde R_k := R_k - \hat{\bar m}$ satisfy:
+(i) under nominal operation $\mathbb{E}\tilde R_k = 0$ and
+$\operatorname{Var}(\tilde R_k) = \Sigma_\Xi (1 + K_{\mathrm{cal}}^{-1})$, so
+$\beta_{\mathrm{op}}^2 = \lambda_{\max}(\Sigma_\Xi)(1+K_{\mathrm{cal}}^{-1})$
+does not depend on $\bar m$; (ii) under the fault the population second
+moment of $\tilde R_k$ is $m^2 s_c s_c^\top + \Sigma_\Xi(1+K_{\mathrm{cal}}^{-1})$,
+which is the certificate's setting with $\beta_{\mathrm{op}}^2$ as in (i)
+and the fault signature intact; (iii) for the $R^{-}$ channel, centring
+removes the \emph{first-order} contamination of Corollary~\ref{cor:contamination}:
+$\Pi^{-}\tilde R_k = \Pi^{-}\Xi_k - \Pi^{-}(\hat{\bar m} - \bar m)$ has mean
+zero even if $\Pi^{-}\bar m \neq 0$ (non-equivariant $\hat f$), but the flip
+test on $\tilde R_k$ is exact only if $\Law(\rho_R \Xi_k) = \Law(\Xi_k)$
+--- second-order asymmetries of a non-equivariant model (mirror-unequal
+variances of the fluctuation) survive centring --- and the estimation error
+$\hat{\bar m} - \bar m = O_p(K_{\mathrm{cal}}^{-1/2})$ is a common offset of
+all monitored cycles, so the size after centring is nominal only for
+$K \ll K_{\mathrm{cal}}$.
+\end{lemma}
+
+\begin{proof}
+(i)--(ii): $\hat{\bar m} = \bar m + \bar\Xi_{\mathrm{cal}}$ with
+$\bar\Xi_{\mathrm{cal}}$ independent of the monitored $\Xi_k$ and of
+covariance $\Sigma_\Xi/K_{\mathrm{cal}}$; the systematic profile cancels
+identically and the variances add. (iii): $\rho_R \tilde R_k \eqdist \tilde R_k$
+requires $\Law(\rho_R\Xi_k - \rho_R\bar\Xi_{\mathrm{cal}}) = \Law(\Xi_k -
+\bar\Xi_{\mathrm{cal}})$, which holds iff the fluctuation law is invariant;
+a common offset $-\Pi^-\bar\Xi_{\mathrm{cal}}$ of variance
+$\Sigma^-/K_{\mathrm{cal}}$ added to all $K$ paired differences enters the
+paired-energy statistic as a mean shift of that size, i.e.\ a noncentrality
+of order $K/K_{\mathrm{cal}}$ in standardized units.
+\end{proof}
+
+This is the mechanism behind Sprint~4, Finding~4 (degrading a DeLaN by
+sample size raised $\hat\beta$ five-fold but $\beta_{\mathrm{op}}$ only by
+$1.7\times$: the systematic part was calibrated away), and it is Part~0's
+$H_0'$ route applied to residuals: centring is the calibration of
+$\nu_0$. Its limits --- second-order asymmetry, and the $K/K_{\mathrm{cal}}$
+term --- are why the equivariant model of the next proposition is preferable
+to centring a non-equivariant one for the $R^{-}$ channel: with
+$\delta_f = 0$ nothing needs to be calibrated away.
+
+\begin{proposition}[Equivariant DeLaN by mirror weight sharing]
+\label{prop:equiv-delan}
+Let $\hat f_0 : \R^{3}\times\R^{3}\times\R^{3}\times\R^{3} \to \R^{3}$,
+$(q,\dot q,\ddot q, a) \mapsto \tau$, be a leg Lagrangian network
+\cite{lutter2019delan} for the template leg (LF, resp.\ LH): with
+$M_0(q) = L(q)L(q)^\top + \epsilon I$ ($L$ lower triangular with
+softplus-positive diagonal), potential $V_0(q;a)$ parametrized by the trunk
+specific force $a$, and fixed passive terms $b\dot q + f\tanh(\dot q/c)$
+($b, f$ diagonal, $c > 0$),
+\begin{equation}
+  \label{eq:delan-template}
+  \hat f_0(q,\dot q,\ddot q,a) \;=\; M_0(q)\ddot q + C_0(q,\dot q)\dot q +
+  \nabla_q V_0(q;a) + b\dot q + f\tanh(\dot q/c),
+\end{equation}
+$C_0$ the Christoffel matrix of $M_0$. Let $S = \operatorname{diag}(s_{\mathrm{HAA}},
+s_{\mathrm{HFE}}, s_{\mathrm{KFE}})$ be the joint-sign matrix of the sagittal
+reflection (Table~\ref{tab:joint-signs}; $S = \operatorname{diag}(-1,1,1)$
+in the uniform-axis convention) and $E = \operatorname{diag}(1,-1,1)$ its
+action on the specific force. Define the mirrored leg's model by
+\begin{equation}
+  \label{eq:mirror-template}
+  \hat f_{\sigma}(q,\dot q,\ddot q,a) \;:=\; S\, \hat f_0\bigl(Sq,\; S\dot q,\; S\ddot q,\; Ea\bigr),
+\end{equation}
+and the four-leg model by $\hat F := (\hat f_{\mathrm{LF}}, \hat f_{\mathrm{RF}},
+\hat f_{\mathrm{LH}}, \hat f_{\mathrm{RH}}) = (\hat f_{0}^{F}, (\hat f_0^{F})_\sigma,
+\hat f_0^{H}, (\hat f_0^{H})_\sigma)$ with one template per front/hind pair.
+Then:
+\begin{enumerate}
+\item[(i)] $\hat F$ is exactly $\mathbb{C}_2$-equivariant: $\hat F(\repX(\gs)z)
+= \repR(\gs)\hat F(z)$ for all $z$, so $\delta_f = 0$.
+\item[(ii)] $\hat f_\sigma$ is the inverse dynamics of the Lagrangian
+$L_\sigma(q,\dot q;a) := L_0(Sq, S\dot q; Ea)$: its mass matrix
+$M_\sigma(q) = S M_0(Sq) S$ is symmetric positive definite, its potential is
+$V_\sigma(q;a) = V_0(Sq;Ea)$, its Coriolis matrix is the Christoffel matrix
+of $M_\sigma$, and the passive terms are unchanged. The mirrored leg
+therefore has the same physical structure as the template (positive
+definiteness, Christoffel consistency $\dot M_\sigma = C_\sigma + C_\sigma^\top$,
+conservative potential) --- inherited, not re-learned.
+\item[(iii)] With two templates the construction enforces exactly the
+morphological symmetry $G = \mathbb{C}_2$ of a robot whose front and hind
+pairs differ (M1, Go2); a single template for all four legs
+(\texttt{n\_templates}$=1$) additionally imposes a front--hind
+identification that is \emph{not} a symmetry of these robots and is used
+only as an ablation.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $\repX(\gs)$ sends the LF data $(q,\dot q,\ddot q)$ to the RF slot with
+the signs $S$ and $a \mapsto Ea$ (Section~\ref{sec:reps}), and $\repR(\gs)$
+sends the LF torque to the RF slot with $S$. The RF component of
+$\hat F(\repX(\gs)z)$ is $\hat f_\sigma(Sq_{\mathrm{LF}}, S\dot q_{\mathrm{LF}},
+S\ddot q_{\mathrm{LF}}, Ea) = S\hat f_0(S^2 q_{\mathrm{LF}}, \dots, E^2 a) =
+S\hat f_0(q_{\mathrm{LF}},\dots,a) = S\hat f_{\mathrm{LF}}(z)$, which is the RF
+component of $\repR(\gs)\hat F(z)$; the LF component of $\hat F(\repX(\gs)z)$
+is $\hat f_0(Sq_{\mathrm{RF}}, \dots, Ea) = S\cdot S\hat f_0(Sq_{\mathrm{RF}},\dots,Ea)
+= S\hat f_\sigma(q_{\mathrm{RF}},\dots,a) = S \hat f_{\mathrm{RF}}(z)$, the LF
+component of $\repR(\gs)\hat F(z)$; the hind pair is identical
+($S^2 = E^2 = I$). (ii) With $q' := Sq$ (so $\dot q' = S\dot q$, $S = S^\top =
+S^{-1}$), $L_\sigma(q,\dot q;a) = \tfrac12 \dot q'^\top M_0(q')\dot q' -
+V_0(q';Ea) = \tfrac12\dot q^\top S M_0(Sq) S\,\dot q - V_0(Sq;Ea)$, so
+$M_\sigma = S M_0(S\cdot) S$: a congruence of an SPD matrix by an
+orthogonal matrix, hence SPD, and $V_\sigma(q;a) = V_0(Sq;Ea)$. By the chain
+rule $\nabla_q V_\sigma = S(\nabla_{q'}V_0)(Sq;Ea)$ and the Euler--Lagrange
+expression transforms as $\frac{d}{dt}\partial_{\dot q}L_\sigma -
+\partial_q L_\sigma = S\bigl[\frac{d}{dt}\partial_{\dot q'}L_0 -
+\partial_{q'}L_0\bigr](Sq,S\dot q,S\ddot q)$, i.e.\ the inverse dynamics of
+$L_\sigma$ is $S$ times the inverse dynamics of $L_0$ at the mirrored
+arguments; the Christoffel matrix of $M_\sigma$ is $C_\sigma(q,\dot q) =
+S\,C_0(Sq,S\dot q)\,S$ (Christoffel symbols are built from first
+derivatives of $M$, and $\partial_{q_i} = s_i\partial_{q'_i}$), so
+$C_\sigma\dot q = S C_0(Sq,S\dot q)S\dot q$, matching \eqref{eq:mirror-template}
+term by term. Passive terms: $S b S\dot q = b\dot q$ for diagonal $b$, and
+$S f\tanh(S\dot q/c) = f\tanh(\dot q/c)$ because $\tanh$ is odd and $S$
+diagonal with entries $\pm 1$. Since the DeLaN forward pass computes exactly
+the Euler--Lagrange expression of its template
+\cite{lutter2019delan}, \eqref{eq:mirror-template} \emph{is} the inverse
+dynamics of $L_\sigma$. (iii) The reflection pairs LF$\leftrightarrow$RF and
+LH$\leftrightarrow$RH and nothing else (Section~\ref{sec:m1}); a shared
+template across the pairs would identify front and hind leg subsystems.
+\end{proof}
+
+\begin{remark}[Exactly zero, also in floating point]
+\label{rem:exact-fp}
+$S$ and $E$ are signed permutations, and multiplication by $\pm 1$ is exact
+in floating point; the defect $\hat f_\sigma(\repX z) - S\hat f_0(z)$ is
+computed by evaluating the \emph{same} network on bitwise-identical inputs
+($S^2 q = q$ exactly), so $\delta_f$ measured on data is $0$ to the last
+bit --- not $10^{-6}$ (Sprint~6 unit tests \texttt{tests/test\_delan\_equiv.py}
+and the $\delta_f$ column of Block~Q). Weight sharing across a leg orbit is
+the discrete-group instance of group-equivariant architectures
+\cite{cohen2016group,weiler2019general,finzi2021practical} --- a group
+convolution over the leg index --- and is how morphological symmetries are
+imposed on learned dynamics in \cite{ordonez2025morphological}; here the
+convolution has a single orbit per template and no learnable mixing, so
+equivariance costs nothing and no basis of equivariant maps has to be
+solved for.
+\end{remark}
+
+\begin{remark}[Why not a soft (PINN-style) penalty]
+\label{rem:no-soft}
+Physical consistency comes from the architecture (DeLaN: $M = LL^\top +
+\epsilon I$ is positive definite for every input, the Coriolis term is the
+Christoffel term of that $M$), symmetry consistency from weight sharing.
+Neither is a loss term, and for a reason that matters to the theory: a
+penalty $\lambda\,\mathbb{E}\|\hat f(\rho z) - \rho\hat f(z)\|^2$ makes the
+defect small \emph{on the training distribution and in expectation}, but
+gives no bound on $\delta_f$ (nor on $\delta_f^{(q)}$ off the training
+support), so $\epsbar{model}$ in Corollary~\ref{cor:contamination} cannot be
+written down; likewise a positivity penalty on $M$ can be violated at test
+time, and Proposition~\ref{prop:equiv-delan}(ii) would become a statement
+about training loss rather than about the model. The residual $R^{-}$ test
+is a claim about the null \emph{law}; only hard structure gives it something
+to inherit.
+\end{remark}
+
+\paragraph{Falsification condition and empirical anchor (equivariant DeLaN).}
+The proposition is exact; what is empirical is whether the constraint costs
+accuracy: the anchor is Block~Q --- validation RMSE of the equivariant
+ladder (full, $50$k, $10$k, $2$k samples per leg) against the plain ladder,
+and $\delta_f^{(0.95)}$ of both (Section~\ref{sec:p2-anchors}). A
+validation RMSE more than $10\,\%$ worse than the plain model would indicate
+that a shared template lacks capacity for the two legs of a pair (or that
+the pair is not physically mirror-symmetric --- an A1 signal on the training
+world), and would be reported as such.
+
+\subsection{Updated \texorpdfstring{$\varepsilon$}{epsilon}-budget and the three-channel architecture}
+\label{sec:p2-budget}
+
+Table~\ref{tab:degradation2} extends the falsification--degradation map of
+Table~\ref{tab:degradation} by the model row. Figure~\ref{fig:architecture}
+draws the three readouts of the residual --- $R^{-}$ on $\Pi^{-}r$, the
+joint residual rows (with $\Pi^{+}r$ as their magnitude reading and the
+per-leg deviation for left/right attribution), and the six floating-base
+rows of the analytic observer (payload and other base-level nuisances,
+Sprint~4 Finding~2) --- and marks the one learned component. Everything
+downstream of $\hat f$ has zero trainable parameters: the flip test, the
+conformal calibration, the e-process/e-CUSUM layer, and the isolation rules
+(pair--joint from the $R^{-}$ ranking, left/right from the joint rows,
+payload from the base rows).
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}p{0.17\linewidth}p{0.36\linewidth}p{0.40\linewidth}@{}}
+\toprule
+term & falsification signal & degradation path \\
+\midrule
+$\epsbar{dyn}$, $\epsbar{ctrl}$, $\epsbar{env}$, $\epsbar{noise}$ &
+as in Table~\ref{tab:degradation} & as in Table~\ref{tab:degradation};
+all four pass into the residual unchanged (data-processing inequality) \\
+$\epsbar{model}$ (new) &
+$\delta_f^{(0.95)} > 0$ on mirrored validation data (Block~Q); residual
+flip-test size above the band on nominal data while the raw test is in band
+(e13b) &
+(1) replace $\hat f$ by its equivariant version (weight sharing,
+Proposition~\ref{prop:equiv-delan}): $\epsbar{model} = 0$;
+(2) calibration-centre the residual (Lemma~\ref{lem:centring}): first-order
+removal, $H_0'$ on residuals; (3) budget it: level
+$\alpha + \tfrac12(\epsbar{tot} + \epsbar{model})$ with
+\eqref{eq:c-delta}--\eqref{eq:c-delta-q} \\
+$\epsbar{chir}$ ($\nu_0$) & Gate~1b & unchanged: $H_0'$ on the residual
+(centring is its calibration) \\
+residual memory & causal generator with memory comparable to the cycle &
+unfolded elements / block flips (Remark~\ref{rem:causal}) \\
+\bottomrule
+\end{tabular}
+\caption{Falsification--degradation map extended by the model term of
+Corollary~\ref{cor:contamination}. The four Part~0 terms are unchanged; the
+new term is zero for equivariant nominal models by construction.}
+\label{tab:degradation2}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw, rounded corners, align=center, minimum height=8mm, inner sep=3pt, text width=40mm},
+  learn/.style={box, fill=orange!20, draw=orange!70!black, thick, text width=46mm},
+  zero/.style={box, fill=blue!7},
+  data/.style={box, fill=gray!12},
+  arr/.style={-latex, thick},
+  node distance=7mm and 6mm]
+  \node[data] (tele) {telemetry $(x,u,y)$\\ phase registration $\to Z_k$};
+  \node[learn, right=of tele] (model) {\textbf{nominal model $\hat f$}\\ analytic (Pinocchio observer, A1)\\ or learned: equivariant DeLaN\\ (mirror weight sharing, $\delta_f = 0$)};
+  \node[data, right=of model] (res) {residual element $R_k = \mathfrak{r}(Z_k)$\\ $=\Pi^{+}R_k + \Pi^{-}R_k$ (+ base rows)};
+  \node[zero, below=of model, xshift=-46mm] (rminus) {$R^{-}$: flip test on $\Pi^{-}R_k$\\ (Hemerik--Goeman, exact under $H_0$)};
+  \node[zero, right=of rminus] (rplus) {joint rows: conformal on $\Pi^{+}R_k$\\ ($R^{+}$ magnitude, per-leg deviation)};
+  \node[zero, right=of rplus] (base) {floating-base rows (6)\\ payload / base-level nuisances};
+  \node[zero, below=of rplus, text width=70mm] (seq) {sequential layer: e-process / e-CUSUM (Ville)};
+  \node[zero, below=of seq, text width=118mm] (iso) {isolation rules: pair--joint from the $R^{-}$ ranking $\cdot$ left/right from the joint rows $\cdot$ payload from the base rows};
+  \node[data, left=4mm of rminus, text width=30mm] (mf) {model-free path $\hat f \equiv 0$:\\ $R_k = $ torque block of $Z_k$};
+  \draw[arr] (tele) -- (model);
+  \draw[arr] (model) -- (res);
+  \draw[arr] (res.south) -- ++(0,-3.5mm) -| (rminus.north);
+  \draw[arr] (res.south) -- ++(0,-3.5mm) -| (rplus.north);
+  \draw[arr] (res.south) -- ++(0,-3.5mm) -| (base.north);
+  \draw[arr] (rminus.south) -- ++(0,-3.5mm) -| (seq.west);
+  \draw[arr] (rplus.south) -- (seq.north);
+  \draw[arr] (base.south) -- ++(0,-3.5mm) -| (seq.east);
+  \draw[arr] (seq) -- (iso);
+  \draw[arr, dashed] (tele.south) -- ++(0,-3.5mm) -| (mf.north);
+  \draw[arr, dashed] (mf.east) -- (rminus.west);
+  \node[below=2mm of iso, align=center, text width=150mm] {\textcolor{orange!70!black}{orange: the only learned component (the nominal model)}\\ blue: zero trainable parameters (test, calibration, sequential layer, isolation rules)};
+\end{tikzpicture}}
+\caption{Three-channel architecture on the residual data element. The
+nominal model is the only learned component (or the analytic observer); the
+$R^{-}$ test reads $\Pi^{-}R_k$, the magnitude channel reads $\Pi^{+}R_k$ and
+the joint rows, the base rows are the payload channel; the sequential and
+isolation layers are fixed rules. The model-free $R^{-}$ of Sprints~1--2 is
+the dashed path $\hat f \equiv 0$.}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{Empirical anchors (Sprint~6, e13; back-filled from the run)}
+\label{sec:p2-anchors}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}p{0.20\linewidth}p{0.30\linewidth}p{0.42\linewidth}@{}}
+\toprule
+statement & experiment & status / reading \\
+\midrule
+Prop.~\ref{prop:residual-h0}, Cor.~\ref{cor:contamination} &
+e13b: size of the residual flip test under $H_0$ vs $\delta_f^{(0.95)}$
+(plain DeLaN ladder, equivariant ladder, analytic) &
+\pending{back-fill from e13b} \\
+Prop.~\ref{prop:power-gain} &
+e13a: residual vs raw $R^{-}$ power on the low-SNR grid; variance
+decomposition $\operatorname{Var}(\Pi^-y)$ vs $\operatorname{Var}(\Pi^-r)$;
+Mahalanobis reference &
+\pending{back-fill from e13a} \\
+Cor.~\ref{cor:two-channel} + Thm.~\ref{thm:n1-2} on residuals &
+e13c: e04c groups (single / bilateral equal / unequal) with $R^{-}$ on
+$\Pi^{-}r$ and $R^{+}$ on $\Pi^{+}r$; three-channel isolation confusion &
+\pending{back-fill from e13c} \\
+Prop.~\ref{prop:equiv-delan} &
+Block~Q: $\delta_f^{(0.95)}$ and validation RMSE, plain vs equivariant
+ladders &
+\pending{back-fill from Block~Q} \\
+\bottomrule
+\end{tabular}
+\caption{Empirical anchors of Part~2. Entries are filled from the e13 run
+and the Block~Q reports; wheeled-M1 anchors (e13d) are pending the M1
+world.}
+\label{tab:anchors}
+\end{table}

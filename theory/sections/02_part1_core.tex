@@ -1,0 +1,166 @@
+\section{Part~1 core: exactness and isotypic detectability (minimal statement)}
+\label{sec:part1core}
+
+\paragraph{Status of this section.}
+The full Part~1 (workstreams N1-1 through N1-4: unfolded half-period shift,
+cross-cycle exchangeability, sequential e-processes, IPM refinement of the
+$\varepsilon$-budget) is not yet in this document. Part~2
+(Section~\ref{sec:part2}) needs exactly two of its results in a minimal form
+--- the exactness of the flip test under $H_0$ and the isotypic
+characterization of what an invariance test can see --- and states them here
+with proofs, so that Part~2 is self-contained. When the full Part~1 lands,
+Theorems~\ref{thm:n1-1} and~\ref{thm:n1-2} are to be replaced by their general
+versions and the labels kept.
+\todo[inline]{Part~1 stand-in (Sprint~6): replace by the full N1-1/N1-2
+statements (unfolded shift, e-processes, IPM route) and re-point the labels
+\texttt{thm:n1-1}, \texttt{thm:n1-2}.}
+
+\subsection{Setting}
+\label{sec:p1-setting}
+
+Cycle elements live in the finite-dimensional space $\mathcal{W} = \R^{dN}$
+($d$ channels on the $N$-point phase grid, footnote of
+Section~\ref{sec:cycles}). For the trot, $\symgrp = \{(e,0),\sigma_*\}$ with
+$\sigma_* = (\gs,\tfrac12)$, and $\rho := \rho(\sigma_*)$ acts on
+$\mathcal{W}$ by \eqref{eq:cycle-action}: a signed channel permutation
+composed with the half-grid cyclic shift. Both factors are orthogonal
+involutions, hence
+\begin{equation}
+  \label{eq:rho-involution}
+  \rho^{2} = I, \qquad \rho^{\top} = \rho, \qquad
+  \Pi^{\pm} := \tfrac12 (I \pm \rho), \qquad
+  \mathcal{W} = \mathcal{W}^{+} \oplus \mathcal{W}^{-},
+\end{equation}
+where $\Pi^{\pm}$ are complementary orthogonal projectors ---
+the isotypic decomposition of $\mathcal{W}$ into the trivial ($\rho = +1$)
+and sign ($\rho = -1$) components of $\symgrp \cong \mathbb{Z}_2$.
+Throughout this section the cycles are assumed independent (or, more weakly,
+exchangeable) across $k$ --- the separate requirement of
+Remark~\ref{rem:exch}; how far the wrapped element satisfies the invariance
+exactly is the matter of Remark~\ref{rem:wrap} and is not re-litigated here.
+
+\subsection{Theorem N1-1: exactness of the flip test}
+\label{sec:n1-1}
+
+Let $T : \mathcal{W}^{K} \to \R$ be any statistic of $K$ cycle elements. The
+flip group $\mathcal{G}_K := \{ \rho^{\varepsilon_1} \times \dots \times
+\rho^{\varepsilon_K} : \varepsilon \in \{0,1\}^{K}\}$ acts on
+$(Z_1,\dots,Z_K)$ coordinatewise. The random-subset test of
+\cite{hemerik2018exact} draws $g_2,\dots,g_M$ i.i.d.\ uniformly from
+$\mathcal{G}_K$, sets $g_1 = \mathrm{id}$, and reports
+\begin{equation}
+  \label{eq:hg-p}
+  p \;=\; \frac{1 + \#\{ j \ge 2 : T(g_j Z) \ge T(Z) \}}{M}.
+\end{equation}
+
+\begin{theorem}[N1-1, exactness]
+\label{thm:n1-1}
+If $Z_1,\dots,Z_K$ are independent and each satisfies $H_0$, that is
+$\Law(\rho Z_k) = \Law(Z_k)$, then $\Law(g Z) = \Law(Z)$ for every
+$g \in \mathcal{G}_K$, and the $p$-value \eqref{eq:hg-p} is super-uniform:
+$\mathbb{P}(p \le \alpha) \le \alpha$ for all $\alpha \in [0,1]$, with
+equality at $\alpha \in \{1/M, 2/M, \dots\}$ when $T$ has no ties. The
+statement holds for every statistic $T$ and does not involve any model of the
+data.
+\end{theorem}
+
+\begin{proof}
+Independence and per-cycle invariance give
+$\Law(\rho^{\varepsilon_1} Z_1, \dots, \rho^{\varepsilon_K} Z_K) =
+\bigotimes_k \Law(\rho^{\varepsilon_k} Z_k) = \bigotimes_k \Law(Z_k)$, i.e.\
+$\Law(gZ) = \Law(Z)$ for all $g \in \mathcal{G}_K$. Given this invariance,
+the multiset $\{T(g_1 Z), \dots, T(g_M Z)\}$ with $g_1 = \mathrm{id}$ and
+$g_2,\dots,g_M$ uniform is exchangeable: for the joint law of
+$(g_1 Z, g_2 Z, \dots, g_M Z)$, replacing $Z$ by $g Z$ ($g$ uniform,
+independent) leaves the law of $Z$ unchanged and maps the tuple to
+$(g Z, g_2 g Z, \dots)$ whose entries $g_j g$ are again i.i.d.\ uniform, so
+the identity holds no special position. The rank of $T(Z)$ among $M$
+exchangeable values is uniform on $\{1,\dots,M\}$ (ties resolved
+conservatively), which is
+\cite[Theorem~2]{hemerik2018exact}; \eqref{eq:hg-p} is that rank divided by
+$M$.
+\end{proof}
+
+\begin{remark}[What the theorem does not say]
+It says nothing about power, and it presumes cross-cycle independence
+(exchangeability suffices, block flips handle short-range dependence,
+Remark~\ref{rem:exch}). Under the $\varepsilon$-approximate assumptions the
+level is inflated additively by Lemma~\ref{lem:eps}. It is also the reason
+why every downstream statistic in the project --- including the residual
+statistics of Part~2 --- is built from $\rho$-paired quantities: the theorem
+holds for any $T$, so the choice of $T$ is a pure power question.
+\end{remark}
+
+\subsection{Theorem N1-2: isotypic detectability}
+\label{sec:n1-2}
+
+Structured alternatives (Definition~\ref{def:h1}) shift the mean trajectory.
+The minimal statement is for location alternatives with $\symgrp$-invariant
+fluctuations; it is what Part~2 transports to residuals.
+
+\begin{theorem}[N1-2, isotypic detectability]
+\label{thm:n1-2}
+Let $Z_k = \mu + \xi_k$ with $\mu \in \mathcal{W}$ deterministic and
+$\xi_k$ i.i.d.\ with $\Law(\rho \xi_k) = \Law(\xi_k)$ and
+$\mathbb{E}\xi_k = 0$, $\operatorname{Var}(\xi_k) = \Sigma$. Then:
+\begin{enumerate}
+  \item[(i)] \emph{(invisible component)} If $\Pi^{-}\mu = 0$ then $H_0$
+  holds for $(Z_k)$, and \emph{no} $\symgrp$-invariance test --- no test
+  whose level is controlled by Theorem~\ref{thm:n1-1} --- has power above its
+  level against $\mu$: the trivial component $\Pi^{+}\mu$ is structurally
+  invisible.
+  \item[(ii)] \emph{(visible component)} If $\Pi^{-}\mu \neq 0$ then $H_0$
+  fails, and the paired-difference statistic
+  $T(Z) = \|\tfrac1K \sum_k D_k\|^2$, $D_k := Z_k - \rho Z_k = 2\Pi^{-}Z_k$,
+  has $\mathbb{E}\,T = 4\|\Pi^{-}\mu\|^2 + \tfrac{1}{K}\operatorname{tr}
+  \operatorname{Var}(D_1)$ while its flip-null counterpart (any nontrivial
+  flip pattern) has expectation $\tfrac{1}{K}\operatorname{tr}\operatorname{Var}(D_1)
+  + O(\|\Pi^-\mu\|^2/K)$: the flip test is consistent as $K \to \infty$, with
+  noncentrality growing like $K\,\|\Pi^{-}\mu\|^{2}$ (in the standardized
+  version, $K \sum_c (\Pi^-\mu)_c^2 / \operatorname{Var}(D_1)_{cc}$).
+  \item[(iii)] \emph{(general alternatives)} An arbitrary alternative law
+  $P_1$ on $\mathcal{W}$ is undetectable by every $\symgrp$-invariance test
+  iff $\push{\rho} P_1 = P_1$; in particular a fault pattern fixed by
+  $\sigma_*$ (bilateral, synchronized, equal magnitude,
+  Example~\ref{ex:bilateral}) is invisible to $R^{-}$ whatever its magnitude,
+  and must be read by a magnitude ($\Pi^{+}$) channel.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) $\Pi^{-}\mu = 0$ means $\rho\mu = \mu$, so $\rho Z_k = \mu + \rho\xi_k
+\eqdist \mu + \xi_k = Z_k$: $H_0$ holds and Theorem~\ref{thm:n1-1} makes every
+flip test level-$\alpha$ under $\Law(Z)$, i.e.\ its rejection probability is
+at most $\alpha$. (ii) $D_k = 2\Pi^{-}\mu + (\xi_k - \rho\xi_k)$ with
+$\mathbb{E}(\xi_k - \rho\xi_k) = 0$; hence $\mathbb{E}\|\bar D\|^2 =
+\|2\Pi^-\mu\|^2 + \operatorname{tr}\operatorname{Var}(D_1)/K$. For a flip
+pattern $\varepsilon$ with $m$ of the $K$ signs equal to $-1$, the flipped
+mean is $\tfrac{1}{K}\sum_k \varepsilon_k D_k$ whose expectation is
+$\tfrac{K-2m}{K}\,2\Pi^-\mu$, of squared norm $\le 4\|\Pi^-\mu\|^2$ with
+equality only for the identity; averaged over uniform flips the mean of
+$\tfrac{K-2m}{K}$ is $0$ and its second moment is $1/K$, giving the stated
+$O(\|\Pi^-\mu\|^2/K)$ term. Consistency follows because the observed
+statistic concentrates at $4\|\Pi^-\mu\|^2 > 0$ while all but a vanishing
+fraction of flipped statistics concentrate at $0$ (law of large numbers in
+both cases). If $\Pi^-\mu \ne 0$ then $\rho\mu \ne \mu$ and, since
+$\mathbb{E}\rho Z = \rho\mu \neq \mu = \mathbb{E}Z$, $H_0$ fails.
+(iii) If $\push{\rho}P_1 = P_1$ the data satisfy $H_0$ and (i) applies; if
+$\push{\rho}P_1 \neq P_1$ some bounded measurable $h$ has
+$\mathbb{E}_{P_1}[h(Z) - h(\rho Z)] \neq 0$, and the flip test with
+$T = |\tfrac1K \sum_k (h(Z_k) - h(\rho Z_k))|$ is consistent by the argument
+of (ii).
+\end{proof}
+
+\begin{remark}[Reading]
+Detection lives in the sign component $\mathcal{W}^-$, blindness in the
+trivial component $\mathcal{W}^+$; the two are orthogonal complements. This
+is the structural reason for the two-channel design ($R^-$ invariance test
+plus a magnitude channel), which Part~2 sharpens: with an equivariant nominal
+model both channels read the \emph{same} residual, one component each.
+The empirical anchor is e04c (rp005): the bilateral-equal group is $R^-$-blind
+with window rejection in the binomial band, the single-leg group is detected
+by both channels, and the unequal group is intermediate in the antisymmetric
+\emph{share}; the observed superlinearity of the response in $1-\kappa$
+(rp005, Finding) is a reminder that (ii) is a first-order statement in the
+mean shift.
+\end{remark}

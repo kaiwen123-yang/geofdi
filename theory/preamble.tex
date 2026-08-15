@@ -9,6 +9,8 @@
 \usepackage{array}
 \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
 % todonotes needs TikZ; fall back to a plain red inline note if unavailable so
 % the document still builds on a minimal TeX installation.
 \IfFileExists{todonotes.sty}{%
@@ -17,6 +19,8 @@
   \newcommand{\todo}[2][]{\textbf{\textcolor{red}{[TODO: #2]}}}%
   \newcommand{\listoftodos}{}%
 }
+% pending-anchor marker usable inside table cells (todonotes floats cannot live inside floats)
+\newcommand{\pending}[1]{\textcolor{red!80!black}{[pending: #1]}}
 \usepackage[colorlinks=true,linkcolor=blue!55!black,citecolor=blue!55!black,urlcolor=blue!55!black]{hyperref}
 
 % ---------- theorem-like environments ----------
