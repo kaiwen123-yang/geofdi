@@ -38,8 +38,8 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [x] rp016 Block W review pack; tag `hw-ready`
 
 ## Block E — e03 external benchmark + sequential redesign
-- [ ] E1 `detect/sequential.py` (e-process / e-CUSUM / conformal-CUSUM; half-cycle elements; calibration ≥ 400 cycles); e04a κ=0.7: median delay ≤ 2 cycles, nominal ARL ≥ 1/α
-- [ ] E2 pre-registration committed before the run (incl. diagonal class if present)
+- [x] E1-done `detect/sequential.py` (e-process / e-CUSUM / conformal-CUSUM; half-cycle elements; calibration ≥ 400 cycles); e04a κ=0.7: median delay ≤ 2 cycles, nominal ARL ≥ 1/α
+- [x] E2-done E2 pre-registration committed before the run (incl. diagonal class if present)
 - [ ] E2 e03 run: R⁻ half-cycle e-process (raw), R⁺ tracking + Mahalanobis, GRU regression (leave-one-file-out; η 0.4↔0.6; single→double; 3 seeds); per-episode + summary tables + four-class figure
 - [ ] E gate: mirrored-bilateral cell R⁻ ≈ α
 - [ ] Block E review pack
