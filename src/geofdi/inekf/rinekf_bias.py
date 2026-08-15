@@ -10,7 +10,7 @@ propagation Jacobian. This is the accepted contact-InEKF-with-bias construction;
 State: xi = (xi_R, xi_v, xi_p, xi_{d_i}, delta_bg, delta_ba[, delta_benc]) with the RI error on the SE_{2+N}(3) part and
 additive errors on the biases. Propagation uses the bias-corrected input; the Jacobian gains A[R, bg] = -R (through
 Exp), A[v, ba] = -R, A[v, bg] = -R [a]_x (second order, kept), and the bias blocks are random walks. Encoder bias enters
-only the measurement: h(q - b_enc) with H_benc = -J_leg(q).
+only the measurement: h(q - b_enc); the RIEKF update b_enc += (K z) uses H_benc = +R J_leg (see correct()).
 """
 from __future__ import annotations
 
@@ -92,7 +92,8 @@ class RIEKFBias(RIEKF):
 
     def correct(self, measurements, t=None, leg_jac=None):
         """leg_jac: optional dict foot -> (J_leg (3, n_enc_leg), enc_index (n_enc_leg,)) to include the encoder-bias
-        measurement Jacobian H_benc = -J_leg (h(q - b_enc) at first order). Without it the encoder bias is unobservable."""
+        measurement Jacobian H_benc = +R J_leg (from h(q - b_enc) at first order). Without it the encoder bias is
+        unobservable (its marginal covariance only grows)."""
         meas = [(f, h, c) for f, h, c in measurements if f in self.d]
         if not meas:
             return None
@@ -101,7 +102,9 @@ class RIEKFBias(RIEKF):
             k = self.feet.index(f)
             H[3 * j:3 * j + 3, 6:9] = -np.eye(3); H[3 * j:3 * j + 3, 9 + 3 * k:12 + 3 * k] = np.eye(3)
             if leg_jac is not None and f in leg_jac:
-                J, ei = leg_jac[f]; H[3 * j:3 * j + 3, self._benc_idx().start + np.asarray(ei)] = -self.R @ J
+                # h(q - b_enc) => dz/d(delta b_enc) = -R J, and the RIEKF update b_enc += (K z) needs H = -dz/d(err),
+                # so H_benc = +R J (verified by encoder-bias recovery: -R J diverges to the wrong sign)
+                J, ei = leg_jac[f]; H[3 * j:3 * j + 3, self._benc_idx().start + np.asarray(ei)] = self.R @ J
             z[3 * j:3 * j + 3] = self.R @ h + self.p - self.d[f]
             Nb[3 * j:3 * j + 3, 3 * j:3 * j + 3] = self.R @ (c + self.skf**2 * np.eye(3)) @ self.R.T
         S = H @ self.P @ H.T + Nb; Sinv = np.linalg.inv(S); K = self.P @ H.T @ Sinv; delta = K @ z
