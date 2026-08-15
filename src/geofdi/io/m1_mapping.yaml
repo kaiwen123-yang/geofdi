@@ -1,0 +1,40 @@
+# Wheeled M1 (GENISOM zsm-1w / MATRiX `zgws`) channel mapping — Sprint 7 Block W1.
+# unverified: true  -> candidate until the Day-0 audit (docs/protocol/m1_day0_wheeled.md) fixes names, order and signs.
+robot: m1_wheeled
+unverified: true
+geofdi_order:                       # the GeoFDI telemetry order (LF, RF, LH, RH x ABAD, HIP, KNEE, WHEEL)
+  legs: [LF, RF, LH, RH]
+  joints: [ABAD, HIP, KNEE, WHEEL]
+mjcf:                               # MATRiX zgws MJCF joint names in GeoFDI order (A = right, B = left; FOOT = wheel)
+  joints_in_geofdi_order:
+    [FBL_ABAD_JOINT, FBL_HIP_JOINT, FBL_KNEE_JOINT, FBL_FOOT_JOINT,
+     FAR_ABAD_JOINT, FAR_HIP_JOINT, FAR_KNEE_JOINT, FAR_FOOT_JOINT,
+     RBL_ABAD_JOINT, RBL_HIP_JOINT, RBL_KNEE_JOINT, RBL_FOOT_JOINT,
+     RAR_ABAD_JOINT, RAR_HIP_JOINT, RAR_KNEE_JOINT, RAR_FOOT_JOINT]
+sdk:                                # genisom_robot_sdk JointStateData.names (GEN2 SDK): fl/fr/bl/br x 1..4 — CANDIDATE
+  name_pattern: "{leg}{index}"      # e.g. fl1
+  legs: {fl: LF, fr: RF, bl: LH, br: RH}
+  index: {"1": ABAD, "2": HIP, "3": KNEE, "4": WHEEL}     # candidate: 1 = hip roll, 2 = hip pitch, 3 = knee pitch, 4 = wheel
+  positions_units: rad
+  velocities_units: rad/s
+  efforts_semantics: unknown        # unknown | current_estimate | torque  (Day-0 item)
+  legacy_bag_names: [fl_hip_roll_joint, fl_hip_pitch_joint, fl_knee_pitch_joint, fl_foot_joint]   # August 2026 rosbag2 JointState names (per leg prefix fl/fr/bl/br)
+signs:                              # sign convention relative to the GeoFDI uniform-axis convention (ABAD roll x, others pitch y)
+  convention: uniform_axis_candidate
+  note: >
+    The legacy August bags showed all four joints flipping between mirror legs (vendor-frame signs, legacy_aug_inventory.md
+    §4a). If confirmed on Day 0, set per_leg_sign below to {LF: [1,1,1,1], RF: [-1,-1,-1,-1], LH: [1,1,1,1], RH: [-1,-1,-1,-1]}
+    (right legs expressed in the vendor frame -> uniform-axis frame); the manifest signs (ABAD -1, others +1) are unchanged.
+  per_leg_sign: {LF: [1, 1, 1, 1], RF: [1, 1, 1, 1], LH: [1, 1, 1, 1], RH: [1, 1, 1, 1]}
+imu:
+  frame: body                       # candidate: base_link origin, x forward, y left, z up (MJCF site 'imu' at the base origin)
+  accel: specific_force_mps2
+  gyro: rad_s
+  quaternion_order: wxyz            # candidate
+contacts:
+  source: none                      # the wheeled M1 has no foot-force sensor: contact flag from wheel effort/current or absent
+session_files:                      # session directory layout consumed by geofdi.io.m1_sdk.load_m1_session
+  joint_states: joint_states.csv    # t, <name>_pos, <name>_vel, <name>_eff for every SDK name (any order; missing -> NaN)
+  imu: imu.csv                      # t, qw, qx, qy, qz, wx, wy, wz, ax, ay, az
+  cmd: cmd.csv                      # optional: t, vx, vy, wz (commanded body velocity)
+  meta: meta.yaml                   # robot, source (sim|hardware), rate_hz, efforts_semantics, notes

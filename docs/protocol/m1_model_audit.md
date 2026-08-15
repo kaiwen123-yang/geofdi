@@ -80,3 +80,32 @@ model (the legacy M1 bags showed all four joints flipping between mirror legs, i
   vendor URDF for the point-foot machine — ask GENISOM for the `zsm-1` (non-wheeled) description).
 - Real joint sign/offset table (Day-0 audit) before any M1 H₀ experiment.
 - MATRiX runtime (Baidu pan) not fetched — not needed for the model audit; would only add the embedded controller.
+
+## Sprint 7 Block W1 (2026-08-16) — wheeled M1 worlds of record
+
+`scripts/build_m1_wheeled_worlds.py` → `src/geofdi/sim/assets/m1/{m1_wheeled,m1_wheeled_sym}.xml` (+ scenes). D007: the
+wheeled `zgws` is the hardware M1; the point-foot candidate is retired.
+
+- **m1_wheeled** (original): every number from the source incl. the chiral details (base com_y +3.4 mm, base products,
+  RAR knee −3.3 g, mesh-fit pos/quat artefacts on the left knees). **m1_wheeled_sym**: left legs = exact mirror of the
+  right templates (front FAR, hind RBL → majority knee mass 0.86312 kg on all four), base com_y = 0, base products removed.
+- Both: meshes → primitives (base box from the STL extents, existing box collisions, wheels = cylinders r 0.096, half-width
+  0.025, **solref 0.05 s = tire compliance** — with the default stiff contact the wheels chatter at ≥ 1 m/s: contact
+  fraction 0.65–0.85, f_z std 17–40 N; with 0.05 s: 1.00 / 1.8 N at ≤ 1 m/s, 0.90–0.97 / 14–18 N at 2 m/s); joint
+  damping 0.05, armature 0.01; **ctrlrange ABAD ±40, HIP/KNEE ±60, WHEEL ±20 N·m** (start values), actuatorfrcrange as in
+  the source (legs ±150, wheels ±40); IMU site at the base origin; sensors imu_acc/imu_gyro/base_quat/base_linvel;
+  keyframe `stand` (0, 0.8, −1.5, wheel 0; z 0.42; settles at z ≈ 0.455). Physics 400 Hz, control 200 Hz.
+- Telemetry `geofdi.sim.telemetry_m1` (LF, RF, LH, RH × ABAD, HIP, KNEE, WHEEL; wheel *angle* excluded from Z; manifest
+  YAML `src/geofdi/sim/manifests/m1_wheeled.yaml`), env `geofdi.sim.env_m1` (rolling + stepping), controller
+  `geofdi.sim.controller_wheeled` (legs PD stand + wheel-rate PD to v/r + equivariant yaw damper), SDK mapping/loader
+  `geofdi.io.m1_mapping.yaml` / `geofdi.io.m1_sdk` (`unverified: true`).
+- **t01** (`tests/test_m1_wheeled.py`): sym world rolling 3.1e-13, stepping (half-period shift) 1.9e-11; original world
+  2.3 N·m max knee-torque mirror residual in a 6 s perturbed transient (steady rolling: roll offset −0.12…−0.17°, wheel
+  load asymmetry ≈ 2 N = 1.5 %) — the ε_dyn candidate of the real M1 model.
+- **Rolling smoke** (60 s, seed 1, `results/m1_wheeled_smoke/w1-20260816/smoke.md`): 0.5 / 1.0 / 2.0 m/s stable on
+  both worlds (v 0.474/0.959/1.919 with the 3 s ramp; roll ±0.02°, pitch −2.5…−3.0°, yaw drift < 0.5°/54 s, lateral
+  drift 0.3–1.5 m/54 s = the small heading offset left by the perturbed start).
+- **Stepping mode** (`mode: stepping`, equivariant PD trot on the 12 leg joints, wheels position-held): the first Go2
+  template (kp 150, lift 0.45/0.20) pitches −19° and lifts the front only 27 %; variant (0, 0.8, −1.5), lift 0.30/0.10,
+  kp 200, kd 6, period 0.5 s stays up 30 s (z 0.446–0.462, roll ±1°, pitch −5°, front duty 0.5, hind duty 0.8: the M1
+  is rear-heavy) → kept as `m1_stepping` with these defaults; e01-W runs in rolling mode only this sprint.

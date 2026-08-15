@@ -1,0 +1,7 @@
+<mujoco model="m1_wheeled scene">
+  <option timestep="0.0025"/>
+  <include file="m1_wheeled.xml"/>
+  <worldbody>
+    <geom name="floor" size="0 0 0.05" type="plane" friction="0.8 0.02 0.01"/>
+  </worldbody>
+</mujoco>
