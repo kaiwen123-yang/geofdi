@@ -63,13 +63,13 @@ def main():
         res[name] = pmap(_run, [(41000 + 100 * ci + r, K_cal, kp, fault) for r in range(R)], a.workers); print(f"  [E1] {name} done", flush=True)
     # thresholds from the first half of the nominal runs (held-out monitored segments), evaluation on the second half
     nom = res["nominal"]; n_thr = len(nom) // 2
-    horizon_half = 2 * K_post                                              # half-cycles of the fault horizon
-    dets = {"eprocess": EProcess(ALPHA), "ecusum": ECusum(ALPHA), "conformal_cusum": ConformalCusum(ALPHA)}
-    # calibrate each detector's conformal set on its own run's calibration scores; thresholds by bootstrap over held-out nominal monitored scores
+    horizon_half_nom = 2 * K_post_nom                                     # the CUSUM must control FAR over the NOMINAL horizon
+    from geofdi.detect.sequential import ConformalCusum as _CC
+    dets = {"eprocess": EProcess(ALPHA), "eprocess_decim": EProcess(ALPHA), "ecusum": ECusum(ALPHA), "conformal_cusum": ConformalCusum(ALPHA)}
     for k, d in dets.items():
-        if k != "eprocess":
+        if k in ("ecusum", "conformal_cusum"):
             d.calibrate(np.concatenate([r["s_cal"] for r in nom[:n_thr]]))
-            d.h = calibrate_threshold(d, [r["s_mon"] for r in nom[:n_thr]], horizon=horizon_half, far=ALPHA, n_boot=1000, rng=np.random.default_rng(1))
+            d.h = calibrate_threshold(d, [r["s_mon"] for r in nom[:n_thr]], horizon=horizon_half_nom, far=ALPHA, n_boot=1000, rng=np.random.default_rng(1))
     w0 = K_cal // WINDOW
     h_ref = calibrate_ecusum_threshold([r["pw"][:w0] for r in nom[:n_thr]], K_post // WINDOW, far=ALPHA, n_boot=1000, rng=np.random.default_rng(2))
     rows = []
@@ -78,8 +78,11 @@ def main():
         for k, d in dets.items():
             delays = []
             for r in runs:
-                d.calibrate(r["s_cal"]); S, al = d.run(r["s_mon"])
-                delays.append(np.nan if al is None else (al + 1) / 2.0)          # half-cycles -> cycles
+                d.calibrate(r["s_cal"][::2] if k == "eprocess_decim" else r["s_cal"])
+                s_mon = r["s_mon"][::2] if k == "eprocess_decim" else r["s_mon"]
+                S, al = d.run(s_mon)
+                step = 1.0 if k == "eprocess_decim" else 0.5                     # decimated: one score per cycle
+                delays.append(np.nan if al is None else (al + 1) * step)
             dl = np.array(delays); horizon = (K_post_nom if name == "nominal" else K_post)
             rows.append({"condition": name, "detector": f"halfcycle_{k}", "R": len(runs), "alarm_frac": float(np.mean(~np.isnan(dl))), "det_within_horizon": float(np.mean(dl <= horizon)),
                          "delay_median_cycles": float(np.nanmedian(dl)) if np.isfinite(dl).any() else np.nan, "delay_q90_cycles": float(np.nanquantile(dl, 0.9)) if np.isfinite(dl).any() else np.nan,
@@ -100,11 +103,11 @@ def main():
     tab = pd.DataFrame(rows); tab.to_csv(out / "e1_halfcycle_validation.csv", index=False)
     pd.set_option("display.width", 250)
     def g(c, d, col): return float(tab[(tab.condition == c) & (tab.detector == d)][col].iloc[0])
-    line = ("[E1] half-cycle mirror score + conformal (K_cal=%d): kappa 0.7 median delay [cycles] eprocess %.1f / e-CUSUM %.1f / conformal-CUSUM %.1f (det<=2 cycles %.2f/%.2f/%.2f); kappa 0.9: %.1f / %.1f / %.1f; "
+    line = ("[E1] half-cycle mirror score + conformal (K_cal=%d): kappa 0.7 median delay [cycles] eprocess(adjacent) %.1f / eprocess(decimated) %.1f / e-CUSUM %.1f / conformal-CUSUM %.1f (det<=2 cycles %.2f/%s/%.2f/%.2f); kappa 0.9: %.1f / %s / %.1f / %.1f; "
             "nominal false-alarm within %d cycles: %.3f / %.3f / %.3f (ARL0 censored %.0f / %.0f / %.0f cycles) | reference 5-cycle-window flip test: kappa 0.7 delay eproc %.0f / e-CUSUM %.0f, nominal FA %.3f / %.3f"
-            % (K_cal, g("gain_LF-KFE_0.7", "halfcycle_eprocess", "delay_median_cycles"), g("gain_LF-KFE_0.7", "halfcycle_ecusum", "delay_median_cycles"), g("gain_LF-KFE_0.7", "halfcycle_conformal_cusum", "delay_median_cycles"),
-               g("gain_LF-KFE_0.7", "halfcycle_eprocess", "det2"), g("gain_LF-KFE_0.7", "halfcycle_ecusum", "det2"), g("gain_LF-KFE_0.7", "halfcycle_conformal_cusum", "det2"),
-               g("gain_LF-KFE_0.9", "halfcycle_eprocess", "delay_median_cycles"), g("gain_LF-KFE_0.9", "halfcycle_ecusum", "delay_median_cycles"), g("gain_LF-KFE_0.9", "halfcycle_conformal_cusum", "delay_median_cycles"),
+            % (K_cal, g("gain_LF-KFE_0.7", "halfcycle_eprocess", "delay_median_cycles"), g("gain_LF-KFE_0.7", "halfcycle_eprocess_decim", "delay_median_cycles"), g("gain_LF-KFE_0.7", "halfcycle_ecusum", "delay_median_cycles"), g("gain_LF-KFE_0.7", "halfcycle_conformal_cusum", "delay_median_cycles"),
+               g("gain_LF-KFE_0.7", "halfcycle_eprocess", "det2"), f"{g('gain_LF-KFE_0.7','halfcycle_eprocess_decim','det2'):.2f}", g("gain_LF-KFE_0.7", "halfcycle_ecusum", "det2"), g("gain_LF-KFE_0.7", "halfcycle_conformal_cusum", "det2"),
+               g("gain_LF-KFE_0.9", "halfcycle_eprocess", "delay_median_cycles"), f"{g('gain_LF-KFE_0.9','halfcycle_eprocess_decim','delay_median_cycles'):.1f}", g("gain_LF-KFE_0.9", "halfcycle_ecusum", "delay_median_cycles"), g("gain_LF-KFE_0.9", "halfcycle_conformal_cusum", "delay_median_cycles"),
                K_post_nom, g("nominal", "halfcycle_eprocess", "alarm_frac"), g("nominal", "halfcycle_ecusum", "alarm_frac"), g("nominal", "halfcycle_conformal_cusum", "alarm_frac"),
                g("nominal", "halfcycle_eprocess", "arl_censored_cycles"), g("nominal", "halfcycle_ecusum", "arl_censored_cycles"), g("nominal", "halfcycle_conformal_cusum", "arl_censored_cycles"),
                g("gain_LF-KFE_0.7", "window5_eproc", "delay_median_cycles"), g("gain_LF-KFE_0.7", "window5_ecusum", "delay_median_cycles"), g("nominal", "window5_eproc", "alarm_frac"), g("nominal", "window5_ecusum", "alarm_frac")))
