@@ -232,7 +232,7 @@ def stage_a(cfg, res_dir, data_dir, quick=False):
     import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
     main_dets = ["Rminus_paired_energy_eproc", "Rminus_paired_energy_ecusum", "Rplus_track_eproc"]
     ftypes = list(sa["faults"].keys())
-    fig, axes = plt.subplots(1, len(ftypes), figsize=(4.0 * len(ftypes), 3.8), squeeze=False)
+    fig, axes = plt.subplots(1, len(ftypes), figsize=(3.0 * len(ftypes), 3.2), squeeze=False)
     for ax, ftype in zip(axes[0], ftypes):
         for dname in main_dets:
             for joint, ls in zip(sa["joints"], ("-", "--")):
@@ -439,7 +439,7 @@ def stage_e(cfg, res_dir, data_dir, quick=False):
     tab = pd.DataFrame(rows); tab.to_csv(res_dir / "e04e_isolation_ranking.csv", index=False)
     conf.rename_axis("isolated (R- pair-joint, swing, nominal scale + R+ left/right)").to_csv(res_dir / "e04e_confusion_resolved.csv", header=["count"])
     import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(1, 4, figsize=(15, 3.8))
+    fig, axes = plt.subplots(1, 4, figsize=(12, 3.2))
     for ax, kind in zip(axes, ("pair_all_pooled", "pair_swing_pooled", "pair_all_nominal", "pair_swing_nominal")):
         sub = tab[tab.ranking == kind].sort_values("rank")
         ax.barh(sub.group, sub.mean_energy, color=["C3" if t else "C0" for t in sub.is_target]); ax.invert_yaxis(); ax.set_xlabel("mean R⁻ projection energy")
