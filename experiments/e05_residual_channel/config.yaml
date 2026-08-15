@@ -1,0 +1,50 @@
+# e05 — residual R+ channel (generalized-momentum observer) vs the tracking-error R+ (S2) and the mirror channel R-.
+experiment: e05_residual_channel
+workers: 22
+sim:
+  model: go2_urdf_sym               # D005 default world (URDF inertias, mirror-exact); URDF joint dynamics
+  gait: trot
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+registration: {N: 64, drop_first: 20}       # URDF world: 20 warm-up cycles (slow attractor, see Block G)
+observer:
+  backend: pin
+  cutoff_hz: 10.0                    # K_O = 2 pi f_c
+  torque: tau_cmd                    # commanded (current-based) torque: actuator gain/bias faults are visible
+  armature: 0.01
+  damping: 0.01
+  frictionloss: 0.2
+detect:
+  alpha: 0.05
+  M: 512
+  window_rminus: 5                   # R- e-CUSUM windows (S2 protocol; h calibrated on nominal windows)
+  ecusum_horizon_windows: 20
+  ecusum_boot: 2000
+stage_a:                             # FAR under symmetric drift (S2 params): rplus_resid (tau_cmd and tau_meas) vs rplus_track
+  R: 100
+  seed_base: 31000
+  K_cal: 60
+  K_mon: 200
+  drift_symmetric: {magnitude: 0.10, tau_s: 20.0}
+stage_b:                             # the two R+-blind cells of S2: HFE gain and KFE bias on LF; onset cycle 60, 100 monitored
+  R: 50
+  seed_base: 32000
+  K_cal: 60
+  K_post: 100
+  leg: LF
+  hfe_gain: [0.9, 0.8, 0.7]
+  kfe_bias: [0.5, 1.0, 2.0]
+stage_c:                             # lateral payload vs single-leg fault: joint (R-, residual R+) reading
+  R: 50
+  seed_base: 33000
+  K_cal: 60
+  K_post: 100
+  payload_asymmetric: [0.5, 1.0]     # kg, offset_y 0.05 m
+  compare_faults:
+    - {type: actuator_gain, leg: LF, joint: KFE, magnitude: -0.3}
+    - {type: actuator_bias, leg: LF, joint: HFE, magnitude: 1.0}
+outputs: {store_first_n: 2}

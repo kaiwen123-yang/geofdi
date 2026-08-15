@@ -308,10 +308,10 @@ def load_model(cfg: "SimConfig") -> mujoco.MjModel:
     base = spec.body("base")
     for j in list(base.joints):
         if j.type == mujoco.mjtJoint.mjJNT_FREE:
-            j.delete()
+            spec.delete(j)
     base.pos = np.array([0.0, 0.0, 0.45])
     for k in list(spec.keys):
-        k.delete()                                    # keyframes refer to the old qpos layout
+        spec.delete(k)                                # keyframes refer to the old qpos layout
     return spec.compile()
 
 
