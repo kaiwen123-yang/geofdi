@@ -550,7 +550,16 @@ i.e.\ the largest total-variation displacement of the whole-cycle law caused
 by the equivariance defect of one factor, whatever the state of the other
 factors. Since $P_{\mathrm{env}}$ is drawn once per cycle, conjugating it
 displaces the cycle law by at most $\eps{env}$ (data-processing inequality),
-which justifies the identification $\epsbar{env} = \eps{env}$.
+which justifies the identification $\epsbar{env} = \eps{env}$. The seemingly
+more natural choice --- the equivariance defect of the $\Tc$-fold
+\emph{product} kernel $\bigotimes_t P_{\bullet}(\cdot \mid x_{t-1},\dots)$
+with the conditioning trajectory held fixed --- is \emph{not} sufficient:
+with the controller interleaved in the loop, the closed-loop displacement can
+strictly exceed it, so a lemma stated in that quantity would be false (worked
+two-step example in the companion note
+\texttt{theory/counterexamples/product\_kernel\_gap.pdf}). Definition
+\eqref{eq:cycle-eps} is the closed-loop quantity, for which the lemma below
+is a triangle inequality by construction.
 \end{definition}
 
 \begin{lemma}[$\varepsilon$-robust type-I control]
@@ -568,7 +577,9 @@ $\sigma \in \symgrp$,
 \end{equation}
 and every test $\varphi$ that is level-$\alpha$ under all exactly
 $\symgrp$-invariant laws satisfies
-$\mathbb{E}[\varphi] \le \alpha + \epsbar{tot}$ under the actual nominal law.
+$\mathbb{E}[\varphi] \le \alpha + (1 - |\symgrp|^{-1})\,\epsbar{tot}$ under
+the actual nominal law; for the trot, $\symgrp \cong \mathbb{Z}_2$, this is
+$\mathbb{E}[\varphi] \le \alpha + \tfrac12\,\epsbar{tot}$.
 \end{lemma}
 
 \begin{proof}[Proof sketch]
@@ -587,14 +598,31 @@ $\widetilde P := |\symgrp|^{-1} \sum_{\sigma \in \symgrp} \push{\rho(\sigma)} P$
 be its $\symgrp$-average (for $\symgrp \cong \mathbb{Z}_2$,
 $\widetilde P = \tfrac12\bigl(P + \Law(\rho(\sigma_*) Z_k)\bigr)$).
 $\widetilde P$ is exactly $\symgrp$-invariant, and by (i) and convexity of
-$\dtv$, $\dtv(P, \widetilde P) \le \max_{\sigma} \dtv(P, \push{\rho(\sigma)}P)
-\le \epsbar{tot}$; hence $\mathbb{E}_P[\varphi] \le
-\mathbb{E}_{\widetilde P}[\varphi] + \epsbar{tot} \le \alpha + \epsbar{tot}$.
+$\dtv$ (the identity term contributes zero),
+$\dtv(P, \widetilde P) \le |\symgrp|^{-1} \sum_{\sigma \neq e}
+\dtv(P, \push{\rho(\sigma)}P) \le (1 - |\symgrp|^{-1})\,\epsbar{tot}$ ---
+for $\symgrp \cong \mathbb{Z}_2$, $\dtv(P,\widetilde P) = \tfrac12
+\dtv(P, \Law(\rho(\sigma_*)Z_k)) \le \tfrac12 \epsbar{tot}$; hence
+$\mathbb{E}_P[\varphi] \le \mathbb{E}_{\widetilde P}[\varphi] +
+\dtv(P,\widetilde P) \le \alpha + (1 - |\symgrp|^{-1})\,\epsbar{tot}$.
 Full proof --- including measurability, the bookkeeping of the shifted cycle
 (its initial state and environment window are those of the original process
-at phase $\Delta\theta$), and the tightening of $\epsbar{\bullet}$ discussed
-in Remark~\ref{rem:linear} --- is deferred to workstream N1-4.
+at phase $\Delta\theta$), and the metric refinement discussed in
+Remark~\ref{rem:linear} --- is deferred to workstream N1-4.
 \end{proof}
+
+\paragraph{Scoping.}
+Lemma~\ref{lem:eps} is stated for a test that reads a single cycle element.
+A test $\varphi$ acting on $m$ cycles $(Z_1,\dots,Z_m)$ inherits the coarse
+bound $\mathbb{E}[\varphi] \le \alpha + m\,(1-|\symgrp|^{-1})\,\epsbar{tot}$
+--- i.e.\ $\alpha + \tfrac{m}{2}\epsbar{tot}$ for the trot --- by running the
+hybrid argument of (i) one cycle at a time (each cycle's factors are
+conjugated within a configuration covered by the supremum in
+\eqref{eq:cycle-eps}, and later cycles are generated from its terminal state
+by common kernels): the per-cycle defect is charged once for every cycle the
+test reads. How the inflation accumulates for sequential and anytime-valid
+procedures that read unboundedly many cycles (e-processes, workstream N1-1)
+is part of the N1-4 accounting.
 
 \begin{remark}[From per-transition to cycle-level defects]
 \label{rem:linear}
@@ -611,23 +639,27 @@ linear bound
   \qquad\text{hence}\qquad
   \epsbar{tot} \;\le\; \eps{env} + \Tc\,\bigl(\eps{dyn} + \eps{ctrl} + \eps{noise}\bigr).
 \end{equation}
-This linear bound is pessimistic: it charges every step's defect at full
-weight for the remainder of the cycle. If the one-step closed-loop state
-kernel (conditionally on the environment draw) is a Dobrushin contraction
-with coefficient $\delta < 1$ uniformly along the cycle, the perturbation
-injected at step $t$ is damped by $\delta^{\,s-t}$ at step $s$, so the defect
-visible in the state marginal at any fixed phase accumulates as a geometric
-sum, $\sum_{t \le s} \delta^{\,s-t} \eps{\bullet} \le \eps{\bullet}/(1-\delta)$,
-and one expects
-\[
-  \epsbar{\bullet} \;\lesssim\; \frac{\eps{\bullet}}{1-\delta}
-\]
---- of the order of the per-transition defect rather than $\Tc$ times it.
-Making this precise for the trajectory-level quantity
-\eqref{eq:cycle-eps} (which functionals of $Z_k$ inherit the geometric
-rate, and how the phase-grid resolution $N$ enters) is deferred to
-workstream N1-4; until then \eqref{eq:linear-bound} is the operative
-conversion.
+At the level of total variation between whole-cycle (block) laws this
+linear bound is essentially tight: a defect that shows up as a rare transient
+signature at each step is detectable from the trajectory with probability of
+order $\Tc\,\eps{\bullet}$, and the two-step example of the companion note
+\texttt{theory/counterexamples/product\_kernel\_gap.pdf} comes arbitrarily
+close to $\Tc\,\eps{ctrl}$. Contraction does not change this: if the one-step
+closed-loop state kernel (conditionally on the environment draw) is a
+Dobrushin contraction with coefficient $\delta<1$, the perturbation injected
+at step $t$ is damped by $\delta^{\,s-t}$ at step $s$, so the \emph{phase
+marginals} carry only a geometric sum $\sum_{t\le s}\delta^{\,s-t}\eps{\bullet}
+\le \eps{\bullet}/(1-\delta)$ --- but a block-level TV distance sees every
+step's defect at full weight regardless. The tightening direction for
+workstream N1-4 is therefore not a sharper TV constant but a change of
+metric: replace $\dtv$ on block laws by an integral probability metric
+adapted to the statistic class actually deployed (kernel or energy
+discrepancies over mirror-paired phase marginals, Definition~\ref{def:pairing});
+for such metrics the contraction acts marginal by marginal, and the
+cycle-level defect is expected to scale like $\eps{\bullet}/(1-\delta)$ rather
+than $\Tc\,\eps{\bullet}$.
+Until N1-4 delivers that conversion, \eqref{eq:linear-bound} is the operative
+one.
 \end{remark}
 
 \begin{definition}[Recalibrated null $H_0'$: asymmetry-change detection]
@@ -672,9 +704,10 @@ statistics that estimate a per-transition defect (the mirrored
 system-identification gap, the state-matched Gate~1 distance, the
 per-channel noise mismatch) are therefore lifted to the cycle level before
 comparison with $\tau$: coarsely by the factor $\Tc$ of
-Remark~\ref{rem:linear}, or by the tighter contraction-based conversion once
-workstream N1-4 delivers it. The unconditional mirrored-command distance of
-the A2 audit already lives on the closed-loop scale and needs no lifting.
+Remark~\ref{rem:linear}, or by the statistic-adapted IPM conversion of that
+remark once workstream N1-4 delivers it. The unconditional mirrored-command
+distance of the A2 audit already lives on the closed-loop scale and needs no
+lifting.
 
 \begin{table}[ht]
 \centering
