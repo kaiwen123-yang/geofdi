@@ -1,9 +1,26 @@
-# e03 — head-to-head against baselines on the public Liu et al. A1 fault
-# dataset (resolved under data/raw/public/liu-a1-fault via the repo symlink).
+# e03 — external public simulation benchmark: Liu et al. RA-L 2025 (Unitree A1, Gazebo, GRUFD-FTC dataset). Sprint 7 Block E2.
 experiment: e03_liu_a1_headtohead
-seed: 0
-data:
-  source: public/liu-a1-fault
-  splits: [test]
-baselines: [supervised_classifier]
-metrics: [detection_delay, auc, false_alarms_per_hour]
+data_dir: raw/public/liu-a1-fault/grufd-ftc_84ca180/extracted     # under $GEOFDI_DATA_ROOT/data
+rate_hz: 100
+registration: {N: 64, phase_joint: HFE, drop_first_cycles: 4, drop_last_cycles: 5}
+detect:
+  alpha: 0.05
+  grace_s: 0.5                      # detection window = episode + grace; healthy gaps exclude the first grace after an episode
+  min_calibration_halfcycles: 100   # per command condition (pooled across the other files); else fall back to all conditions of the other files
+  contact_none: true                # no contacts / torques in the data
+gru:                                # Liu Table I
+  input: 57
+  hidden: 256
+  layers: 1
+  epochs: 100
+  batch: 32
+  lr: 0.0001
+  window: 25                        # 0.5 s at 50 Hz
+  stride_train: 5
+  fs_hz: 50                         # rows decimated by 2
+  lowpass_hz: 1.0
+  threshold: 0.7
+  max_batches_per_epoch: 200
+  seeds: [0, 1, 2]
+  splits: [lofo, eta_0.4_to_0.6, eta_0.6_to_0.4, single_to_double]
+outputs: {}
