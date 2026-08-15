@@ -37,3 +37,16 @@ live under `$GEOFDI_DATA_ROOT/results/<exp>/<run_id>/`; the run ids below are th
 ## Rules
 - Long edge ≤ 1600 px for pack figures; the paper versions are re-rendered vector (PDF) from the CSVs.
 - Every figure's data source is a CSV in a review pack; no figure is produced from a run that is not in a pack.
+
+## Regeneration (Block F — `scripts/make_paper_figures.py`)
+
+One-shot factory: `GEOFDI_DATA_ROOT=... python scripts/make_paper_figures.py [--check] [--only T1,F6b]`.
+Writes `$GEOFDI_DATA_ROOT/results/paper/{tables/*.csv, figures/*.pdf, paper_tables.tex, coverage.md}`. The run-id map
+lives in the script (`RUN`) and matches the review-pack run ids above; `--check` verifies every source CSV exists.
+
+- Tables **T1–T5, T7–T9 generated** from the pack CSVs (paper-ready CSV + a booktabs `paper_tables.tex`); T9b adds the
+  e09 three-channel isolation accuracy. **T6, T10 are prose/theory tables** (registered, authored in LaTeX/markdown).
+- Figures **F4b (ARL–delay), F6b (low-SNR power), F10b (N2 signatures) regenerated as vector PDF** from CSV; the
+  multi-panel merges (F2, F3, F5–F10) are **registered** with their source run PNG — the manuscript composes the vector
+  versions by hand from the same CSVs. New Sprint-7 panels registered: **F11 (e09 confusion), F12 (e11 complementarity)**.
+- Coverage table (every id → status) is regenerated at `results/paper/coverage.md` on each run.
