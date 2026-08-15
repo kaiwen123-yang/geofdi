@@ -38,15 +38,37 @@ def mirror_state(qpos, qvel):
     return qp, qv
 
 
-def _pair_of_rollouts(duration=3.0):
-    qpos0, qvel0 = keyframe_state()
+def _pair_of_rollouts(duration=3.0, model="go2_menagerie_sym"):
+    qpos0, qvel0 = keyframe_state(sim_model=model)
     rng = np.random.default_rng(123)
     qpos0[7:] += rng.normal(0, 0.05, 12); qvel0[6:] += rng.normal(0, 0.2, 12); qvel0[3:6] += rng.normal(0, 0.1, 3)
     qpB, qvB = mirror_state(qpos0, qvel0)
-    A, man = rollout(SimConfig(duration_s=duration, seed=0, noise=ZERO_NOISE, init_qpos=qpos0.tolist(), init_qvel=qvel0.tolist()))
-    B, _ = rollout(SimConfig(duration_s=duration, seed=0, noise=ZERO_NOISE, init_qpos=qpB.tolist(), init_qvel=qvB.tolist(),
+    A, man = rollout(SimConfig(model=model, duration_s=duration, seed=0, noise=ZERO_NOISE, init_qpos=qpos0.tolist(), init_qvel=qvel0.tolist()))
+    B, _ = rollout(SimConfig(model=model, duration_s=duration, seed=0, noise=ZERO_NOISE, init_qpos=qpB.tolist(), init_qvel=qvB.tolist(),
                              phase_offset=0.5))
     return A, B, man
+
+
+def _mirror_error(A, B, man):
+    rep = C2Rep(man); chans = z_channel_names(man)
+    err = np.abs(B[chans].to_numpy() - rep.mirror_only(A[chans].to_numpy()))
+    worst = sorted({c: float(err[:, i].max()) for i, c in enumerate(chans)}.items(), key=lambda kv: -kv[1])[:5]
+    return float(err.max()), worst
+
+
+def test_go2_urdf_sym_world_is_mirror_equivariant_to_1e10():
+    """Block G: the symmetrized go2_description world passes t01."""
+    A, B, man = _pair_of_rollouts(model="go2_urdf_sym")
+    e, worst = _mirror_error(A, B, man)
+    assert e <= 1e-10, f"go2_urdf_sym mirror-sim mismatch {e:.3e}; worst {worst}"
+
+
+def test_go2_urdf_original_world_breaks_mirror_symmetry():
+    """Block G: the ORIGINAL go2_description world (base ixy/iyz, FL calf collision) is chiral: t01 fails; the
+    failure magnitude is the direct eps_dyn measurement (4.9e-3 in raw channel units at 3 s)."""
+    A, B, man = _pair_of_rollouts(model="go2_urdf")
+    e, worst = _mirror_error(A, B, man)
+    assert 1e-4 < e < 1e-1, f"expected a chiral mismatch of order 1e-3, got {e:.3e}; worst {worst}"
 
 
 def test_mirror_sim_equals_rho_of_original_to_1e10():

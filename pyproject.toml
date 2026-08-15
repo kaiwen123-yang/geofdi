@@ -18,8 +18,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-sim = ["mujoco==3.11.0"]
-dyn = ["pin"]
+sim = ["mujoco==3.11.0", "trimesh", "pycollada"]           # trimesh/pycollada: dae -> stl asset conversion (Block G)
+# Pinocchio 3.x from PyPI ('pin'); the 3.9.0 wheel links liburdfdom.so.4 / libtinyxml2.so.10, so the cmeel runtime
+# wheels must be pinned (pip otherwise resolves cmeel-urdfdom 6 / cmeel-tinyxml2 11 -> ImportError). Fallback without
+# Pinocchio: geofdi.dynamics uses MuJoCo mj_rne / mj_inverse (backend switch in dynamics/config).
+dyn = ["pin>=3.9,<4", "cmeel-urdfdom==4.0.1", "cmeel-tinyxml2==10.0.0"]
+# torch: install the CUDA-13 wheel explicitly: pip install torch --index-url https://download.pytorch.org/whl/cu130
+learn = ["torch>=2.9", "gpytorch"]
 dev = ["pytest", "ruff"]
 
 [tool.setuptools.packages.find]

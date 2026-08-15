@@ -219,7 +219,8 @@ def stage_c(cfg, res_dir: Path, data_dir: Path, quick=False):
     first_n = cfg["outputs"]["store_cycles_first_n"]
     curves, bounds, rows, eps_rows = {}, {}, [], []
     D_null_pool = None
-    for delta in [0.0] + list(sc["deltas"]):
+    skip_i = bool(sc.get("skip_typeI", False))        # e01c-G (Block G): only the H0' part is needed
+    for delta in ([] if skip_i else [0.0] + list(sc["deltas"])):
         asym = [] if delta == 0 else [{"leg": sc["leg"], "joint": sc["joint"], "kp_gain": 1.0 + delta}]
         args = [(_sim_cfg(cfg, sc["seed_base"] + r, controller={"asymmetry": asym}), K, N, df0, M, sc["seed_base"] + 30000 + r, stats_, m_list,
                  (data_dir / "c" / f"delta_{delta}" / f"rep_{r:03d}") if r < first_n else None) for r in range(R)]
@@ -241,19 +242,23 @@ def stage_c(cfg, res_dir: Path, data_dir: Path, quick=False):
             curves[f"δ={delta} {s}"] = (m_list, rates, lo, hi)
         if delta > 0:
             bounds[f"bound α+m·ε̂ (δ={delta}, ε̂={eps_hat:.4f})"] = (m_list, [alpha + m * eps_hat for m in m_list])
-    tab = pd.DataFrame(rows); tab.to_csv(res_dir / "e01c_typeI_vs_m.csv", index=False)
-    pd.DataFrame(eps_rows).to_csv(res_dir / "e01c_eps_proxy.csv", index=False)
-    for s in stats_:
-        F.typeI_vs_m({k: v for k, v in curves.items() if k.endswith(s)}, bounds, res_dir / f"e01c_typeI_vs_m_{s}.png", alpha,
-                     title=f"e01c — type-I error vs monitoring window m ({s})\ndotted: coarse bound α+m·ε̂ with the empirical single-cycle proxy ε̂ (clipped at 1.05)")
-    viol = tab[(tab["delta"] > 0) & (tab["rejection_rate"] > tab["bound_alpha_plus_m_eps"] + 1e-12)]
-    ok_i = len(viol) == 0
+    if not skip_i:
+        tab = pd.DataFrame(rows); tab.to_csv(res_dir / "e01c_typeI_vs_m.csv", index=False)
+        pd.DataFrame(eps_rows).to_csv(res_dir / "e01c_eps_proxy.csv", index=False)
+        for s in stats_:
+            F.typeI_vs_m({k: v for k, v in curves.items() if k.endswith(s)}, bounds, res_dir / f"e01c_typeI_vs_m_{s}.png", alpha,
+                         title=f"e01c — type-I error vs monitoring window m ({s})\ndotted: coarse bound α+m·ε̂ with the empirical single-cycle proxy ε̂ (clipped at 1.05)")
+        viol = tab[(tab["delta"] > 0) & (tab["rejection_rate"] > tab["bound_alpha_plus_m_eps"] + 1e-12)]
+        ok_i = len(viol) == 0
+    else:
+        viol = []; ok_i = True
     # ---- H0'
     hp = sc["h0prime"]; Rh = 4 if quick else hp["R"]; K_cal = 40 if quick else hp["K_cal"]; K_mon = 40 if quick else hp["K_mon"]
     window = 10 if quick else hp["window"]; dbl = 60 if quick else hp["double_at_cycle"]; d0 = hp["delta"]
     period = cfg["sim"]["controller"]["period_s"]; t_double = (dbl + df0) * period
-    stable = [{"leg": sc["leg"], "joint": sc["joint"], "kp_gain": 1.0 + d0}]
-    change = stable + [{"leg": sc["leg"], "joint": sc["joint"], "kp_gain": 1.0 + 2 * d0, "t_start": t_double}]
+    d_change = float(hp.get("change_delta", 2 * d0))   # gain after the change (default: doubling); e01c-G: d0 = 0 (world asymmetry only)
+    stable = [{"leg": sc["leg"], "joint": sc["joint"], "kp_gain": 1.0 + d0}] if d0 > 0 else []
+    change = stable + [{"leg": sc["leg"], "joint": sc["joint"], "kp_gain": 1.0 + d_change, "t_start": t_double}]
     out_h = {}
     for name, asym in (("stable", stable), ("doubled", change)):
         args = [(_sim_cfg(cfg, hp["seed_base"] + r, controller={"asymmetry": asym}), K_cal + K_mon, N, df0, M,

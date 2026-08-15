@@ -1,0 +1,7 @@
+<mujoco model="go2_urdf flat scene (headless)">
+  <!-- Flat-ground scene for GeoFDI simulation (go2_description-derived world). -->
+  <include file="go2_urdf.xml"/>
+  <worldbody>
+    <geom name="floor" size="0 0 0.05" type="plane" friction="0.8 0.02 0.01"/>
+  </worldbody>
+</mujoco>

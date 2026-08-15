@@ -75,6 +75,16 @@ def build_manifest(include_groups=("q", "dq", "tau_cmd", "tau_meas", "imu_acc", 
         for j in JOINTS:
             ch.append({"name": f"qref_{leg}_{j}", "group": "qref", "leg": leg, "joint": j, "kind": "scalar-signed",
                        "partner": f"qref_{MIRROR_LEG[leg]}_{j}", "sign": JOINT_SIGN[j], "in_Z": False})
+    for leg in LEGS:                    # world-frame foot contact force (sum over the foot geom's contacts) and the
+        for ax in "xyz":                # force-weighted contact point (sim oracle; hardware: estimated) -> momentum observer
+            ch.append({"name": f"fc_{ax}_{leg}", "group": "contact_force", "leg": leg, "joint": None, "kind": "diagnostic",
+                       "partner": None, "sign": None, "in_Z": False})
+        for ax in "xyz":
+            ch.append({"name": f"cp_{ax}_{leg}", "group": "contact_point", "leg": leg, "joint": None, "kind": "diagnostic",
+                       "partner": None, "sign": None, "in_Z": False})
+        for ax in "xyz":                # world-frame contact torque (torsional/rolling friction of the condim-6 foot contact)
+            ch.append({"name": f"tc_{ax}_{leg}", "group": "contact_torque", "leg": leg, "joint": None, "kind": "diagnostic",
+                       "partner": None, "sign": None, "in_Z": False})
     return {"schema": "geofdi-m1-telemetry-v1", "leg_order": list(LEGS), "joint_order": list(JOINTS),
             "gait_group": {"G": "C2 sagittal reflection", "Sigma": "{(e,0),(g_s,1/2)}", "delta_theta": 0.5},
             "channels": ch, "sim": sim_meta or {}}
@@ -89,7 +99,9 @@ def all_columns() -> list[str]:
             + [f"c_{l}" for l in LEGS] + [f"temp_{l}" for l in LEGS]
             + ["base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "base_qz", "base_vx", "base_vy", "base_vz"]
             + [f"foot_{ax}_{l}" for l in LEGS for ax in "xyz"]
-            + [f"qref_{l}_{j}" for l in LEGS for j in JOINTS])
+            + [f"qref_{l}_{j}" for l in LEGS for j in JOINTS]
+            + [f"fc_{ax}_{l}" for l in LEGS for ax in "xyz"] + [f"cp_{ax}_{l}" for l in LEGS for ax in "xyz"]
+            + [f"tc_{ax}_{l}" for l in LEGS for ax in "xyz"])
 
 
 def write_run(out_dir: Path, df: pd.DataFrame, manifest: dict, config: dict) -> None:

@@ -67,3 +67,24 @@ One entry per hard-to-reverse decision. Format: `D<nnn> — <title> — <date> �
 - Test: Hemerik–Goeman random-subset flips over cycles (identity included, p = (1+#)/M, M = 512),
   statistics = paired-difference L2 energy and mirror energy distance, per-channel standardization
   by the flip-invariant pooled std.
+
+## D005 — Simulation worlds after Block G (go2_description URDF) — 2026-08-15 — accepted
+
+- Three Go2 worlds exist (`geofdi.sim.env.MODELS`): `go2_menagerie_sym` (S0/S1–S3 baseline, kept for reproduction),
+  `go2_urdf` (Unitree go2_description URDF converted by `geofdi.sim.urdf2mjcf`, every number from the URDF incl. the
+  base products of inertia ixy = 1.2166e-4, iyz = −3.12e-5 and the FL-calf collision chirality) and `go2_urdf_sym`
+  (same, mirror-symmetrized: base I ← (I+EIE)/2, left-leg collision primitives = mirror of the right ones).
+- **Default world for new experiments: `go2_urdf_sym`** (true URDF inertias, mirror-exact: t01 7e-11). `go2_urdf` is
+  the A1′ audit-rehearsal world (t01 fails at 4.9e-3 = ε_dyn; e01a size unchanged under S1 noise, e01c H₀′ size 0.028
+  in band). The menagerie world stays the reproduction baseline for S1–S3.
+- The URDF world uses the URDF/xacro joint dynamics (damping 0.01, frictionloss 0.2; armature 0.01 as in menagerie).
+  Consequences measured in Block G: the symmetric trot orbit is stable but attracts slowly (half-period mirror residual
+  1e-3 rad at 5 s, 6e-5 at 10 s) → **20 warm-up cycles** in the URDF worlds (10 in the menagerie world); an
+  under-damped body-pitch / hind-knee mode with a period of ≈ 2 gait cycles makes consecutive mirror differences
+  negatively correlated (lag-1 −0.03 overall, −0.11/−0.15 in hind-knee q/dq/τ and pitch rate) → the per-cycle flip
+  test is *conservative* (size 0.020/0.025 at α = 0.05, KS p 0.000; also for the unfolded statistic and block-4
+  flips). With joint damping 2 (`SimConfig.joint_damping`, diagnostic) the same world gives uniform p (sizes
+  0.055/0.060). This is an exchangeability (A-exch) effect, not a symmetry effect; the flip test stays valid
+  (conservative). Experiments that need nominal size in the URDF world either use `joint_damping: 2.0` explicitly or
+  accept the conservative size — state which.
+- The generic converter (`urdf2mjcf.py`) is the path for the M1 URDF/MJCF (Block M).

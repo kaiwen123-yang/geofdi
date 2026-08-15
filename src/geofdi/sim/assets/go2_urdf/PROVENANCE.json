@@ -1,0 +1,123 @@
+{
+ "source": "Go2_URDF.zip (Unitree go2_description ROS package, SolidWorks-to-URDF export 2023-10-11), user upload 2026-08-15",
+ "source_zip_sha256": "690d6863813cd2854c90e0afef3cc8102e3613c91e8f53e4850b85be916852c5",
+ "license": "BSD (package.xml <license>BSD</license>; Unitree publishes go2_description under BSD-3-Clause)",
+ "urdf_sha256": "333c3331ef76793134aeb3e928fdc9213fc879a274dc6e02ba5ac4f6950143df",
+ "worlds": {
+  "go2_urdf": {
+   "nbody": 14,
+   "njnt": 13,
+   "nu": 12,
+   "ngeom": 28,
+   "total_mass": 15.019000000000002,
+   "sha256": "a9f2599ba460319e9c79a31b09043523aef315f650d68198d3b96bd623af200c"
+  },
+  "go2_urdf_sym": {
+   "nbody": 14,
+   "njnt": 13,
+   "nu": 12,
+   "ngeom": 28,
+   "total_mass": 15.019000000000002,
+   "sha256": "0d3ecc8cc1afaa851b9411b9b99d4efc4dd9bb58693a9575efe6884cd52e5506"
+  }
+ },
+ "meshes": {
+  "calf.dae": {
+   "sha256": "29872fa1a435b92bc2b395fdfa7f0aee26101db3c494681896bd4ef24ee7883c",
+   "bytes": 1125517,
+   "stl": "data/assets/go2_urdf/meshes_stl/calf.stl",
+   "stl_sha256": "c0c081b9d10245117211efc6c9ae19fe62209018b6b9af2feed97f62793b13d3",
+   "vertices": 7704,
+   "faces": 8602,
+   "extents_m": [
+    0.05836794897913933,
+    0.03962193988247341,
+    0.266652845910606
+   ]
+  },
+  "calf_mirror.dae": {
+   "sha256": "79c66be7ed06760bd5001c067a1fb0ac517f639d8b1a5f89be471903b3f359e1",
+   "bytes": 1125457,
+   "stl": "data/assets/go2_urdf/meshes_stl/calf_mirror.stl",
+   "stl_sha256": "b7250c062db4bbe465a41129324be378d248f72561b6fdd215735c7553ed8c5c",
+   "vertices": 7703,
+   "faces": 8602,
+   "extents_m": [
+    0.05836794897913933,
+    0.039621939883777095,
+    0.26665284378189125
+   ]
+  },
+  "foot.dae": {
+   "sha256": "ffbd95fd641866ce9bd277aa249b92dafc9148d70131fa2c52709a35ce5b710b",
+   "bytes": 506988,
+   "stl": "data/assets/go2_urdf/meshes_stl/foot.stl",
+   "stl_sha256": "3f30f4431e8b67ed6609c350d6e0724c91d8716e40588f63f23a0baf715410ea",
+   "vertices": 12312,
+   "faces": 4404,
+   "extents_m": [
+    0.04530792124569416,
+    0.039606978861665545,
+    0.0387909896671772
+   ]
+  },
+  "hip.dae": {
+   "sha256": "8735e10617afe252cef0844c1d139d15bc6d4c653660d742fea9fe05c2704d8f",
+   "bytes": 4666421,
+   "stl": "data/assets/go2_urdf/meshes_stl/hip.stl",
+   "stl_sha256": "63116636c1ae96ca77473ef13909838fc99c2b6beae05d961c5f44106306df4c",
+   "vertices": 35525,
+   "faces": 37040,
+   "extents_m": [
+    0.11807793006300926,
+    0.07560092995217493,
+    0.09849094226956367
+   ]
+  },
+  "thigh.dae": {
+   "sha256": "a622381ae308897ff143b8bbf02f075457c342b22984205040424a5a983246fa",
+   "bytes": 3884136,
+   "stl": "data/assets/go2_urdf/meshes_stl/thigh.stl",
+   "stl_sha256": "82d6bb89e99ec70f7cffea16c778e044fd1114c4ebe97b29460775aa41ecc2df",
+   "vertices": 26297,
+   "faces": 30134,
+   "extents_m": [
+    0.09685695171356201,
+    0.07341694853121564,
+    0.27793098188609056
+   ]
+  },
+  "thigh_mirror.dae": {
+   "sha256": "c7bae0b0565c2aa4b7cc15a538d795e9153e0f10c821cc18429e92693172bdc6",
+   "bytes": 3896575,
+   "stl": "data/assets/go2_urdf/meshes_stl/thigh_mirror.stl",
+   "stl_sha256": "266ab98ee5c74dde881579d20af869ae973eeeb7d96c62080c455d501fbb0aba",
+   "vertices": 26285,
+   "faces": 30126,
+   "extents_m": [
+    0.09685695171356201,
+    0.07341694073967878,
+    0.27793099038630553
+   ]
+  },
+  "trunk.dae": {
+   "sha256": "e52bebbb5c7ff1f6aedee620c9b5b349f6e965360ecc63a9bb743eeff2d0be64",
+   "bytes": 10727399,
+   "stl": "data/assets/go2_urdf/meshes_stl/trunk.stl",
+   "stl_sha256": "81e0ae9a1d687f2c0d414ae3a13dc9326df6fe4b879eaa085ec89588a7c12560",
+   "vertices": 57401,
+   "faces": 77928,
+   "extents_m": [
+    0.4599559009075165,
+    0.19399994453163796,
+    0.18567299714854993
+   ]
+  }
+ },
+ "dropped_from_zip": [
+  ".history/ (editor backups)",
+  "dae/ (byte-identical duplicates of meshes/, base.dae == trunk.dae)",
+  "launch/ (rviz/gazebo)"
+ ],
+ "git": "daa7dad07a863754ec4ce1351da8c45cced4c8d6"
+}

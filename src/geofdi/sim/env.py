@@ -25,10 +25,21 @@ MODEL_JOINTS = [f"{l}_{j}_joint" for l in ("FL", "FR", "RL", "RR") for j in ("hi
 FOOT_GEOMS = ("FL", "FR", "RL", "RR")
 
 
-def scene_path(terrain: str = "flat") -> str:
+MODELS = {
+    # S0 world (mujoco_menagerie go2, symmetrized; S1-S3 reproduction baseline)
+    "go2_menagerie_sym": "assets/unitree_go2/scene_flat.xml",
+    # go2_description URDF worlds (Sprint 4 Block G): original (base ixy/iyz kept) and mirror-symmetrized
+    "go2_urdf": "assets/go2_urdf/mjcf/scene_go2_urdf.xml",
+    "go2_urdf_sym": "assets/go2_urdf/mjcf/scene_go2_urdf_sym.xml",
+}
+
+
+def scene_path(terrain: str = "flat", model: str = "go2_menagerie_sym") -> str:
     if terrain not in ("flat", "slope"):
         raise NotImplementedError("terrains: flat | slope (rough is reserved for later sprints)")
-    return str(resources.files("geofdi.sim").joinpath("assets/unitree_go2/scene_flat.xml"))
+    if model not in MODELS:
+        raise KeyError(f"unknown sim model '{model}'; known: {sorted(MODELS)}")
+    return str(resources.files("geofdi.sim").joinpath(MODELS[model]))
 
 
 def apply_terrain(m: mujoco.MjModel, terrain: str, slope_deg: float, slope_axis: str) -> None:
@@ -69,6 +80,10 @@ class NoiseConfig:
 @dataclass
 class SimConfig:
     gait: str = "trot"
+    model: str = "go2_menagerie_sym"  # sim world, see MODELS (S1-S3 used the menagerie world; D005: go2_urdf_sym default for new work)
+    weld_base: bool = False           # weld the trunk to the world (leg = fixed-base manipulator; Block L1 'leg = arm')
+    joint_damping: float | None = None  # override the 12 leg-joint dampings at load time (URDF world: 0.01 from the xacro;
+                                      # menagerie world: 2.0 — the S1 value; used for the Block G damping diagnostic)
     speed: float = 0.0
     terrain: str = "flat"
     slope_deg: float = 0.0            # terrain == 'slope': tilt angle
@@ -97,11 +112,46 @@ class SimConfig:
         return asdict(self)
 
 
+def _foot_contact_forces(m: mujoco.MjModel, d: mujoco.MjData, floor: int, feet: list, leg_bodies: dict | None = None):
+    """Per-leg floor-contact bookkeeping for one physics substep.
+    Returns fz (4,) = normal force on the FOOT geom (contact flag semantics), and the per-leg contact WRENCH from all
+    contacts between the floor and the leg's bodies (foot sphere + calf-lower cylinders, one rigid body): fw (4,3) world
+    force, tw (4,3) world torque about the world origin (transported to the reference point later), cpw (4,3) normal-
+    force-weighted contact-point sum, fsum (4,) normal-force sum for the weighting."""
+    fz = np.zeros(4); fw = np.zeros((4, 3)); tw = np.zeros((4, 3)); cpw = np.zeros((4, 3)); fsum = np.zeros(4); f6 = np.zeros(6)
+    for i in range(d.ncon):
+        g1, g2 = d.contact[i].geom1, d.contact[i].geom2
+        if g1 != floor and g2 != floor:
+            continue
+        g = g2 if g1 == floor else g1
+        leg = None
+        for j, f in enumerate(feet):
+            if g == f:
+                leg = j; break
+        if leg is None and leg_bodies is not None:
+            leg = leg_bodies.get(int(m.geom_bodyid[g]))
+        if leg is None:
+            continue
+        mujoco.mj_contactForce(m, d, i, f6)
+        Fr = d.contact[i].frame.reshape(3, 3).T                         # contact frame -> world (frame rows = axes)
+        Fw = Fr @ f6[:3]; Tw = Fr @ f6[3:]                              # force and torque (condim 6: torsional/rolling friction)
+        if g2 == floor:                                                 # the normal points geom1 -> geom2 and the returned
+            Fw = -Fw; Tw = -Tw                                          # wrench acts on geom2: flip if the robot geom is geom1
+        pos = d.contact[i].pos
+        if g == feet[leg]:
+            fz[leg] += abs(f6[0])
+        fw[leg] += Fw; tw[leg] += Tw + np.cross(pos, Fw); cpw[leg] += abs(f6[0]) * pos; fsum[leg] += abs(f6[0])
+    return fz, fw, tw, cpw, fsum
+
+
 def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: bool = False):
     if cfg.gait != "trot":
         raise NotImplementedError("only the trot is implemented")
-    m = model if model is not None else mujoco.MjModel.from_xml_path(scene_path(cfg.terrain))
+    m = model if model is not None else load_model(cfg)
     m.opt.timestep = cfg.sim_dt
+    if cfg.joint_damping is not None:
+        for n in MODEL_JOINTS:
+            m.dof_damping[m.jnt_dofadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, n)]] = cfg.joint_damping
     apply_terrain(m, cfg.terrain, cfg.slope_deg, cfg.slope_axis)
     if cfg.foot_contact == "stiff":
         for gname in FOOT_GEOMS:
@@ -117,20 +167,31 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
     cparams = TrotParams(**{**cfg.controller, "speed": cfg.speed})
     ctrl = TrotController(cparams)
     d = mujoco.MjData(m)
-    mujoco.mj_resetDataKeyframe(m, d, 0)
     qadr = np.array([m.jnt_qposadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, n)] for n in MODEL_JOINTS])
     vadr = np.array([m.jnt_dofadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, n)] for n in MODEL_JOINTS])
+    base_id = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "base")
+    if cfg.weld_base:
+        d.qpos[qadr] = np.tile([0.0, 0.9, -1.8], 4)               # 'home' leg posture, trunk welded at load_model height
+    else:
+        mujoco.mj_resetDataKeyframe(m, d, 0)
     if cfg.init_qpos is not None:
         d.qpos[:] = np.asarray(cfg.init_qpos, dtype=float)
         d.qvel[:] = np.asarray(cfg.init_qvel, dtype=float) if cfg.init_qvel is not None else 0.0
     else:
         d.qpos[qadr] += rng.normal(0.0, noise.init_joint_std, 12)
         d.qvel[vadr] += rng.normal(0.0, noise.init_vel_std, 12)
-        d.qvel[3:6] += rng.normal(0.0, noise.init_body_rate_std, 3)
+        if not cfg.weld_base:
+            d.qvel[3:6] += rng.normal(0.0, noise.init_body_rate_std, 3)
     mujoco.mj_forward(m, d)
     faults = FaultBank(list(cfg.faults) + list(cfg.nuisance), m, cfg.ctrl_dt, rng)
     floor = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "floor")
     feet = [mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, g) for g in FOOT_GEOMS]
+    leg_bodies = {}                       # body id -> leg index, for the leg's hip/thigh/calf bodies (contact wrench bookkeeping)
+    for j, leg in enumerate(("FL", "FR", "RL", "RR")):
+        for part in ("hip", "thigh", "calf"):
+            bid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, f"{leg}_{part}")
+            if bid >= 0:
+                leg_bodies[bid] = j
     sid = {n: mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SENSOR, n) for n in ("imu_acc", "imu_gyro", "base_quat", "base_linvel")}
     sadr = {n: (m.sensor_adr[i], m.sensor_dim[i]) for n, i in sid.items()}
     T = cparams.period_s
@@ -160,12 +221,15 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
         if cfg.imu_mode == "integrating":
             q_prev = d.sensordata[sadr["base_quat"][0]:sadr["base_quat"][0] + 4].copy()
             v_prev = d.sensordata[sadr["base_linvel"][0]:sadr["base_linvel"][0] + 3].copy()
-        acc_sum = np.zeros(3); gyr_sum = np.zeros(3)
+        acc_sum = np.zeros(3); gyr_sum = np.zeros(3); fw_sum = np.zeros((4, 3)); tw_sum = np.zeros((4, 3)); cpw_sum = np.zeros((4, 3)); fzw_sum = np.zeros(4)
+        fz_s = np.zeros(4)
         for _ in range(nsub):
             mujoco.mj_step(m, d)
             if cfg.imu_mode == "averaged":
                 acc_sum += d.sensordata[sadr["imu_acc"][0]:sadr["imu_acc"][0] + 3]
                 gyr_sum += d.sensordata[sadr["imu_gyro"][0]:sadr["imu_gyro"][0] + 3]
+            fz_s, fw_s, tw_s, cpw_s, fsum_s = _foot_contact_forces(m, d, floor, feet, leg_bodies)   # per-substep wrenches (averaged below)
+            fw_sum += fw_s; tw_sum += tw_s; cpw_sum += cpw_s; fzw_sum += fsum_s
         tau_meas = tau_app + rng.normal(0.0, noise.torque_meas_std, 12)
         if cfg.imu_mode == "sampled":
             acc0 = d.sensordata[sadr["imu_acc"][0]:sadr["imu_acc"][0] + 3].copy()
@@ -187,20 +251,21 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
         acc = acc0 + rng.normal(0.0, noise.imu_acc_std, 3)
         gyr = gyr0 + rng.normal(0.0, noise.imu_gyro_std, 3)
         gyr_prev = gyr
-        c = np.zeros(4); fz = np.zeros(4); f6 = np.zeros(6)
-        for i in range(d.ncon):
-            g1, g2 = d.contact[i].geom1, d.contact[i].geom2
-            for j, f in enumerate(feet):
-                if (g1 == floor and g2 == f) or (g2 == floor and g1 == f):
-                    mujoco.mj_contactForce(m, d, i, f6); fz[j] += abs(f6[0])       # normal force in the contact frame
+        c = np.zeros(4)
+        fz = fz_s                                                                    # end-of-step normal force -> contact flag (S1/S2 semantics)
+        fw = fw_sum / nsub; tw0 = tw_sum / nsub                                      # mean world contact wrench over the control step (torque about the world origin)
+        cpw = np.zeros((4, 3)); tw = np.zeros((4, 3))
+        for j, f in enumerate(feet):
+            cpw[j] = cpw_sum[j] / fzw_sum[j] if fzw_sum[j] > 0 else d.geom_xpos[f] - np.array([0.0, 0.0, m.geom_size[f][0]])
+            tw[j] = tw0[j] - np.cross(cpw[j], fw[j])                                 # torque about the leg's reference contact point
         c[:] = (fz > cfg.contact_force_thresh).astype(float) if cfg.contact_force_thresh > 0 else (fz > 0).astype(float)
         temp = a_temp * temp + (1 - a_temp) * (tau_app.reshape(4, 3) ** 2).mean(axis=1)
         base_lin = d.sensordata[sadr["base_linvel"][0]:sadr["base_linvel"][0] + 3]
         foot_w = np.concatenate([d.geom_xpos[g] for g in feet])
         rows[k, :] = np.concatenate([[d.time, theta], q_meas, dq_meas, tau_cmd, tau_meas, acc, gyr, c, temp,
-                                     d.qpos[0:3], d.qpos[3:7], base_lin, foot_w, q_ref])
+                                     d.xpos[base_id], d.xquat[base_id], base_lin, foot_w, q_ref, fw.ravel(), cpw.ravel(), tw.ravel()])
     df = pd.DataFrame(rows, columns=all_columns())
-    manifest = build_manifest(sim_meta={"model": "unitree_go2 (menagerie da76818e, symmetrized, mesh-free)",
+    manifest = build_manifest(sim_meta={"model": cfg.model, "weld_base": cfg.weld_base, "joint_damping": cfg.joint_damping,
                                         "ctrl_dt": cfg.ctrl_dt, "sim_dt": cfg.sim_dt, "period_s": T,
                                         "gait": cfg.gait, "speed": cfg.speed, "terrain": cfg.terrain,
                                         "slope_deg": cfg.slope_deg, "slope_axis": cfg.slope_axis, "seed": cfg.seed,
@@ -233,9 +298,26 @@ def _body_state(d, sadr, noise, rng, gyr_meas):
     return {"roll": float(roll), "w_x": float(gyr_meas[0]), "w_z": float(gyr_meas[2]), "v_y": float(vb[1])}
 
 
-def keyframe_state(model: mujoco.MjModel | None = None):
+def load_model(cfg: "SimConfig") -> mujoco.MjModel:
+    """MjModel for cfg.model / cfg.terrain; weld_base replaces the trunk's free joint by a weld to the world (the
+    robot hangs at the keyframe height with the legs free: each leg is a fixed-base 3-dof manipulator)."""
+    path = scene_path(cfg.terrain, cfg.model)
+    if not cfg.weld_base:
+        return mujoco.MjModel.from_xml_path(path)
+    spec = mujoco.MjSpec.from_file(path)
+    base = spec.body("base")
+    for j in list(base.joints):
+        if j.type == mujoco.mjtJoint.mjJNT_FREE:
+            j.delete()
+    base.pos = np.array([0.0, 0.0, 0.45])
+    for k in list(spec.keys):
+        k.delete()                                    # keyframes refer to the old qpos layout
+    return spec.compile()
+
+
+def keyframe_state(model: mujoco.MjModel | None = None, sim_model: str = "go2_menagerie_sym"):
     """(qpos, qvel) of the symmetric 'home' keyframe — a symmetric initial condition."""
-    m = model if model is not None else mujoco.MjModel.from_xml_path(scene_path())
+    m = model if model is not None else mujoco.MjModel.from_xml_path(scene_path(model=sim_model))
     d = mujoco.MjData(m)
     mujoco.mj_resetDataKeyframe(m, d, 0)
     return d.qpos.copy(), d.qvel.copy()
