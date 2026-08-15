@@ -1,0 +1,35 @@
+# e10 — N2 estimator signatures (Sprint 7 Block N2).
+#   nis_smoke : rolling-contact InEKF (m1_wheeled_sym) NIS consistency vs fixed-foot RIEKF and ESKF (per-bin FAR).
+#   signatures: bias-augmented InEKF (Go2 go2_urdf_sym) reconstruction of injected encoder / gyro biases and the
+#               innovation-direction match to the analytic adjoint prediction; slip direction vs R-covariance.
+experiment: e10_n2_signatures
+workers: 20
+nis_smoke:
+  model: m1_wheeled_sym
+  speed: 1.0
+  duration_s: 24.0
+  warmup_s: 3.0
+  R: 20
+  seed_base: 61000
+  sigma_gyro: 0.01
+  sigma_accel: 0.1
+  sigma_enc: 3.0e-3
+  sigma_contact: 3.0e-3
+  sigma_kin_floor: 3.0e-3
+  sigma_roll: 0.06                 # forward rolling-odometry process noise (m/s) on a rolling contact
+  sigma_slip: 3.0e-3               # lateral/vertical no-slip process noise (m/s)
+  far_alpha: 0.01                  # per-correction NIS gate (chi2_{dof,1-alpha}); consistent filter -> exceed frac ~ alpha
+signatures:
+  model: go2_urdf_sym
+  gait: trot
+  duration_s: 10.0
+  R: 20
+  seed_base: 62000
+  sigma_gyro: 0.01
+  sigma_accel: 0.1
+  sigma_enc: 2.0e-3
+  sigma_contact: 2.0e-3
+  encoder_bias: {leg: LF, joint: KFE, rad: 0.05}      # +0.05 rad on LF-KFE
+  gyro_bias: {axis: y, rad_s: 0.02}                    # 0.02 rad/s about body y (pitch; roll/pitch observable via gravity, yaw is not)
+  slip: {leg: LF, dir: [1.0, 0.0, 0.0], mag: 0.01}     # 1 cm/s world-x foot slip on LF (mirror: RF -> [1,0,0] too)
+  bias_rw: {gyro: 1.0e-4, accel: 1.0e-3, enc: 1.0e-5}
