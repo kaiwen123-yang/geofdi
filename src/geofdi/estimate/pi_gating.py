@@ -9,8 +9,11 @@ weight from detect.stance_event:
   - "geofdi_soft": per-leg stance-event e-process -> weight w_i = 1/(1+max(e-1,0)); the foot covariance is scaled by 1/w_i
                   (w->1 no change, w->0 covariance -> inf, i.e. the measurement is down-weighted smoothly).
   - "geofdi_hard": per-leg e-process -> hard gate; the measurement is dropped when e_i >= 1/alpha.
-The per-foot score is the whitened kinematic-constraint residual: the filter's per-foot innovation Mahalanobis distance
-(legged), or the rolling-constraint residual ||d_dot_hat - R u|| whitened (wheeled). A nominal library (calibration run)
+The literature THRESHOLD reads the estimated contact-point world speed (which the filter partly HIDES by drifting to
+keep the foot "fixed") and trips at a fixed 0.4 m/s -- false-rejecting nominal touch-down/lift-off transients. The GeoFDI
+gate scores the PRE-update per-foot innovation (the honest kinematic-constraint residual, not corrupted by the update) and
+fires via a conformal-p / e-process calibrated on the NOMINAL event library, so its per-EVENT false-alarm rate is ~alpha.
+The wheeled version scores the rolling-constraint residual. A nominal library (calibration run)
 sets the conformal reference so the gate's per-EVENT false-alarm rate is ~alpha (FAR guarantee).
 
     res = run_gated_filter(df, kin, mode="geofdi_soft", lib=lib, ...)   # returns est path, gate log, per-step weights
@@ -57,7 +60,9 @@ def build_event_library(df, kin, sigma_enc=3e-3, n_legs=4, **kw):
 
 
 def _run(df, kin, mode="none", lib=None, sigma_gyro=0.01, sigma_accel=0.1, sigma_enc=3e-3, sigma_contact=3e-3,
-         sigma_kin_floor=3e-3, alpha=0.05, foot_speed_thresh=0.4, cov_inflate=10.0, threshold_hard=False):
+         sigma_kin_floor=3e-3, alpha=0.05, foot_speed_thresh=0.4, cov_inflate=10.0, threshold_hard=False, slip=None):
+    # slip = dict(leg, t0, t1, vel_world=[vx,vy,vz]): a controlled world-frame foot slip that corrupts the stationary-
+    # contact measurement of `leg` during [t0,t1] (the tracked contact point drifts by vel_world*(t-t0), body-framed).
     q_cols = [f"q_{l}_{j}" for l in LEGS for j in JOINTS]
     Q = df[q_cols].to_numpy(); acc = df[["imu_a_x", "imu_a_y", "imu_a_z"]].to_numpy(); gyr = df[["imu_w_x", "imu_w_y", "imu_w_z"]].to_numpy()
     C = df[[f"c_{l}" for l in LEGS]].to_numpy() > 0.5; t = df["t"].to_numpy()
@@ -75,13 +80,16 @@ def _run(df, kin, mode="none", lib=None, sigma_gyro=0.01, sigma_accel=0.1, sigma
         for leg in range(4):
             if C[k, leg]:
                 h, J = kin.h_and_jac(Q[k], leg); cov = J @ (sigma_enc ** 2 * np.eye(3)) @ J.T
+                if slip is not None and leg == slip["leg"] and slip["t0"] <= t[k] < slip["t1"]:
+                    drift_world = np.asarray(slip["vel_world"], float) * (t[k] - slip["t0"]); h = h + f.R.T @ drift_world
                 if not prev[leg]:
                     f.add_contact(leg, h, cov)
-                score = _score_innovation(f, leg, h, cov)
+                v_foot = _foot_world_velocity(f, h, h_prev[leg], dt)          # what the literature threshold reads (filter-corrupted)
+                score = _score_innovation(f, leg, h, cov)                    # GeoFDI gating score: the PRE-update per-foot innovation
                 if tracker is not None:
                     tracker.update(leg, True, score, lib0, t=t[k])
                 if mode == "threshold":
-                    if _foot_world_velocity(f, h, h_prev[leg], dt) > foot_speed_thresh:
+                    if v_foot > foot_speed_thresh:
                         if threshold_hard:
                             w_k[leg] = 0.0; h_prev[leg] = h; continue
                         cov = cov * cov_inflate; w_k[leg] = 1.0 / cov_inflate
@@ -113,4 +121,8 @@ def run_gated_filter(df, kin=None, mode="none", lib=None, **kw):
     kin = kin or Go2Kinematics()
     f, est, info = _run(df, kin, mode=mode, lib=lib, **kw)
     info["p_final"] = f.p.copy()
+    # ground-truth error vs the sim base pose (if present); est tracks the IMU point p, GT is base + R r_imu
+    if "base_x" in df:
+        gt = df[["base_x", "base_y", "base_z"]].to_numpy(); err = np.linalg.norm(est[:, :2] - gt[:, :2], axis=1)
+        info["gt_rmse_xy"] = float(np.sqrt(np.mean(err ** 2))); info["gt_end_xy"] = float(err[-1]); info["gt_err_xy"] = err
     return est, info

@@ -1,0 +1,20 @@
+# e16 — pi_i gating of the contact-aided InEKF (Sprint 8 Block G). Three-estimator comparison on a controlled foot slip.
+experiment: e16_pi_gating
+workers: 16
+sim_go2:
+  model: go2_urdf_sym
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+inekf: {sigma_gyro: 0.01, sigma_accel: 0.1, sigma_enc: 3.0e-3, sigma_contact: 3.0e-3, sigma_kin_floor: 3.0e-3, alpha: 0.05, foot_speed_thresh: 0.4, cov_inflate: 10.0}
+gate:
+  R: 20
+  seed_base: 82000
+  lib_seed_base: 83000
+  lib_rollouts: 6
+  duration_s: 20.0
+  slip: {leg: 0, t0: 8.0, t1: 12.0, vel_world: [0.6, 0.0, 0.0]}   # LF slips 0.6 m/s in +x for 4 s (unilateral)
+  estimators: [none, threshold, geofdi_hard, geofdi_soft]

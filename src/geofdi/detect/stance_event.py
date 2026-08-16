@@ -50,8 +50,8 @@ class StanceEventTracker:
     gating weight (see estimate/pi_gating). Per-event because a per-step test would over-count the correlated stance
     samples; FAR is then controlled per event."""
 
-    def __init__(self, n_legs: int = 4, alpha: float = 0.05, kind: str = "sqrt", kappa: float = 0.5, decay: float = 1.0):
-        self.n = n_legs; self.alpha = alpha; self.kind = kind; self.kappa = kappa; self.decay = decay
+    def __init__(self, n_legs: int = 4, alpha: float = 0.05, kind: str = "sqrt", kappa: float = 0.5, decay: float = 1.0, agg_q: float = 0.75):
+        self.n = n_legs; self.alpha = alpha; self.kind = kind; self.kappa = kappa; self.decay = decay; self.agg_q = agg_q
         self.E = np.ones(n_legs)                 # running e-process per leg (product of event e-values)
         self.e_cur = np.ones(n_legs)             # e-value of the CURRENT open event (updated live from the running mean)
         self._acc = [[] for _ in range(n_legs)]  # scores of the currently-open event
@@ -64,20 +64,27 @@ class StanceEventTracker:
                 self._acc[leg].append(float(score))
             self._in[leg] = True
             if self._acc[leg]:
-                p = lib.conformal_p(leg, float(np.mean(self._acc[leg])))
+                p = lib.conformal_p(leg, float(np.quantile(self._acc[leg], self.agg_q)))   # sustained-anomaly quantile
                 self.e_cur[leg] = float(p_to_e(np.array([p]), self.kind, self.kappa)[0])   # live e for the open event
         elif self._in[leg]:                       # event just closed
             if self._acc[leg]:
-                sc = float(np.mean(self._acc[leg])); p = lib.conformal_p(leg, sc); e = float(p_to_e(np.array([p]), self.kind, self.kappa)[0])
+                sc = float(np.quantile(self._acc[leg], self.agg_q)); p = lib.conformal_p(leg, sc); e = float(p_to_e(np.array([p]), self.kind, self.kappa)[0])
                 self.E[leg] = self.E[leg] ** self.decay * e; self.events.append({"leg": leg, "t": t, "score": sc, "p": p, "e": e})
             self._acc[leg] = []; self._in[leg] = False; self.e_cur[leg] = 1.0
 
     def current_e(self) -> np.ndarray:
-        """Per-leg e-value in force NOW: the open event's live e (if in contact) times the closed-event e-process."""
+        """Per-leg e-value in force NOW for GATING: the live e-value of the currently-open stance event (1 when the foot is
+        in swing). This is per-EVENT (transient), so a leg is gated only while its own current touch-down looks anomalous
+        and recovers on the next clean event -- unlike the cumulative detection e-process (`detection_E`), which is a
+        product over events and is meant to grow under a persistent fault, not to drive a per-event gate."""
+        return np.where(self._in, self.e_cur, 1.0)
+
+    def detection_E(self) -> np.ndarray:
+        """Cumulative per-leg e-process (product of closed-event e-values) -- the anytime-valid DETECTION statistic."""
         return self.E * np.where(self._in, self.e_cur, 1.0)
 
     def weights(self, mode: str = "soft") -> np.ndarray:
-        """Per-leg gating weight from the current e-value. hard: 0 if e >= 1/alpha else 1. soft: 1/(1+e) in (0,1]."""
+        """Per-leg gating weight from the current-event e-value. hard: 0 if e >= 1/alpha else 1. soft: 1/(1+max(e-1,0))."""
         e = self.current_e()
         if mode == "hard":
             return (e < 1.0 / self.alpha).astype(float)
