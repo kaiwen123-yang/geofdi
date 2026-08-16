@@ -345,28 +345,43 @@ pair $\mu = s_{\mathrm{L}} + s_{\mathrm{R}}$ with $\rho s_{\mathrm{L}}
 
 \begin{remark}[Amplitude ceiling of the blindness --- A5-under-fault can fail]
 \label{rem:amplitude-ceiling}
-Layer~I.a is not unconditional: its hypothesis A5-under-fault is exactly the
-uniqueness that Remark~\ref{rem:bifurcation} warns can break. A bilateral
-$\symgrp$-fixed fault deep enough to destabilize the symmetric attractor of
-the faulted loop drives it (generically) to a \emph{chiral} limit cycle whose
-mirror image is a second attractor: then A1--A4 still hold, the fault is still
-$\symgrp$-fixed, yet $\push{\rho}P_\varphi \neq P_\varphi$ and (I.b) makes it
-visible. So the blindness has an \emph{amplitude ceiling}: mild-to-moderate
-symmetric degradation is invisible to $R^-$, but a sufficiently severe
-bilateral fault reappears through the chirality channel $\eps{chir}$
-(Assumption~A5$'$). The ceiling is the fault magnitude at which the symmetric
-periodic orbit of the faulted plant loses stability; below it the two-channel
-design (Corollary~\ref{cor:two-channel-necessity}) is required, above it a
-one-sided residual re-emerges. This prediction is tested in the pre-registered
-chirality-ceiling experiment (P1, \texttt{experiments/e15\_predictions}): a
-bilateral mirror fault of equal severity $\kappa$ is swept downward and $R^-$
-power together with the duty-factor chirality index is recorded. The Block~P
-run found $R^-$ blind and the chirality index at its floor across the whole
-swept range (the symmetric gain fault preserves A5-under-fault and does not
-bifurcate at speed~$0$): the blindness is robust and the ceiling is a
-phenomenon of a genuine symmetry-breaking regime (the Sprint-1 moving-trot
-low-gain chiral gait) rather than of symmetric degradation --- see the P1
-anchor below.
+\emph{What was measured first.} The pre-registered chirality-ceiling experiment
+(P1, \texttt{experiments/e15\_predictions}, $R = 30$ per point) swept a
+bilaterally symmetric actuator-gain fault of equal severity on a mirror pair
+over $1-\kappa \in \{0.3, 0.5, 0.6, 0.7\}$ --- i.e.\ down to $30\,\%$ of nominal
+torque, far past any operating point one would call a degradation --- and found
+$R^-$ power $0.00$ at \emph{every} severity, with the realized-gait chirality
+index (the mirror residual of the stance duty factors and touch-down phases,
+the $\eps{chir}$ of A5$'$) pinned at its nominal floor $\approx 0.003$
+throughout. \textbf{The blindness of Layer~I.a is therefore robust to
+amplitude: symmetric degradation, however severe, does not by itself break the
+symmetric attractor.} The pre-registered expectation of a ceiling inside this
+range was \emph{not} met, and the statement below is the corrected one.
+
+\emph{What the ceiling actually requires.} Layer~I.a is still not
+unconditional, but the escape route is narrower than "large enough magnitude".
+Its hypothesis A5-under-fault is the uniqueness that
+Remark~\ref{rem:bifurcation} warns can break, and breaking it needs the faulted
+loop to enter a genuine \emph{symmetry-breaking bifurcation}, not merely a large
+fault: the symmetric periodic orbit must lose stability, after which an
+equivariant system settles on a \emph{chiral} limit cycle whose mirror image is a
+second attractor. Then A1--A4 hold, the fault is still $\symgrp$-fixed, yet
+$\push{\rho}P_\varphi \neq P_\varphi$ and (I.b) makes it visible through
+$\eps{chir}$. Such a regime does exist in this project's own worlds --- the
+Sprint-1 moving-trot Go2 at low proportional gain realized a chiral gait with
+duty factors $0.63/0.64$ and $0.85/0.87$ and a chirality index $\approx 0.23$,
+two orders of magnitude above the P1 floor (rp003, Finding~1) --- but it is
+reached by \emph{destabilizing the gait}, not by scaling a symmetric fault at a
+stable operating point. The practical reading is therefore stronger than the
+original conjecture: within the envelope where the commanded gait remains
+stable, the two-channel design
+(Corollary~\ref{cor:two-channel-necessity}) is \emph{necessary}, and one should
+not count on a severe bilateral fault eventually revealing itself to $R^-$.
+Falsification of the corrected statement: a $\symgrp$-fixed fault that raises
+$R^-$ power above $\alpha$ while the chirality index stays at its nominal floor
+(that would break Layer~I.a itself), or a bifurcating regime in which $R^-$
+stays blind although the chirality index has risen (that would break the
+$\eps{chir}$ route).
 \end{remark}
 
 \begin{remark}[Statistic consistency --- paired mean vs energy distance]
