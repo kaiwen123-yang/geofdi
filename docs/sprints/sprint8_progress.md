@@ -52,12 +52,12 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [x] rp027 Block T2 review pack; tag `theory-part1-v1.1`
 
 ## Block P — three pre-registered prediction experiments (`experiments/e15_predictions/`)
-- [ ] `docs/protocol/e15_preregistration.md` committed BEFORE the run
-- [ ] P1 chirality ceiling: κ ∈ {0.7,0.5,0.4,0.3}, R=30 → power + chirality index vs κ figure + ceiling estimate
-- [ ] P2 statistic split: left-leg encoder noise var ×4, R=50 → paired_energy ≈ α vs energy_distance > α + protocol note
-- [ ] P3 slip regimes: Go2 unilateral patch / uniform low μ; M1 single-wheel / both-wheel μ×0.5, R=30 → regime × channel table
-- [ ] results back-filled into T2 empirical anchors, theory recompiled
-- [ ] rp028 Block P review pack
+- [x] 713f199 e15 pre-registration committed BEFORE the run (2026-08-16 14:35)
+- [x] P1 (e15a, R=30): R⁻ blind (0.00) at all κ, chirality at floor → A5-under-fault holds, ceiling NOT reached by symmetric fault (blindness robust; bifurcation is the rp003 moving-trot regime). Reported honestly
+- [x] P2 (e15b): DECISIVE toy — paired_energy pinned at α [0.05,0.10,0.03,0.03], energy_distance [0.05,0.15,0.30,0.88]; closed-loop near floor (honest); deployment = run both. New faults encoder_noise_scale / torque_meas_noise_scale
+- [x] P3 (e15c): go2 unilateral R⁻ 1.00/NIS quiet, uniform R⁻ 0.00/NIS 1.42 — clean slip-classifier; m1 single R⁻ 1.00, both R⁻ 0.00 (rolling-NIS insensitive to symmetric wheel slip — noted)
+- [x] P1/P2 anchors back-filled in 02_n1_theorems.tex; make theory 0 error/undefined/overfull
+- [x] rp028 Block P review pack
 
 ## Block G — slip statistics + πᵢ gating (`detect/stance_event.py`, `estimate/pi_gating.py`, `experiments/e16_pi_gating/`)
 - [ ] G1 per-stance-event conformal p / e-values (legged) + per-wheel rolling-constraint residual (wheeled); FAR per event
