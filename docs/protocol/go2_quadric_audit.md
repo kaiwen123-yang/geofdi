@@ -288,3 +288,45 @@ C 6.38) and the between-date ratio mean(Mar)/mean(Jan) = 1.18 are all identical,
 cross-calibration contrast (0.33 vs 0.37) now compares *confirmed* rather than hypothesised groupings. Reported as
 required by the sprint rule "if the numbers change, report honestly": they did not change, because the hypothesis was
 right.
+
+## R5a. The xb4 / nmb3 split experiment (Sprint 10 M0.2)
+
+Pre-registration `docs/protocol/e20_split_preregistration.md` (committed before the run). `xb4` and `nmb3` are the two
+sessions that alarmed *inside* one continuous traverse in R5, so they decide whether the per-run calibration rule is
+sufficient. Each session's straight rows were halved — `xb4` spatially by median RTK easting, `nmb3` temporally — and
+each half tested alone, together, and with a within-longest-run halving control.
+
+| session | part | K | H₀ p | H₀′ window-reject | H₀′ alarm | H₀′ e-proc max | ν₀ |
+|---|---|---:|---:|---:|---:|---:|---:|
+| xb4 | half A (easting ≤ −1.9 m) | 233 | 0.002 | 0.40 | **window 7** | 9.9e4 | 19.5 |
+| xb4 | half B (easting > −1.9 m) | 216 | 0.002 | **0.00** | **none** | 0.54 | 36.8 |
+| xb4 | concatenated | 467 | 0.002 | 0.58 | window 1 | 6.3e12 | 21.6 |
+| nmb3 | first half (time) | 219 | 0.002 | **0.07** | **none** | 8.1 | 10.7 |
+| nmb3 | second half (time) | 237 | 0.002 | 0.20 | **window 3** | 26.4 | 14.8 |
+| nmb3 | concatenated | 463 | 0.002 | 0.30 | window 12 | 4.2e5 | 9.4 |
+
+**Neither pre-registered outcome occurred; the result is a third one — localised non-stationarity.** In both sessions
+*one* half is clean (xb4 half B: window-reject 0.00, e-process 0.54, nowhere near the 1/α = 20 alarm line; nmb3 first
+half: 0.07, e-process 8.1) while the *other* half still alarms on its own. So the alarm is neither a pure join artefact
+(prediction 1 fails — a half alarms internally) nor a uniform within-traverse anomaly (prediction 2 fails — the other
+half is in band). The inhomogeneity is real and **localised to an identified part of the session**, and the two halves
+also carry genuinely different asymmetry levels (xb4 ν₀ 19.5 vs 36.8; nmb3 10.7 vs 14.8).
+
+**Prediction 3 (symmetric readout should move if the split is a surface line) — split verdict.**
+For **xb4 the symmetric readouts are identical across the split**: foot-force level differs by 1 %, high-frequency IMU
+texture by 3 %, speed by 0.5 %. A bilaterally symmetric surface change would have moved them, so **the xb4 spatial split
+does not correspond to the site-A tile line, and the P-A surface-switch explanation is *not* supported for this
+session.** For **nmb3 the foot-force level does move, by 17 %** (23.1 → 26.9) across the temporal split, and it is the
+heavier second half that alarms — consistent with a genuine change of walking condition part-way through that session.
+
+**Consequences, stated conservatively.**
+1. The deployment rule from R5 survives but is sharpened: calibrate ν₀ **per homogeneous segment**, and a segment is not
+   guaranteed homogeneous merely because it is one continuous run — `xb4` half A is a single spatial region that is
+   still internally non-stationary.
+2. `xb4` half A and `nmb3` second half are carried into the manuscript's hardware section as **residual-anomaly
+   segments**: real, reproducible H₀′ rejections on a healthy machine whose cause is not identified by the recorded
+   channels. They are the honest counterweight to the clean halves.
+3. **Window-count caveat, stated rather than hidden:** the within-longest-run halves alarm 0/2 in both sessions, but each
+   has only 2–3 monitoring windows, so the e-process has little opportunity to cross 1/α. That null is *not* evidence of
+   within-run homogeneity — the same confound identified in B6. Settling it needs the ≥ 60 s continuous runs already on
+   the robot-day list.
