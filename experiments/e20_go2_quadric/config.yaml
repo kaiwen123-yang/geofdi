@@ -1,0 +1,14 @@
+# e20 — GeoFDI on the QUADRIC-GINS Go2 corpus (Sprint 9 Block R).
+# Pre-registration: docs/protocol/go2_real_preregistration.md (committed before any run).
+experiment: e20_go2_quadric
+sessions:
+  "2026-01-05": [nmb1, nmb2, nmb3, nmb4, xb1, xb2, xb3, xb4]
+  "2026-03-06": [by1, by2, by3]
+sites:                       # [inferred] in go2_session_meta_form.md; R2 pairs by site
+  nmb: B
+  xb: A
+  by: C
+detect: {alpha: 0.05, M: 512, N: 64, window: 10, seed: 0, drop_first: 3, drop_last: 3}
+registration: {min_run_s: 8.0, pool_runs: true}     # pool all straight runs of a session (each registered separately)
+inekf: {sigma_gyro: 0.02, sigma_accel: 0.2, sigma_contact: 0.02, sigma_kin_floor: 0.02, alpha: 0.05,
+        foot_speed_thresh: 0.4, cov_inflate: 10.0}
