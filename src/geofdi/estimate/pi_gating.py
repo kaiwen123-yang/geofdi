@@ -67,7 +67,10 @@ def _run(df, kin, mode="none", lib=None, sigma_gyro=0.01, sigma_accel=0.1, sigma
     # slip = dict(leg, t0, t1, vel_world=[vx,vy,vz]): a controlled world-frame foot slip that corrupts the stationary-
     # contact measurement of `leg` during [t0,t1] (the tracked contact point drifts by vel_world*(t-t0), body-framed).
     q_cols = [f"q_{l}_{j}" for l in LEGS for j in JOINTS]
-    Q = df[q_cols].to_numpy(); acc = df[["imu_a_x", "imu_a_y", "imu_a_z"]].to_numpy(); gyr = df[["imu_w_x", "imu_w_y", "imu_w_z"]].to_numpy()
+    # a high-level-API robot (Sprint 9 Go2) exposes foot positions but NO joint stream: with use_provided_feet the FK is
+    # never called, so missing q columns are fine.
+    Q = df[q_cols].to_numpy() if all(c in df for c in q_cols) else np.full((len(df), 12), np.nan)
+    acc = df[["imu_a_x", "imu_a_y", "imu_a_z"]].to_numpy(); gyr = df[["imu_w_x", "imu_w_y", "imu_w_z"]].to_numpy()
     C = df[[f"c_{l}" for l in LEGS]].to_numpy() > 0.5; t = df["t"].to_numpy()
     quat = df[["base_qw", "base_qx", "base_qy", "base_qz"]].to_numpy()
     pos = np.nan_to_num(df[["base_x", "base_y", "base_z"]].to_numpy()); vel = np.nan_to_num(df[["base_vx", "base_vy", "base_vz"]].to_numpy())

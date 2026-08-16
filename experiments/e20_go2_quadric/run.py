@@ -114,18 +114,25 @@ def h0_h0prime(Z, rep, det, seed=0):
 
 
 def per_leg_ranking(Z, rep, chans):
-    """Which leg carries the anti-symmetric energy (P-LH). Pi^- energy per leg on standardized channels; R- pairs legs,
-    so the ranking is over mirror PAIRS (front LF/RF vs hind LH/RH) plus the per-leg share of the pair's channels."""
+    """Which mirror PAIR carries the anti-symmetric energy.
+
+    R- can rank pairs but NOT sides: for a mirror pair (c, c') the anti-symmetric part obeys (Pi^- Z)[c'] = -sign*(Pi^- Z)[c],
+    so both partners hold identical Pi^- energy. (An earlier version of this function standardised each channel by its own
+    std before summing, which broke that identity and produced a spurious left/right ranking -- do not do that.) The side
+    is recoverable only from the SIGN of the mean difference, reported by _stages.signed_pair_asymmetry (R5).
+    """
     _, Zm = isotypic_split(Z, rep)
-    sc = Z.transpose(1, 0, 2).reshape(Z.shape[1], -1).std(axis=1) + 1e-12
-    e = (Zm / sc[None, :, None]) ** 2
-    per_leg = {}
-    for l in LEGS:
-        ix = [i for i, c in enumerate(chans) if c.endswith(f"_{l}") or f"_{l}_" in c]
-        per_leg[l] = float(e[:, ix, :].mean())
-    pair = {"front(LF/RF)": 0.5 * (per_leg["LF"] + per_leg["RF"]), "hind(LH/RH)": 0.5 * (per_leg["LH"] + per_leg["RH"])}
-    return {"per_leg_antisym_energy": per_leg, "per_pair": pair,
-            "top_leg": max(per_leg, key=per_leg.get), "top_pair": max(pair, key=pair.get)}
+    tot = float((Zm ** 2).sum()) + 1e-12
+    pair = {}
+    for a, b in (("LF", "RF"), ("LH", "RH")):
+        ix = [i for i, c in enumerate(chans) if f"_{a}" in c or f"_{b}" in c]
+        pair[f"{a}/{b}"] = float((Zm[:, ix, :] ** 2).sum() / tot)
+    fam = {}
+    for f in ("foot_pos", "foot_vel", "foot_force", "imu"):
+        ix = [i for i, c in enumerate(chans) if c.startswith(f)]
+        if ix:
+            fam[f] = float((Zm[:, ix, :] ** 2).sum() / tot)
+    return {"pair_share": pair, "top_pair": max(pair, key=pair.get), "family_share": fam, "top_family": max(fam, key=fam.get)}
 
 
 # ------------------------------------------------------------------ R1
@@ -141,9 +148,12 @@ def stage_r1(res_dir):
         print(f"[r1] {name} ({info['site']}, {day}): K={r.get('K')} straight {info['straight']['masked_s']:.0f}s | "
               f"H0 p={r.get('H0_whole_p',{}).get('paired_energy',float('nan')):.4f} win-rej {r.get('H0_window_rej',float('nan')):.2f} alarm {r.get('H0_alarm')} | "
               f"H0' win-rej {r.get('H0p_window_rej',float('nan')):.2f} eproc {r.get('H0p_eproc_max',float('nan')):.1f} alarm {r.get('H0p_alarm')} | "
-              f"nu0 {r.get('nu0',float('nan')):.2f} | top {rank.get('top_leg','-')}/{rank.get('top_pair','-')}", flush=True)
+              f"nu0 {r.get('nu0',float('nan')):.2f} | top pair {rank.get('top_pair','-')} {rank.get('pair_share',{})} | top family {rank.get('top_family','-')}", flush=True)
     T = pd.DataFrame(rows)
-    T.drop(columns=[c for c in ("H0_pw", "H0p_pw", "per_leg_antisym_energy", "per_pair") if c in T]).to_csv(res_dir / "e20_r1_sessions.csv", index=False)
+    T2 = T.copy()
+    for k in ("LF/RF", "LH/RH"):
+        T2[k] = T2["pair_share"].apply(lambda d: d.get(k) if isinstance(d, dict) else np.nan)
+    T2.drop(columns=[c for c in ("H0_pw", "H0p_pw", "pair_share", "family_share") if c in T2]).to_csv(res_dir / "e20_r1_sessions.csv", index=False)
     (res_dir / "e20_r1_full.json").write_text(json.dumps(rows, indent=1, default=str))
     _plot_r1(res_dir, T, rows)
     ok_H0 = int((T["H0_whole_p"].apply(lambda d: d.get("paired_energy", 1.0)) <= det["alpha"]).sum())
@@ -151,7 +161,9 @@ def stage_r1(res_dir):
     line = (f"[e20 R1] {len(T)} Go2 sessions: naive H0 rejects on {ok_H0}/{len(T)} (prediction 1: >= 8/11); "
             f"H0' sequential e-process alarms on {n_alarm}/{len(T)} (prediction 2: none on a healthy session); "
             f"H0' window-reject rate median {T['H0p_window_rej'].median():.2f}; nu0 range {T['nu0'].min():.2f}-{T['nu0'].max():.2f}; "
-            f"per-pair anti-symmetric energy top = " + ", ".join(f"{s}:{r['top_pair']}" for s, r in zip(T.session, rows)))
+            f"anti-symmetric energy is carried by the {T['top_pair'].mode().iloc[0]} pair in {int((T['top_pair']==T['top_pair'].mode().iloc[0]).sum())}/{len(T)} sessions "
+            f"(median share LH/RH {np.median([r['pair_share']['LH/RH'] for r in rows]):.2f} vs LF/RF {np.median([r['pair_share']['LF/RF'] for r in rows]):.2f}); "
+            f"dominant channel family = {T['top_family'].mode().iloc[0]}")
     (res_dir / "conclusions.txt").open("a").write(line + "\n"); print(line)
     return T
 
@@ -167,20 +179,20 @@ def _plot_r1(res_dir, T, rows):
     ax.bar(xs + 0.2, T["H0p_window_rej"], 0.4, color="tab:blue", label="H₀′ window-reject")
     ax.axhline(alpha, color="k", ls=":", lw=0.8, label="α"); ax.axhspan(0, 0.12, color="green", alpha=0.10)
     ax.set_xticks(xs); ax.set_xticklabels(T.session, rotation=45, ha="right", fontsize=7)
-    ax.set_ylabel("R⁻ window-reject rate"); ax.set_title("Go2 (own corpus, >1 yr in service, 5 kg payload):\nnaive H₀ sees the natural asymmetry, H₀′ stays in band", fontsize=8.5)
+    ax.set_ylabel("R⁻ window-reject rate"); ax.set_title("Go2 (own corpus, >1 yr in service, 5 kg payload): naive H₀ rejects on\n11/11 — the natural asymmetry is real. H₀′ is ALSO elevated here because\nthese elements pool several straight runs (see R5: within one run it is not)", fontsize=8)
     ax.legend(fontsize=7); ax.grid(alpha=.3, axis="y")
     ax = axes[1]
     ax.bar(xs, T["nu0"], color=cs); ax.errorbar(xs, T["nu0"], yerr=T["nu0_boot_std"], fmt="none", ecolor="k", capsize=3)
     ax.set_xticks(xs); ax.set_xticklabels(T.session, rotation=45, ha="right", fontsize=7)
     ax.set_ylabel("ν₀ (H₀′ calibration asymmetry level)")
-    ax.set_title("ν₀ per session — colour = site (A orange / B blue / C green)\nJan (nmb,xb) vs Mar (by): the two-month reproducibility check", fontsize=8.5); ax.grid(alpha=.3, axis="y")
+    ax.set_title("ν₀ per session — colour = site (A orange / B blue / C green)\nJan (nmb,xb) vs Mar (by): two-month drift (×1.18) < within-site spread", fontsize=8.5); ax.grid(alpha=.3, axis="y")
     ax = axes[2]
     ep = T["H0p_eproc_max"].to_numpy()
     ax.semilogy(xs, np.maximum(ep, 1e-3), "o", color="tab:blue", label="H₀′ e-process max")
     ax.semilogy(xs, np.maximum(T["H0_eproc_max"].to_numpy(), 1e-3), "s", color="tab:red", label="H₀ e-process max")
     ax.axhline(1 / alpha, color="r", ls="--", lw=0.9, label="alarm 1/α")
     ax.set_xticks(xs); ax.set_xticklabels(T.session, rotation=45, ha="right", fontsize=7)
-    ax.set_ylabel("max e-process"); ax.set_title("sequential monitor: H₀ alarms (real asymmetry),\nH₀′ does not (asymmetry is stationary within a session)", fontsize=8.5)
+    ax.set_ylabel("max e-process"); ax.set_title("sequential monitor: H₀ alarms everywhere (real asymmetry);\nH₀′ alarms on 8/11 when runs are POOLED — diagnosed in R5\nas a between-run condition change, not within-run drift", fontsize=8)
     ax.legend(fontsize=7); ax.grid(alpha=.3)
     fig.suptitle("e20 R1 — GeoFDI R⁻ on 11 own Unitree Go2 sessions (QUADRIC-GINS corpus, 3 sites, 2 dates two months apart)", fontsize=10)
     fig.tight_layout(); fig.savefig(res_dir / "e20_r1_go2_h0_h0prime.png", dpi=115); plt.close(fig)

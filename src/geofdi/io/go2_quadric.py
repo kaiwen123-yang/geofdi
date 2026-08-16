@@ -119,6 +119,20 @@ def load_fixposition(fx_dir: str | Path) -> tuple[pd.DataFrame, dict]:
     return ref, info
 
 
+def _timing_report(hl: pd.DataFrame) -> dict:
+    """Timing fields of a parsed transcript, recomputed from the frame (so a cached load reports the same numbers)."""
+    n = len(hl)
+    t = hl["t_abs"].to_numpy() if "t_abs" in hl else np.array([])
+    dt = np.diff(t) if n > 2 else np.array([np.nan])
+    return {"n_records": int(n), "duration_s": float(hl["t"].iloc[-1]) if n else 0.0,
+            "rate_hz_median": float(1.0 / np.median(dt)) if n > 2 else float("nan"),
+            "dt_ms_median": float(np.median(dt) * 1e3) if n > 2 else float("nan"),
+            "dt_ms_max": float(np.nanmax(dt) * 1e3) if n > 2 else float("nan"),
+            "n_time_backjumps": int(np.sum(dt <= 0)) if n > 2 else 0,
+            "n_gaps_gt_100ms": int(np.sum(dt > 0.1)) if n > 2 else 0,
+            "t0_utc": pd.Timestamp(t[0], unit="s", tz="UTC").isoformat() if n else None}
+
+
 # ------------------------------------------------------------------------------------------ unified session
 def load_go2_quadric_session(session_dir: str | Path, cache: bool = True, max_records: int | None = None):
     """Load one ingested session into the GeoFDI schema. Caches the parsed transcript as parquet under
@@ -130,7 +144,8 @@ def load_go2_quadric_session(session_dir: str | Path, cache: bool = True, max_re
     root = os.environ.get("GEOFDI_DATA_ROOT")
     cache_p = Path(root) / "data" / "processed" / "go2" / f"{name}.parquet" if (root and cache and max_records is None) else None
     if cache_p is not None and cache_p.exists():
-        hl = pd.read_parquet(cache_p); hl_rep = {"cached": True, "n_records": len(hl)}
+        hl = pd.read_parquet(cache_p)
+        hl_rep = _timing_report(hl); hl_rep["cached"] = True     # recompute timing: a cached load must report the same fields
     else:
         hl, hl_rep = parse_sportmodestate(txt, max_records=max_records)
         if cache_p is not None:
@@ -143,6 +158,8 @@ def load_go2_quadric_session(session_dir: str | Path, cache: bool = True, max_re
             df[f"foot_pos_{leg}_{ax}"] = hl[f"foot_pos{3 * li + k}"].to_numpy()
             df[f"foot_vel_{leg}_{ax}"] = hl[f"foot_vel{3 * li + k}"].to_numpy()
         df[f"foot_force_{leg}"] = hl[f"foot_force{li}"].to_numpy()
+        for k, ax in enumerate("xyz"):                              # alias used by estimate/pi_gating (use_provided_feet)
+            df[f"foot_{ax}_{leg}"] = hl[f"foot_pos{3 * li + k}"].to_numpy()
         df[f"c_{leg}"] = np.nan                                     # filled below from the force threshold
     for k, ax in enumerate("xyz"):
         df[f"imu_a_{ax}"] = hl[f"acc{k}"].to_numpy(); df[f"imu_w_{ax}"] = hl[f"gyro{k}"].to_numpy()
