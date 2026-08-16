@@ -4,7 +4,7 @@ All three blocks shipped: **Q** (corpus audit + ingest), **R** (own-Go2 hardware
 9/9). Packs rp031–rp033; tags `theory-part3-v1`, `real-data-milestone-2`. 65 tests pass; `make theory` 0 error /
 0 undefined / 0 overfull / **0 remaining TODOs**. Progress: `sprint9_progress.md`.
 
-## 1. Q1 determination checklist (the格 that decides everything in bold)
+## 1. Q1 determination checklist (the row that decides everything, in bold)
 
 | item | verdict |
 |---|---|
