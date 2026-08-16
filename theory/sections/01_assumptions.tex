@@ -74,9 +74,9 @@ knee flexion/extension (KFE, ``pitch'')   & $\pm y$ & leg swapped, angle kept  &
 wheel spin (if present)                   & $\pm y$ & leg swapped, rate kept   & $+1$ \\
 \bottomrule
 \end{tabular}
-\caption{Per-joint transformation under the sagittal reflection, assuming the
-uniform-axis convention. The M1-specific signs are to be \emph{measured}, not
-assumed (see the remark below).}
+\caption{Per-joint transformation under the sagittal reflection in the
+uniform-axis convention (generic). The measured, platform-specific values are
+in Table~\ref{tab:joint-signs-hw}.}
 \label{tab:joint-signs}
 \end{table}
 
@@ -87,8 +87,12 @@ between left and right legs, in which case part or all of $S$ is absorbed into
 the coordinates and $P_{\gs}$ is closer to a pure permutation. The actual $S$
 for M1 must therefore be established from data (commanding small symmetric
 motions and checking recorded signs), not read off a datasheet.
-\todo[inline]{Back-fill the M1 joint ordering, per-joint signs, and wheel DoFs
-(if any) in Table~\ref{tab:joint-signs} after the Day-0 telemetry audit.}
+This has now been done: the M1 telemetry audit of 2026-08-10 fixed the joint
+count ($n_j = 16$, i.e.\ the wheel DoFs \emph{are} present), the ordering, and
+every sign, and found that the vendor frame does mirror all four joints, so the
+extra flip is real and is undone in the loader. The verified values, together
+with the Go2 corpus that publishes no joint stream at all, are collected in
+Table~\ref{tab:joint-signs-hw}.
 \end{remark}
 
 \paragraph{Actuation.}

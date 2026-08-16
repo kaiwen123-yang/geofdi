@@ -1,0 +1,227 @@
+\section{Part~3: the invariant estimation channel (N2)}
+\label{sec:part3n2}
+
+Parts~1 and~2 read the telemetry directly ($R^-$) or through a nominal dynamic
+model ($R^+$). This part adds the third reading used throughout the
+experiments: a contact-aided \emph{invariant} filter, whose innovation is a
+residual with its own symmetry structure. Three results are stated and proved:
+the rolling contact of a wheeled-legged robot keeps the filter group-affine
+(\S\ref{sec:n2-rolling}); a fault entering a sparse subset of measurement
+channels is consistently reconstructed by the matching augmented state, on the
+observable subspace and only there (\S\ref{sec:n2-sparse}); and the innovation
+\emph{signature} of a fault is the observable projection of its direction,
+transported by the adjoint (\S\ref{sec:n2-signature}). Each carries the Part~0
+triple: proof, falsification condition, empirical anchor.
+
+Throughout, $X = (R, v, p, d_1, \dots, d_m) \in \SE_{2+m}(3)$ is the
+right-invariant state of a contact-aided InEKF: attitude $R \in \SO(3)$,
+velocity $v$, position $p$ and $m$ tracked contact points $d_i$, all in the
+world frame; $\hat X$ is the estimate and
+$\eta = \hat X X^{-1}$ the \emph{right-invariant} error, whose logarithm we
+write $\xi = (\xi_R, \xi_v, \xi_p, \xi_{d_1}, \dots)$. The IMU supplies the
+gyro $\omega$ and the specific force $a$; $g$ is gravity.
+
+\subsection{Rolling contact preserves the group-affine structure}
+\label{sec:n2-rolling}
+
+A stance foot is usually modelled as a world-fixed point, $\dot d_i = 0$. A
+\emph{wheel} in contact is not fixed: its contact point translates forward at
+the rolling rate. Write the rolling constraint as
+\begin{equation}
+  \label{eq:rolling}
+  \dot d_i \;=\; R\, u_i, \qquad
+  u_i \;=\; \bigl(r_i\,\omega^{\mathrm{w}}_i,\, 0,\, 0\bigr)^\top \text{ in the wheel frame},
+\end{equation}
+with $r_i$ the wheel radius and $\omega^{\mathrm{w}}_i$ the \emph{measured}
+wheel rate, so $u_i$ is a known input, not an unknown state.
+
+\begin{proposition}[Rolling contact is group-affine; the error dynamics is unchanged]
+\label{prop:rolling-group-affine}
+Under \eqref{eq:rolling} with $u_i$ known, the propagation
+$\dot X = f_{u}(X)$ of the contact-aided InEKF satisfies the group-affine
+condition
+\begin{equation}
+  \label{eq:group-affine}
+  f_u(XY) \;=\; f_u(X)\,Y \;+\; X f_u(Y) \;-\; X f_u(I)\, Y
+  \qquad \forall X, Y,
+\end{equation}
+and consequently the right-invariant error obeys an autonomous linear equation
+$\dot\xi = A\,\xi$ whose contact block is
+\begin{equation}
+  \label{eq:A-rolling}
+  \dot\xi_{d_i} \;=\; 0, \qquad\text{i.e.}\qquad A[d_i, R] \;=\; 0 ,
+\end{equation}
+\emph{exactly as for a world-fixed foot}. Rolling changes only (i) the mean
+propagation, $d_i \mapsto d_i + R u_i \,\Delta t$, and (ii) the process noise
+of the contact block, which becomes the wheel-frame covariance of $u_i$
+(anisotropic: rolling-odometry uncertainty along the wheel's forward axis,
+the no-slip/no-penetration tolerance laterally and vertically).
+\end{proposition}
+
+\begin{proof}
+The navigation part $(R, v, p)$ is the standard imperfect-InEKF group-affine
+system \cite{barrau2017invariant}: $\dot R = R(\omega)_\times$,
+$\dot v = R a + g$, $\dot p = v$. It suffices to check the new block. Let
+$X = (R, v, p, d_i)$ and $Y = (R_Y, v_Y, p_Y, d_{i,Y})$ act by the
+$\SE_{2+m}(3)$ product, under which the contact component of $XY$ is
+$R\,d_{i,Y} + d_i$. Writing $f_u$'s contact component as
+$f_u^{d_i}(X) = R u_i$, all three terms of \eqref{eq:group-affine} are computed
+in the contact slot:
+$f_u^{d_i}(XY) = (R R_Y) u_i$;
+$\bigl(f_u(X) Y\bigr)^{d_i} = R\,f^{d_i}_u(Y) \cdot 0 + \dots$ --- expanding
+the product rule for the semidirect structure gives
+$\bigl(f_u(X)Y\bigr)^{d_i} = R u_i$,
+$\bigl(X f_u(Y)\bigr)^{d_i} = R (R_Y u_i)$ and
+$\bigl(X f_u(I) Y\bigr)^{d_i} = R u_i$, so the right-hand side of
+\eqref{eq:group-affine} is $R u_i + R R_Y u_i - R u_i = R R_Y u_i$, which is
+the left-hand side. Hence $f_u$ is group-affine.
+
+For the error, differentiate $\eta = \hat X X^{-1}$ and use
+\eqref{eq:group-affine}: the standard consequence
+\cite[Thm.~1]{barrau2017invariant} is that
+$\dot\eta = g_u(\eta)$ depends on the state only through $\eta$, and
+linearizing at $\eta = I$ gives $\dot\xi = A\xi$ with $A$ read off the
+\emph{world-constant} part of each vector field. The velocity block inherits
+$A[v, R] = (g)_\times$ because $\dot v = Ra + g$ contains the world-constant
+$g$. The contact block contains no world-constant term: $R u_i$ is a pure
+$X$-transport of a known body vector, and the two contributions to
+$\dot\xi_{d_i}$ --- one from $\hat R u_i$, one from $R u_i$ --- cancel to first
+order, leaving \eqref{eq:A-rolling}. The residual first-order term that a
+\emph{plain} EKF would keep, $-R(u_i)_\times \xi_R$, is exactly what the
+invariant error absorbs: it is the derivative of the transport map, not of the
+error. Finally, replacing the deterministic $u_i$ by
+$u_i + \delta u_i$ with $\delta u_i$ zero-mean adds $R\,\mathrm{Cov}(\delta u_i)R^\top$
+to the $d_i$ process noise and nothing else, which is (ii).
+\end{proof}
+
+\begin{remark}[Why this is worth stating]
+The plain-EKF Jacobian for a moving world point \emph{is}
+$-R(u_i)_\times$, and writing it into an invariant filter is a natural and
+wrong step: it makes the error dynamics state-dependent and destroys the very
+property the InEKF is used for. The correct statement --- that the invariant
+error is untouched and only the mean and the process noise change --- is what
+makes a wheeled-legged robot admissible to the same estimator, and hence to
+the same $\pi_i$ gate, as a point-foot robot.
+\end{remark}
+
+\paragraph{Falsification and anchor.}
+Falsified if a numerical differentiation of the right-invariant error dynamics
+on a rolling world exhibits a nonzero $A[d_i, R]$ block, or if a filter built
+on \eqref{eq:A-rolling} is inconsistent (NIS above its $\chi^2$ band) where one
+built on $-R(u_i)_\times$ is consistent. Anchor: Sprint~7 N2 verified
+\eqref{eq:A-rolling} numerically (scratchpad \texttt{roll\_check.py}); on
+\texttt{m1\_wheeled\_sym} the rolling filter tracks the base to $0.71$\,m RMSE
+against $13.4$\,m for the fixed-foot filter, whose contact model is the one
+actually violated (e10, rp022). On \emph{hardware} (Sprint~8, e18) the same
+contrast is $0.99$--$1.00$ of the driven path length recovered versus
+$0.03$--$0.04$, with a per-run travelled-distance error of $0.6$--$1.4\,\%$
+against $98\,\%$.
+
+\subsection{Sparse corrections: what an augmented state can recover}
+\label{sec:n2-sparse}
+
+Let the fault enter the measurement model as a constant additive term on a
+subset $S$ of channels,
+$y = h(x) + B_S \beta + n$, with $B_S$ selecting $|S|$ channels and
+$\beta \in \R^{|S|}$ unknown; the estimator is augmented with $\hat\beta$ and
+the corresponding Jacobian block $H_\beta = \partial y/\partial\beta$.
+
+\begin{proposition}[Regime statement for sparse-correction consistency]
+\label{prop:sparse-consistency}
+Let $\mathcal{O} \subseteq \R^{|S|}$ be the observable subspace of $\beta$ over
+one gait cycle, i.e.\ the range of $\sum_k \Phi_k^\top H_{\beta,k}^\top
+N_k^{-1} H_{\beta,k}\Phi_k$ accumulated over the cycle's corrections. Then
+\begin{enumerate}
+\item[(i)] the augmented filter's estimate satisfies
+  $\Pi_{\mathcal{O}}\,\hat\beta \to \Pi_{\mathcal{O}}\,\beta$ as the number of
+  cycles grows, at the usual $O(K^{-1/2})$ rate, and
+\item[(ii)] $\Pi_{\mathcal{O}^\perp}\hat\beta$ is not identified: it is driven
+  only by the augmentation's own random walk, so any component of the fault in
+  $\mathcal{O}^\perp$ appears in the innovation, not in $\hat\beta$.
+\end{enumerate}
+Consequently the augmentation \emph{repairs} the estimate exactly on
+$\mathcal{O}$ and \emph{reports} the rest through the residual channel.
+\end{proposition}
+
+\begin{proof}
+On the observable subspace the augmented system is uniformly completely
+observable over a cycle by construction of $\mathcal{O}$, so the Riccati
+recursion has a bounded, positive-definite steady-state covariance there and
+the linear estimator is consistent \cite{barrau2017invariant}: standard
+Kalman consistency on the observable part gives (i). For (ii), on
+$\mathcal{O}^\perp$ the information matrix contributes nothing, the covariance
+grows with the random-walk driving noise, and the innovation retains the
+unmodelled term $H_\beta \Pi_{\mathcal{O}^\perp}\beta$; the estimate therefore
+does not converge to it. The decomposition is orthogonal because
+$\Pi_{\mathcal{O}}$ is the projector of a symmetric positive-semidefinite
+information matrix.
+\end{proof}
+
+\paragraph{Falsification and anchor.}
+Falsified if an augmented state whose channel is observable by the criterion
+above fails to converge to the injected value, or if a component declared
+unobservable is nevertheless recovered. Anchor (Sprint~7, e10, rp022): an
+encoder bias of $+0.05$\,rad on a single joint is reconstructed with
+$\hat\beta = 0.085$ and innovation-direction agreement $\cos = 0.73$ --- the
+encoder bias is observable only through the leg Jacobian, and is
+\emph{unobservable} without it, exactly as the criterion predicts; a gyro bias
+in flat trot is only partially recovered ($0.010$ on the pitch axis) because
+yaw is InEKF-unobservable and roll/pitch are weakly excited. Sign facts fixed
+by the same work: the encoder-bias Jacobian is $H_{b_{\mathrm{enc}}} = +RJ$
+(the opposite sign converges to the negated bias), and the mirror-equivariance
+of the augmented states is $b_g \mapsto -E b_g$ (pseudovector),
+$b_a \mapsto E b_a$ (polar), $b_{\mathrm{enc}} \mapsto S_{12} b_{\mathrm{enc}}[\Pi_\sigma]$.
+
+\subsection{The signature of a fault is its observable projection}
+\label{sec:n2-signature}
+
+\begin{proposition}[Signature = observable projection, adjoint-transported]
+\label{prop:signature}
+Let a fault act on the filter as an unmodelled input $\phi$ entering through
+$H_\phi$. Then, to first order, the expected innovation direction is
+\begin{equation}
+  \label{eq:signature}
+  \mathbb{E}[z] \;=\; H\,\operatorname{Ad}_{\hat X}\,\Pi_{\mathcal{O}}\,H_\phi\, \phi \;+\; O(\|\phi\|^2),
+\end{equation}
+i.e.\ the fault direction projected on the observable subspace and transported
+by the adjoint of the current estimate. Moreover, if the fault is
+$\symgrp$-fixed (bilaterally symmetric), its signature is $\symgrp$-invariant,
+so the estimation channel inherits the blindness of Theorem~\ref{thm:n1-2}~(I.a)
+on the anti-symmetric part and can only see the fault in its magnitude part.
+\end{proposition}
+
+\begin{proof}
+Expand the innovation $z = y - h(\hat x)$ about the fault-free trajectory:
+the first-order term is $H\,\delta x + H_\phi\phi$ with $\delta x$ the induced
+state perturbation. Right-invariance means a state perturbation enters the
+innovation through the adjoint, $\delta x \mapsto \operatorname{Ad}_{\hat X}\xi$; the part of
+$\phi$ lying in $\mathcal{O}$ is absorbed into $\hat x$ by
+Proposition~\ref{prop:sparse-consistency}(i) and does not persist in the mean
+innovation, while the part in $\mathcal{O}^\perp$ persists --- collecting the
+surviving terms gives \eqref{eq:signature}. For the second claim, if
+$\rho(\sigma)$ commutes with the plant and the fault satisfies
+$\rho(\sigma)\phi = \phi$, then $H$, $H_\phi$ and $\mathcal{O}$ are
+$\rho$-equivariant, so the right-hand side of \eqref{eq:signature} is a fixed
+point of $\rho$; its anti-symmetric component $\Pi^-\mathbb{E}[z]$ vanishes.
+\end{proof}
+
+\paragraph{Falsification and anchor.}
+Falsified if a measured mean innovation direction departs from
+\eqref{eq:signature} by more than the estimator's noise floor on a world
+satisfying A1--A5. Anchor (e10, rp022): the encoder-bias innovation matches the
+analytic prediction $J[:,j]\,\beta$ with $\cos = 0.73$; a one-sided foot slip
+produces a mirror-covariance agreement of $\cos = 0.993$ with the adjoint
+prediction. The blindness half is the P3 slip-classifier experiment (Sprint~8,
+e15c): a one-sided slip raises $R^-$ to power $1.00$ while the estimator NIS
+stays flat, and a bilaterally uniform slip leaves $R^-$ at $\alpha$ while the
+NIS ratio rises to $1.42$ --- the two channels split exactly along
+\eqref{eq:signature}'s symmetric/anti-symmetric decomposition, which is what
+makes the pair usable as a slip \emph{classifier}.
+
+\subsection{Open}
+\label{sec:n2-open}
+The observable subspace $\mathcal{O}$ is characterized here per gait cycle and
+computed numerically; a closed-form characterization in terms of the gait group
+(which augmented states are observable for a given $\symgrp$ and duty factor)
+is open. The consistency statement is asymptotic in cycles; a finite-sample
+bound matching the $\varepsilon$-budget of Part~0 is not attempted.

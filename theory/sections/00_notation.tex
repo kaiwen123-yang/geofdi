@@ -158,7 +158,7 @@ quadrupeds are unavailable.
 \paragraph{Joint count, ordering and reflection signs (resolved on hardware).}
 The M1 platform is a \emph{wheeled-legged} quadruped: $n_j = 16$, four legs
 $\times$ (ABAD = hip roll, HIP = hip pitch, KNEE = knee pitch, WHEEL). The
-ordering and every reflection sign in Table~\ref{tab:joint-signs} were fixed on
+ordering and every reflection sign in Table~\ref{tab:joint-signs-hw} were fixed on
 the 2026-08-10 hardware corpus (\texttt{docs/protocol/m1\_h\_data\_audit.md};
 telemetry names \texttt{fl1\_hip\_roll \dots br4\_foot}), superseding the
 placeholder that stood here.
@@ -191,7 +191,7 @@ both & IMU accelerometer & polar & $\operatorname{diag}(+1,-1,+1)$ & --- \\
      & IMU gyroscope & axial & $\operatorname{diag}(-1,+1,-1)$ & --- \\
 \bottomrule
 \end{tabular}
-\caption{Per-channel reflection signs under $\gs$, verified on hardware. M1:
+\caption{Per-channel reflection signs under $\gs$ \emph{as verified on hardware} (the platform-specific instantiation of the generic Table~\ref{tab:joint-signs}). M1:
 Sprint~8 audit; the wheel \emph{angle} is unbounded (the vendor wraps it to
 $[-\pi,\pi)$) and is therefore excluded from the data element, while the wheel
 \emph{rate} and torque stay. The rightmost column is the extra flip the loader
@@ -201,7 +201,7 @@ the wheel is additionally $-1$ on the left legs and $+1$ on the right. Go2
 built from the robot's own forward kinematics
 (\texttt{foot\_position\_body}/\texttt{foot\_speed\_body}) plus foot force and
 the IMU; the same $\mathbb{C}_2$ representation applies channel-wise.}
-\label{tab:joint-signs}
+\label{tab:joint-signs-hw}
 \end{table}
 
 For the Go2 corpus of Sprint~9 the situation is different in kind rather than in
