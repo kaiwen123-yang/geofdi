@@ -106,6 +106,13 @@ where it matters. Possible reading of the README: 50 Hz is the rate the GRU cons
   Σ-invariance test (theory Part 0, Example *bilateral*). Combinations (2,5), (8,11) (same-side
   pairs) and (2,11), (5,8) (diagonal pairs) break the mirror symmetry and are detectable.
   e03 must report the mirror-pair subset separately.
+* **Sprint 8 note (L4): the mirrored-bilateral external check is INCONCLUSIVE at n = 8.** e03 (Sprint 7) ran the
+  bilateral double-fault (same η on a mirror pair) through the R⁻ flip test and found the straight-segment subset gave
+  ≈ 0.50 double-blindness on only **n = 8 episodes** — too few to distinguish "blind (power ≈ α, as N1-2 predicts)" from
+  "underpowered". The blindness prediction is therefore NOT cleanly demonstrated on the Liu external data; the clean
+  demonstration needs a self-collected straight-driving corpus with a controlled bilateral injection (the M1 rolling
+  corpus once a configurable bilateral fault is available — see the Block P P1/P2 sim predictions and the "still missing"
+  list). Reported as a known gap, not a result. See [[sprint7-outcomes]] e03 line.
 
 ## 5. Nominal (η ≡ 1) material
 

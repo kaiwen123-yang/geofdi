@@ -9,8 +9,8 @@
 # Assembles, in a temp dir:
 #   MANIFEST.md   template with Purpose / Expected / Actual / Git commit /
 #                 Data hashes / Open questions (commit pre-filled). If one of
-#                 the extra files is itself named MANIFEST.md it replaces the
-#                 template.
+#                 the extra files is named MANIFEST.md (or MANIFEST*.md, e.g.
+#                 MANIFEST_rp025.md) it replaces the template.
 #   figures/ tables/ logs/ code/
 # Extra args are bucketed by extension: png/pdf/svg/jpg -> figures,
 # csv/tsv/parquet -> tables, log/txt/out -> logs, everything else -> code.
@@ -76,7 +76,9 @@ for item in "$@"; do
         continue
     fi
     base="$(basename "$item")"
-    if [[ "$base" == MANIFEST.md && -f "$item" ]]; then
+    # any file named MANIFEST.md or MANIFEST*.md (e.g. MANIFEST_rp025.md) replaces the top-level template — the
+    # Sprint 7 packs rp020-024 passed MANIFEST_rpNNN.md, which used to fall through to code/ and leave the TODO stub.
+    if [[ -f "$item" && "$base" == MANIFEST*.md ]]; then
         cp "$item" "$STAGE/MANIFEST.md"
     elif [[ -d "$item" ]]; then
         case "$base" in

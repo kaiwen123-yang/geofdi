@@ -12,13 +12,22 @@ Minimal content (all of it exists in simulation today):
   (Part 2 Prop equiv-delan; Block Q weld models `weld_plain_v1` / `weld_equiv_v1`: δ_f 1.60 vs 0 N·m, val RMSE 0.625
   vs 0.573).
 - Claims: (i) residual inherits H₀ (N3-1) → exact flip test on Π⁻r for the pair; (ii) non-equivariant learner
-  contaminates H₀ (ε̄_model, e13b-style size vs δ_f — to be re-run on the weld world); (iii) DK isolability certificate
-  vs nearest-subspace confusion (e06 weld: analytic accuracy 0.91 / DeLaN-weld 0.80; rp008) with the calibration-
-  centring lemma; (iv) power gain of the residual channel on the weld world (e13a-style, to run).
+  contaminates H₀ (ε̄_model) — **run on the weld world (Sprint 8 L3, e13 weld addendum, R=50, `results/e13_residual_symmetry/
+  e13weld-20260816`): H₀ flip-test size = raw 0.04 / analytic residual 0.02 / equivariant DeLaN 0.00 (δ_f=0) — all in the
+  band [0, 0.12] — vs plain DeLaN 1.00 (δ_f q95 = 1.60); the H₀′ differenced test restores the plain model to 0.04 while
+  naive mean-centring stays at 1.00 (calibration-centring Lemma: centring does NOT fix it)**; (iii) DK isolability
+  certificate vs nearest-subspace confusion (e06 weld: analytic accuracy 0.91 / DeLaN-weld 0.80; rp008) with the
+  calibration-centring lemma; (iv) power gain of the residual channel on the weld world — **run (e13a weld, R⁻ H₀′ power
+  vs 1−κ on LF-KFE actuator gain): analytic residual 0.14 / 0.60 / 1.00 / 1.00 at 1−κ = 0.01 / 0.02 / 0.05 / 0.10, above
+  the raw signal (0.14 / 0.24 / 0.94 / 1.00); the equivariant DeLaN residual is valid but slightly less powerful
+  (0.08 / 0.08 / 0.78 / 1.00)**.
 - Figures: 4 (architecture-lite; δ_f ladder; size vs δ_f; DK certificate vs confusion). Tables: 2 (ladder; confusion).
 - What it does NOT need: floating base, InEKF, gait phase estimation, nuisance study (payload/slope), baselines table.
-- Additional runs required: e13a/e13b on `weld_base: true` (cheap: the pipeline is generic; the reference generator for
-  the welded legs should be a leg-only trajectory instead of the trot template — e06 TODO).
+- Additional runs required: **DONE (Sprint 8 L3)** — `experiments/e13_residual_symmetry/weld_addendum.py` reuses the e13
+  worker/residual machinery with `weld_base=True` and the frozen weld DeLaN models (`models/delan_weld/weld_equiv_v1`,
+  `weld_plain_v1`); figure `e13weld_power_and_contamination.png`, tables `e13a_weld_power.csv` / `e13b_weld_size.csv`.
+  The welded legs still swing under the trot controller (contact term 0), so no separate leg-only reference generator was
+  needed. Remaining figure work is layout only; the numbers are in hand.
 
 ## T-RO main paper adjustments if the RA-L half is split off
 - Keep Part 0/1 theory, the raw-signal R⁻ story, nuisance table, isotypic prediction (raw + residual on the floating

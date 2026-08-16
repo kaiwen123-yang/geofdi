@@ -41,7 +41,7 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [ ] L2 Day-0 docs + `run_pipeline.sh` report notes: rolling primary test = H0', naive H0 excursion expected
 - [ ] L3 weld world e13a/e13b (power + δ_f contamination, R=50) → `docs/paper/split_option.md`
 - [ ] L4 e03 audit doc note: mirrored-bilateral external test n=8 inconclusive
-- [ ] L5 `docs/sprints/` registers N2 theorem write-up as next theory sprint item
+- [x] L5 `docs/sprints/theory_backlog.md` registers the N2 formalisation (sparse-correction consistency + signature=observable projection) as the next theory-sprint item
 - [ ] rp026 Block L review pack
 
 ## Block T2 — N1-2 two-layer restatement (`feat(theory): N1-2 two-layer restatement`; tag `theory-part1-v1.1`)

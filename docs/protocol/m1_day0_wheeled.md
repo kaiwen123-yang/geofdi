@@ -48,8 +48,15 @@ Flat, level floor (mark a 20 m straight lane; direction OUT = away from the door
 | N1 | symmetric payload (1 kg centred on the trunk) rolling 1.0 m/s | 5 + 5 | nuisance row |
 | N2 | temperature sweep: repeat R2 after 20 min of driving | 5 + 5 | `motor_temp_start/end` in meta |
 Session names: `<YYYYMMDD>_rolling_<speed>_flat_<out|back>_repNN` (D001). Every session: `ingest_session.sh <dir> m1/nominal <name>`
-then `run_pipeline.sh` — read `report.md`: R⁻ whole-session p and window QQ (H₀ plausibility), H₀′ ν₀ (the robot's
-stable asymmetry level: expect > 0 on hardware — that is the H₀′ regime, not a failure).
+then `run_pipeline.sh` — read `report.md`. **The primary test in rolling mode is H₀′ (asymmetry CHANGE), not naive H₀.**
+On a healthy real robot naive H₀ (the whole-session flip test) is EXPECTED to reject — the healthy loop is stably
+asymmetric (real ε_dyn) and fixed-duration blocks are serially correlated at short L (Sprint 7 Block W). This was
+confirmed on the first M1 hardware corpus (2026-08-10): all three rolling sessions rejected naive H₀ (p 0.002–0.006)
+while the sequential H₀′ e-process stayed silent (max < 1/α) — `docs/protocol/m1_h_data_audit.md` §13. Read: the H₀′
+differenced/per-window p and its e-process (should not alarm within a healthy session), ν₀ (the robot's stable asymmetry
+level: expect > 0 on hardware — that is the H₀′ regime, not a failure), and the lag-1 block correlation (raise L from 1 s
+to 2 s if positive). Note the half-vs-half differenced test can over-read a slow within-session asymmetry drift
+(session 173247), so prefer the sequential monitor for deployment.
 
 ## 3. Gate 4 — joint-level command access (needed for the residual channel and later fault injection)
 With the robot **suspended (legs free) or lying on a box**: verify that joint-level torque/position commands can be sent

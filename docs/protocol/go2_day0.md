@@ -36,7 +36,10 @@ path; pipeline run once. **No fault is injected on Day 0.**
 | N1 | symmetric payload 1 kg centred, T2 at 0.5 m/s | 5 + 5 | nuisance row |
 | N2 | temperature sweep (repeat T2 after 20 min) | 5 + 5 | |
 Session names `<YYYYMMDD>_trot_<speed>_flat_<out|back>_repNN`; `ingest_session.sh <dir> go2/nominal <name>`; then
-`run_pipeline.sh` — read `report.md`: R⁻ whole-session p, window QQ, e-process, H₀′ (ν₀). Gate 1 (A2): the pipeline's
+`run_pipeline.sh` — read `report.md`. **In rolling/steady mode the primary test is H₀′, not naive H₀**: naive H₀ (the
+whole-session flip test) is EXPECTED to reject on a healthy robot (stably asymmetric loop + correlated blocks, Sprint 7
+Block W; borne out on the M1 hardware, `m1_h_data_audit.md` §13). Read the H₀′ per-window p / e-process (should not alarm
+within a healthy session) and ν₀. Gate 1 (A2): the pipeline
 mirrored-command gap needs τ_cmd (`lowcmd`); Gate 1b (A5): the report's H₀′ ν₀ trend across sessions.
 
 ## 3. Gate 4 — joint-level command access
