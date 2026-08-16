@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.8.14)  16 AUG 2026 19:59
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.8.14)  16 AUG 2026 20:02
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -760,16 +760,6 @@ LaTeX Font Info:    Trying to load font information for U+msb on input line 20.
  (/home/kaiwen/.TinyTeX/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-
-LaTeX Warning: Reference `thm:exact' on page 1 undefined on input line 56.
-
-
-LaTeX Warning: Reference `prop:seq' on page 1 undefined on input line 58.
-
-
-LaTeX Warning: Reference `thm:twolayer' on page 1 undefined on input line 60.
-
-
 Overfull \hbox (1.88719pt too wide) in paragraph at lines 67--73
  [][] 
  []
@@ -781,20 +771,97 @@ File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 ) [1{/home/kaiwen/.TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/home/kaiwen/.TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc}
 
 
-]
-
-LaTeX Warning: Reference `thm:exact' on page 2 undefined on input line 53.
-
-
-LaTeX Warning: Reference `prop:power' on page 2 undefined on input line 53.
+]) (./sections/02_related.tex
+Underfull \hbox (badness 3260) in paragraph at lines 5--11
+ \OT1/ptm/m/it/10 a) Model-based fault and col-li-sion de-tec-tion: [][] \OT1/ptm/m/n/10 The
+ []
 
 
-LaTeX Warning: Reference `prop:seq' on page 2 undefined on input line 53.
+Underfull \hbox (badness 4441) in paragraph at lines 20--23
+ \OT1/ptm/m/it/10 c) Sym-me-try in robotics: [][] \OT1/ptm/m/n/10 Mor-pho-log-i-cal sym-me-try
+ []
 
 
-LaTeX Warning: Reference `thm:twolayer' on page 2 undefined on input line 60.
+Overfull \hbox (237.57945pt too wide) in paragraph at lines 37--59
+ [][] 
+ []
 
-) (./sections/02_related.tex) (./sections/03_preliminaries.tex) (./sections/04_theory.tex) (./sections/05_method.tex) (./sections/06_simulation.tex) (./sections/07_external.tex) (./sections/08_hardware.tex) (./sections/09_limitations.tex) (./sections/10_conclusion.tex) (build/main.bbl [2]) (./appendix/A_proofs.tex)
+) (./sections/03_preliminaries.tex [2]) (./sections/04_theory.tex [3]) (./sections/05_method.tex
+Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 21.
+
+Underfull \hbox (badness 1789) in paragraph at lines 24--25
+[]\OT1/ptm/b/n/10 seg-ment\OT1/ptm/m/n/10 : cut teleme-try into steady, straight, single-
+ []
+
+LaTeX Font Info:    Trying to load font information for OMS+ptm on input line 30.
+(/home/kaiwen/.TinyTeX/texmf-dist/tex/latex/psnfss/omsptm.fd
+File: omsptm.fd 
+)
+LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <10> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 30.
+
+Underfull \hbox (badness 2119) in paragraph at lines 35--37
+[]\OT1/ptm/b/n/10 gate \OT1/ptm/m/n/10 (op-tional): per-stance-event $\OML/cmm/m/it/10 e$\OT1/ptm/m/n/10 -values $\OMS/cmsy/m/n/10 !$ \OT1/ptm/m/n/10 per-leg
+ []
+
+
+Underfull \hbox (badness 2573) in paragraph at lines 50--51
+[]\OT1/ptm/m/n/8 A5; fal-si-fied by a
+ []
+
+
+Underfull \hbox (badness 3826) in paragraph at lines 50--51
+\OT1/ptm/m/n/8 chi-ral gait at low
+ []
+
+
+Underfull \hbox (badness 2065) in paragraph at lines 51--52
+\OT1/ptm/m/n/8 length $\OMS/cmsy/m/n/8 ^^U \OT1/cmr/m/n/8 2\OMS/cmsy/m/n/8 ^^B$ \OT1/ptm/m/n/8 the
+ []
+
+
+Underfull \hbox (badness 2744) in paragraph at lines 52--52
+[]\OT1/ptm/m/n/8 the phase reg-is-tra-tion is half-period
+ []
+
+
+Underfull \hbox (badness 1721) in paragraph at lines 52--53
+[]$\OMS/cmsy/m/n/8 ^^F\OT1/cmr/m/n/8 10 %$ \OT1/ptm/m/n/8 clock er-ror
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 52--53
+\OT1/ptm/m/n/8 costs power, not
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 53--54
+[]\OT1/ptm/m/n/8 per-run cal-i-bra-tion
+ []
+
+
+Underfull \hbox (badness 1565) in paragraph at lines 54--55
+[]\OT1/ptm/m/n/8 Def. []2[]; 11/11 ses-
+ []
+
+[4]
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 81.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\pi' on input line 81.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `subscript' on input line 81.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 81.
+
+) (./sections/06_simulation.tex) (./sections/07_external.tex) (./sections/08_hardware.tex) (./sections/09_limitations.tex) (./sections/10_conclusion.tex) (build/main.bbl) (./appendix/A_proofs.tex)
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -806,33 +873,27 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[3
-
-] (build/main.aux)
+[5] (build/main.aux)
  ***********
 LaTeX2e <2026-06-01>
 L3 programming layer <2026-07-20>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 1A974817E840814B606BC36A92B67606;1300.
+(rerunfilecheck)             Checksum: 2CF09FF26A4634EC52B08715A66AD5DF;3380.
  ) 
 Here is how much of TeX's memory you used:
- 25919 strings out of 469149
- 500952 string characters out of 5460013
- 968340 words of memory out of 5000000
- 54433 multiletter control sequences out of 15000+600000
- 669597 words of font info for 108 fonts, out of 8000000 for 9000
+ 26066 strings out of 469149
+ 503326 string characters out of 5460013
+ 967340 words of memory out of 5000000
+ 54528 multiletter control sequences out of 15000+600000
+ 675831 words of font info for 124 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 92i,9n,104p,830b,903s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on build/main.pdf (3 pages, 156324 bytes).
+ 92i,11n,104p,830b,903s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on build/main.pdf (5 pages, 270208 bytes).
 PDF statistics:
- 182 PDF objects out of 1000 (max. 8388607)
- 149 compressed objects within 2 object streams
- 35 named destinations out of 1000 (max. 500000)
- 109 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 345 PDF objects out of 1000 (max. 8388607)
+ 293 compressed objects within 3 object streams
+ 75 named destinations out of 1000 (max. 500000)
+ 181 words of extra memory for PDF output out of 10000 (max. 10000000)
 

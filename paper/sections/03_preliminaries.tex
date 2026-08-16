@@ -1,3 +1,46 @@
 \section{Preliminaries}
 \label{sec:preliminaries}
-[placeholder]
+
+\paragraph{Symmetry group and representation}
+Let $G=\mathbb{C}_2=\{e,\gs\}$ be the sagittal (left--right) reflection of the robot, acting on leg labels by
+$\gs:(\mathrm{LF}\,\mathrm{RF})(\mathrm{LH}\,\mathrm{RH})$. Front--hind symmetry is \emph{not} assumed: mass
+distribution and leg geometry differ between the pairs, so the richer $\mathbb{K}_4$ of idealised quadrupeds is
+unavailable. On the telemetry channel space the reflection acts by a signed permutation $\repW(\gs)$: a channel maps to
+its mirror partner with a sign fixed by whether the quantity is polar or axial about the sagittal plane. Joint angles
+about the roll axis flip; pitch-axis joints do not; a foot position or velocity in the body frame is polar, so
+$(x,y,z)\mapsto(+x,-y,+z)$ of the partner leg; a foot force is a magnitude; the IMU accelerometer is polar and its
+gyroscope axial. All signs used here were verified on hardware telemetry rather than assumed from a datasheet.
+
+\paragraph{Gait group and data element}
+A commanded gait adds a temporal symmetry. For a trot the relevant group is the \emph{space--time} group
+$\symgrp=\{e,\sigma_*\}$ with $\sigma_*=(\gs,\tfrac12)$: mirroring the robot and shifting by half a gait period maps the
+healthy motion to itself. Telemetry is phase-registered into a \emph{data element} $Z_k\in\R^{d\times N}$: one gait
+cycle of $d$ mirror-paired channels resampled on $N$ phase points. For a robot without a gait phase --- a wheeled-legged
+platform in rolling mode --- the temporal factor is absent, $\symgrp=G$, and the element is a fixed-duration block. The
+group acts on elements by $(\rho(\sigma)Z)(\theta)=\repW(g)\,Z(\theta+\Delta\theta)$, an orthogonal involution, so the
+element space splits into the isotypic components
+\begin{equation}
+  \label{eq:isotypic}
+  \Pi^{\pm}=\tfrac12(I\pm\rho),\qquad \mathcal{W}=\mathcal{W}^{+}\oplus\mathcal{W}^{-},
+\end{equation}
+the mirror-\emph{symmetric} and mirror-\emph{antisymmetric} parts. $\mathcal{W}^-$ is what an invariance test can see;
+$\mathcal{W}^+$ is what it is structurally blind to.
+
+\paragraph{The null hypotheses}
+\begin{definition}[$H_0$, healthy invariance]
+\label{def:h0}
+$H_0:\ \push{\rho(\sigma)}P=P$ for every $\sigma\in\symgrp$, i.e.\ the law of the data element is invariant under the
+gait symmetry.
+\end{definition}
+$H_0$ is what an ideal machine satisfies. A real machine, in service for a year and carrying a payload, is stably but
+measurably asymmetric, and $H_0$ is then false for a healthy robot --- as we confirm on every one of our eleven Go2
+sessions. The deployable null is therefore the recalibrated one:
+\begin{definition}[$H_0'$, unchanged asymmetry]
+\label{def:h0prime}
+Let $\nu(P)\ge 0$ be an asymmetry functional (the energy distance between $\{Z_k\}$ and $\{\rho Z_k\}$ on standardised
+channels), which vanishes iff the law is mirror-invariant. $H_0':\ \nu(P_{\mathrm{mon}})=\nu(P_{\mathrm{cal}})$ --- the
+asymmetry \emph{level} of the monitored window equals the level calibrated on nominal data.
+\end{definition}
+$H_0$ is a special case ($\nu_0=0$). The standing assumptions behind both --- equivariant dynamics, noise and command;
+a unique symmetric attractor; and exchangeability of elements --- are stated with their $\varepsilon$-approximate
+variants and their audits in Appendix~\ref{app:proofs}.

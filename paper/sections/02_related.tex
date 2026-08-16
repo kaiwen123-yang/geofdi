@@ -1,3 +1,65 @@
-\section{Related Work}
+\section{Related Work and Position}
 \label{sec:related}
-[placeholder]
+
+\paragraph{Model-based fault and collision detection}
+The generalised-momentum observer \cite{deluca2003actuator} and the family of residual generators surveyed in
+\cite{haddadin2017robot} are the reference point: they need no fault data, they isolate to a joint, and they are fast.
+Their decision rule is a threshold, usually a $\chi^2$ quantile of a whitened residual, which is exact under an i.i.d.\
+Gaussian assumption that a periodic legged system violates. We reproduce the method faithfully and measure the gap
+(\S\ref{sec:simulation}); the point of comparison in this paper is never raw sensitivity --- the classical detector is
+often \emph{more} sensitive --- but whether the stated false-alarm rate is the delivered one.
+
+\paragraph{Contact estimation and slip handling}
+Probabilistic contact estimation from foot-mounted inertial sensing \cite{camurri2017probabilistic} and learned contact
+classifiers \cite{lin2021contact} improve the input a state estimator receives; controllers for slippery ground
+\cite{jenelten2019slippery} act on detected slip. These decide contact or slip; they do not certify how often they are
+wrong on healthy data. Our gate targets exactly that quantity, and we compare against the standard fixed foot-speed
+threshold on real outdoor data (\S\ref{sec:hardware}).
+
+\paragraph{Symmetry in robotics}
+Morphological symmetry groups have been used to constrain learned dynamics and control
+\cite{ordonez2023discrete}, and adaptation methods recover from damage without diagnosing it \cite{cully2015adapt}.
+Both treat symmetry (or its loss) as structure to exploit; neither turns it into a hypothesis with a level.
+
+\paragraph{Invariance testing}
+Group-randomisation tests give exact finite-sample validity for invariance nulls \cite{hemerik2018exact}, and recent
+work provides anytime-valid $e$-value forms for group invariance \cite{koning2023evalues,vovk2021evalues}. Our
+contribution on this side is not a new test but the identification of a physical invariance --- of a robot, under its
+own morphology and gait --- that these tests can be applied to, together with what the resulting detector can and cannot
+see.
+
+\begin{table*}[t]
+\centering
+\caption{What each detector requires and what it delivers. Every cell is measured in this paper; the experiment that
+produced it is named. ``FAR held'' means the measured nominal alarm rate matches the stated level.}
+\label{tab:claims}
+\footnotesize
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+detector & fault data & training & dynamics model & finite-sample FAR held & symmetric-nuisance immune &
+sequential guarantee & isolation granularity & friction-type detectable \\
+\midrule
+\textbf{GeoFDI $\Rminus$ (raw)} & no & no & no &
+  \textbf{yes} (0.00, e21; 0.049 ext., e03) & \textbf{yes} (0.00, e07/e21) & \textbf{yes} (Prop.~\ref{prop:seq}) &
+  mirror pair $+$ side & no (0.00 at $\times1.5$, M0.3) \\
+\textbf{GeoFDI $\Rminus$ (residual)} & no & no & yes &
+  \textbf{yes} (0.00, M0.3) & \textbf{yes} (inherits $H_0$) & \textbf{yes} &
+  mirror pair $+$ side & \textbf{yes} (1.00 at $\times1.5$) \\
+momentum observer $+\ \chi^2$ & no & no & yes &
+  \textbf{no} (0.15 fixed / 0.50 recal., e21) & no (0.90--0.95, e21) & no & joint &
+  yes (0.85--0.90, but at FAR 0.50) \\
+Mahalanobis & no & nominal only & no &
+  \textbf{no} (0.52 per healthy gap, e03) & no (0.50, e07) & no & none & yes \\
+autoencoder & no & nominal only & no &
+  not stated & no (0.50, e07) & no & none & yes \\
+GRU classifier/regressor & \textbf{yes} & yes & no &
+  empirical only (0.00--0.012, e03) & no (0.65, e07) & no & joint & yes \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Table~\ref{tab:claims} is the summary. Read row-wise it is not a claim that the invariance test dominates: the classical
+observer is faster and, at the smallest friction magnitudes, more sensitive; the GRU isolates to a joint and detects
+everything it was trained on. Read column-wise, the three columns that no baseline fills --- a false-alarm rate that is
+exact rather than empirical, immunity to symmetric nuisances, and a sequential guarantee that survives continuous
+monitoring --- are the ones a robot needs before a detector is allowed to interrupt a controller.

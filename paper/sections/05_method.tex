@@ -1,3 +1,90 @@
 \section{Method}
 \label{sec:method}
-[placeholder]
+
+\subsection{Three channels}
+
+The detector is three readings of the same telemetry, forced by Thm.~\ref{thm:twolayer} rather than assembled by taste.
+$\Rminus$ tests invariance on the raw element and sees exactly the antisymmetric component $\mathcal{W}^-$: one-sided
+faults and one-sided slip, with an exact level and no model. $\Rplus$ reads the symmetric component $\mathcal{W}^+$ of a
+model residual and covers what $\Rminus$ is structurally blind to --- bilaterally symmetric degradation --- at the cost
+of needing a dynamics model and of inheriting no nuisance immunity. The estimator channel reads the innovation of the
+contact-aided invariant filter, which responds to constraint violations (slip, lost contact) whether or not they are
+symmetric. Running $\Rminus$ on the \emph{residual} rather than the raw element is a fourth combination and is what
+makes friction-type faults visible to the invariance test at all (\S\ref{sec:simulation}).
+
+\subsection{The tester}
+
+Algorithm~\ref{alg:geofdi} is the whole procedure. Its correctness rests on nine conditions, listed beside it; each is
+either a theorem hypothesis or an empirical calibration, and each is tagged with where it is established.
+
+\begin{algorithm}[t]
+\caption{GeoFDI tester (one session)}
+\label{alg:geofdi}
+\begin{algorithmic}[1]
+\State \textbf{segment}: cut telemetry into steady, straight, single-condition runs
+\State \textbf{register}: estimate gait phase; resample each cycle onto $N$ points $\rightarrow$ elements $Z_k$
+       (rolling mode: fixed-duration blocks)
+\State \textbf{calibrate}: on the first $K_{\mathrm{cal}}$ elements of \emph{this run}, estimate the asymmetry level
+       $\nu_0$ and the channel scales
+\State \textbf{test}: per window of $w$ elements, flip test (Thm.~\ref{thm:exact}) with statistics
+       \{paired-energy, energy-distance\} $\rightarrow p_t$
+\State \textbf{accumulate}: $e_t\!=\!\tfrac12p_t^{-1/2}$, $E_t\!=\!\prod_{s\le t}e_s$; alarm if $E_t\ge1/\alpha$
+       (Prop.~\ref{prop:seq})
+\State \textbf{recalibrate}: on hardware, replace $H_0$ by $H_0'$ --- test $\nu_{\mathrm{mon}}\!=\!\nu_{\mathrm{cal}}$
+\State \textbf{isolate}: rank mirror \emph{pairs} by $\Pi^-$ energy; obtain the \emph{side} from the signed mean
+\State \textbf{gate} (optional): per-stance-event $e$-values $\rightarrow$ per-leg weights $\pi_i$ $\rightarrow$
+       invariant-filter update
+\end{algorithmic}
+\end{algorithm}
+
+\begin{table}[t]
+\centering
+\caption{The nine conditions Algorithm~\ref{alg:geofdi} depends on, and where each is established.}
+\label{tab:conditions}
+\footnotesize
+\begin{tabular}{@{}p{0.5cm}p{4.6cm}p{2.4cm}@{}}
+\toprule
+\# & condition & established by \\
+\midrule
+C1 & the plant, command and noise are $\symgrp$-equivariant & assumptions A1--A4, audited \\
+C2 & the healthy loop has a \emph{unique} symmetric attractor & A5; falsified by a chiral gait at low gain \\
+C3 & elements are exchangeable across the index & Assumption~E; block length $\ge 2\times$ the nuisance correlation time \\
+C4 & the phase registration is half-period equivariant & $\pm10\,\%$ clock error costs power, not level \\
+C5 & the segment is a single homogeneous condition & per-run calibration (\S\ref{sec:percalib}) \\
+C6 & on hardware, use $H_0'$: the level $\nu_0$, not $\nu=0$ & Def.~\ref{def:h0prime}; 11/11 sessions reject $H_0$ \\
+C7 & a residual channel needs an \emph{equivariant} model & Prop.~\ref{prop:residual}; plain model $\rightarrow$ size $1.00$ \\
+C8 & bilaterally symmetric faults need the $\Rplus$ channel & Thm.~\ref{thm:twolayer} (Layer~I) \\
+C9 & \textbf{side attribution needs a \emph{signed} statistic} & energy statistics rank mirror \emph{pairs} only \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+C9 deserves emphasis because it is easy to get wrong and we did get it wrong once. For a mirror pair $(c,c')$ the
+antisymmetric component satisfies $(\Pi^-Z)[c']=-s\,(\Pi^-Z)[c]$, so the two partners carry \emph{identical} $\Pi^-$
+energy: no energy-type statistic can say which side is at fault, only which pair. Standardising each channel by its own
+scale before summing breaks that identity numerically and manufactures a spurious side ranking. The side is recoverable
+only from the \emph{sign} of the mean difference, which is what Algorithm~\ref{alg:geofdi} line~7 uses.
+
+\subsection{Calibrate per traverse, not per session}
+\label{sec:percalib}
+
+The single most consequential deployment rule we found is not in the theory but in the hardware data. On both of our
+platforms the recalibrated null $H_0'$ holds \emph{within} a continuous traverse and fails \emph{across} traverses: on
+the Go2 corpus the sequential monitor alarms on 8 of 11 sessions when the element pools several straight runs, but on
+only 2 of 11 when it is built from a single run, and a shape classifier labels 8 of 11 $\nu$-trajectories as
+boundary-jumps and none as drift. The same signature appears on the wheeled M1. The mechanism is that the healthy
+asymmetry level depends on heading, ground and payload placement, so concatenating traverses violates the premise that
+calibration and monitoring windows come from one regime. The rule is therefore: \emph{calibrate $\nu_0$ per homogeneous
+segment}. A segment is not automatically homogeneous merely because it is one continuous run --- \S\ref{sec:hardware}
+reports a session where one spatial half is internally clean and the other is not.
+
+\subsection{Equivariant nominal model and $\pi_i$ gating}
+
+The learned nominal model is a Deep Lagrangian Network made equivariant by mirror weight sharing: one template per leg
+pair, applied to the mirrored coordinates of the partner leg, so the equivariance defect is exactly zero rather than
+small. For the estimation front-end, each stance event (a touch-down and the contact interval it opens) is scored by
+the pre-update per-foot innovation, converted to a conformal $p$-value against a library of nominal events, and turned
+into an $e$-value; the per-leg $e$-values become weights $\pi_i$ that either drop (hard gate, $e\ge1/\alpha$) or
+down-weight (soft gate, covariance scaled by $1/w_i$) that foot's measurement. Because the gate is calibrated rather
+than thresholded, its per-event false-alarm rate is $\approx\alpha$ by construction --- which is the property the
+standard fixed foot-speed threshold lacks (\S\ref{sec:hardware}).

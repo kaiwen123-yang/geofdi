@@ -1,3 +1,90 @@
 \section{Theory}
 \label{sec:theory}
-[placeholder]
+
+This section states the results and the intuition; every proof is in Appendix~\ref{app:proofs}, which also carries the
+map from the numbering here to the numbering of the technical notes.
+
+\subsection{An exact test, at any sample size}
+
+\begin{theorem}[Exactness of the flip test]
+\label{thm:exact}
+Let $Z_1,\dots,Z_K$ be data elements that are exchangeable under $H_0$, and let $T$ be any statistic. Draw $M-1$ i.i.d.\
+uniform group elements $\sigma_m\in\symgrp$ (equivalently, i.i.d.\ signs on the antisymmetric component) and let
+$p=\frac{1}{M}\bigl(1+\#\{m: T(\rho(\sigma_m)Z)\ge T(Z)\}\bigr)$. Then under $H_0$, $\mathbb{P}(p\le\alpha)\le\alpha$
+for every $K$ and every $M$, with equality when $\alpha M$ is an integer.
+\end{theorem}
+The mechanism is that under $H_0$ the observed configuration and its group images are equally likely, so the rank of the
+observed statistic among its own orbit is uniform. Nothing is estimated, nothing is fitted, and no asymptotics are
+invoked: the level holds at $K=10$ as it does at $K=1000$. The price is that the test only sees the group --- which is
+exactly what the next theorem characterises.
+
+\subsection{What is visible: a two-layer characterisation}
+
+\begin{theorem}[Two-layer detectability]
+\label{thm:twolayer}
+\emph{(Layer I, law level.)} If the fault pattern is fixed by $\symgrp$ (a bilaterally symmetric degradation) \emph{and}
+the faulted closed loop retains a unique symmetric attractor, then $\push{\rho}P_\varphi=P_\varphi$ and \emph{every}
+level-$\alpha$ invariance test has power $\le\alpha$, whatever the magnitude. Conversely, if
+$\push{\rho}P_\varphi\ne P_\varphi$, a statistic consistent for the two-sample problem between $\{Z_k\}$ and
+$\{\rho Z_k\}$ --- the energy-distance class --- has power $\to 1$.
+\emph{(Layer II, mean level.)} For the paired-energy statistic the noncentrality after $K$ elements is
+$K\|\Pi^-\mu(\varphi)\|^2_\Sigma$, and the test is consistent \emph{iff} $\Pi^-\mu(\varphi)\ne 0$ --- a strict subset of
+the laws Layer~I covers.
+\end{theorem}
+
+Three consequences drive the system design. First, blindness to bilaterally symmetric faults is structural, not a
+weakness of a particular statistic, so a second, magnitude channel reading $\mathcal{W}^+$ is \emph{necessary}, and it
+cannot inherit the same nuisance immunity. Second, the two layers differ exactly on zero-mean law changes: a one-sided
+variance inflation has $\Pi^-\mu=0$ but breaks the law, so the paired statistic is blind while the energy-distance one
+is consistent --- deployment runs both. Third, the blindness is robust in amplitude: sweeping a bilateral fault down to
+$30\,\%$ of nominal torque left the test at its level and the realised gait's chirality at its nominal floor, so the
+escape route is a genuine symmetry-breaking bifurcation of the gait, not a large enough fault.
+
+\begin{proposition}[Power and sample size]
+\label{prop:power}
+Under a Gaussian model for the differenced scores, the power of the whitened quadratic flip statistic at level $\alpha$
+is at least $1-\exp\bigl(-(d+\lambda-c_\alpha)_+^2/(4(d+2\lambda))\bigr)$ with $\lambda=K\|\Pi^-\mu\|^2_{\Sigma}$, which
+inverts to an explicit sample-size rule $K\ge\lambda^*(d,\alpha,\beta)/\|\Pi^-\mu\|^2_{\Sigma}$.
+\end{proposition}
+
+\subsection{Reading it every cycle}
+
+\begin{proposition}[Anytime-valid sequential layer]
+\label{prop:seq}
+Let $p_1,p_2,\dots$ be the window $p$-values of Thm.~\ref{thm:exact} and $e_t=\tfrac12 p_t^{-1/2}$. Then
+$E_t=\prod_{s\le t}e_s$ is a nonnegative supermartingale with $E_0=1$, and by Ville's inequality the rule
+$E_t\ge 1/\alpha$ has false-alarm probability at most $\alpha$ over an unbounded horizon.
+\end{proposition}
+This is what makes the test deployable: it may be inspected after every cycle, and stopping when it looks interesting
+does not invalidate it.
+
+\subsection{Residual channels and equivariance}
+
+Running the same test on the residual of a nominal dynamics model, $r=y-\hat f(x,u)$, both sharpens it and endangers it.
+
+\begin{proposition}[Residual inheritance and its contamination]
+\label{prop:residual}
+If the nominal model $\hat f$ is $\symgrp$-equivariant, the residual element inherits $H_0$ exactly, and the flip test
+on it retains its level while gaining power against faults that act through the dynamics. If $\hat f$ is not
+equivariant, its equivariance defect enters the residual as a fixed asymmetric offset and inflates the level.
+\end{proposition}
+The effect is large enough to matter in practice, not merely in principle: on the welded-leg world a plain learned model
+drives the residual test's size to $1.00$ while its equivariant twin sits at $0.00$ (\S\ref{sec:simulation}). Mirror
+weight sharing is what makes a Deep Lagrangian Network equivariant by construction, and the equivariance defect is then
+exactly zero rather than small.
+
+\subsection{Rolling contact keeps the invariant filter}
+
+\begin{proposition}[Rolling contact is group-affine]
+\label{prop:rolling}
+For a wheel in contact with rolling constraint $\dot d_i=R\,u_i$, $u_i$ a measured input, the contact-aided invariant
+filter's propagation remains group-affine, and the right-invariant error dynamics of the contact block is
+\emph{unchanged}: $A[d_i,R]=0$, exactly as for a world-fixed foot. Rolling alters only the mean propagation
+$d_i\mapsto d_i+Ru_i\Delta t$ and the contact process noise, which becomes anisotropic in the wheel frame.
+\end{proposition}
+The plain-EKF Jacobian for a moving world point is $-R(u_i)_\times$, and carrying it into an invariant filter is a
+natural and wrong step that makes the error dynamics state-dependent. The correct statement admits wheeled-legged
+robots to the same estimator, and hence the same gating front-end, as point-foot robots. The signature of a fault in
+such a filter is the observable projection of its direction transported by the adjoint, which is why a bilaterally
+symmetric slip is invisible to the invariance channel but visible to the estimator channel --- the property that turns
+the pair into a slip \emph{classifier} (\S\ref{sec:method}).
