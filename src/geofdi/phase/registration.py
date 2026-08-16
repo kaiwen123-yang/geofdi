@@ -131,3 +131,35 @@ def straight_mask(df: pd.DataFrame, v_col: str = "v_cmd", warmup_s: float = 0.0,
     v = df[v_col].to_numpy(); t = df[t_col].to_numpy()
     plateau = np.nanmax(np.abs(v)) if np.isfinite(v).any() else 0.0
     return (np.abs(np.abs(v) - plateau) <= tol) & (t >= warmup_s) & (plateau > 0)
+
+
+def straight_mask_kinematic(df: pd.DataFrame, wz_max: float = 0.15, wheel_diff_max: float = 1.0, wheel_min: float = 2.0,
+                            smooth_s: float = 0.5, warmup_s: float = 0.0, min_run_s: float = 2.0, t_col: str = "t") -> tuple[np.ndarray, dict]:
+    """Fallback straight-rolling segmentation when no command signal was recorded (Sprint 8 D2): rows where the moving-RMS
+    (window smooth_s) of the IMU yaw rate w_z is < wz_max [rad/s], the moving-RMS of the left-right mean wheel-rate difference
+    mean(L) - mean(R) is < wheel_diff_max [rad/s] (RMS rather than mean so that brief yaw/wheel impulses are not averaged
+    away), and the moving-mean |wheel rate| > wheel_min [rad/s] (moving, not standing); runs shorter than min_run_s are
+    dropped. Wheel rates are taken in the GeoFDI (re-signed) frame, so left and right have the same sign when rolling
+    straight. Thresholds were calibrated on the 2026-08-10 M1 sessions (docs/protocol/m1_h_data_audit.md): |w_z| q75 ~ 0.1,
+    q90 ~ 0.4 rad/s; RMS(L-R) q75 ~ 0.6-2.4 rad/s (0.06-0.23 m/s); mean |wheel| q25 ~ 3.4-5.7 rad/s.
+    Returns (mask, info) with the thresholds and the resulting run count / total duration."""
+    t = df[t_col].to_numpy(); dt = float(np.median(np.diff(t))); w = max(1, int(round(smooth_s / dt)))
+    k = np.ones(w) / w
+    def rms(x):
+        x = np.nan_to_num(np.asarray(x, dtype=float)); return np.sqrt(np.convolve(x * x, k, mode="same"))
+    def mean(x):
+        x = np.nan_to_num(np.asarray(x, dtype=float)); return np.convolve(x, k, mode="same")
+    wz = rms(df["imu_w_z"].to_numpy()) if "imu_w_z" in df else np.zeros(len(t))
+    wl = 0.5 * (df["dq_LF_WHEEL"].to_numpy() + df["dq_LH_WHEEL"].to_numpy()); wr = 0.5 * (df["dq_RF_WHEEL"].to_numpy() + df["dq_RH_WHEEL"].to_numpy())
+    m = (wz < wz_max) & (rms(wl - wr) < wheel_diff_max) & (mean(0.5 * np.abs(wl + wr)) > wheel_min) & (t >= warmup_s)
+    # drop short runs
+    idx = np.where(m)[0]; n_runs = 0; kept = np.zeros_like(m)
+    if len(idx):
+        breaks = np.where(np.diff(idx) > 1)[0]
+        for r in np.split(idx, breaks + 1):
+            if t[r[-1]] - t[r[0]] >= min_run_s:
+                kept[r] = True; n_runs += 1
+    info = {"rule": "kinematic fallback: RMS|w_z|<wz_max & RMS(wheel_L-wheel_R)<wheel_diff_max & mean|wheel|>wheel_min (moving windows of smooth_s)",
+            "wz_max_rad_s": wz_max, "wheel_diff_max_rad_s": wheel_diff_max, "wheel_min_rad_s": wheel_min, "smooth_s": smooth_s, "min_run_s": min_run_s,
+            "n_runs": int(n_runs), "masked_duration_s": float(kept.sum() * dt), "fraction_of_session": float(kept.mean())}
+    return kept, info

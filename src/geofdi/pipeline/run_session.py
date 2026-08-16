@@ -59,8 +59,13 @@ def _register(df, manifest, robot: str, mode: str, L: float, N: int, warmup_s: f
     z_names = [c["name"] for c in manifest["channels"] if c["in_Z"]]
     info = {}
     if mode == "rolling":
-        mask = straight_mask(df, warmup_s=warmup_s) if "v_cmd" in df and np.isfinite(df["v_cmd"]).any() else (df["t"].to_numpy() >= warmup_s)
-        info["segment_source"] = "v_cmd plateau" if "v_cmd" in df and np.isfinite(df["v_cmd"]).any() else "all rows after warm-up (no command signal)"
+        from ..phase.registration import straight_mask_kinematic
+        if "v_cmd" in df and np.isfinite(df["v_cmd"]).any():
+            mask = straight_mask(df, warmup_s=warmup_s); info["segment_source"] = "v_cmd plateau"
+        elif "dq_LF_WHEEL" in df and np.isfinite(df["dq_LF_WHEEL"]).any() and np.isfinite(df["imu_w_z"]).any():
+            mask, kin = straight_mask_kinematic(df, warmup_s=warmup_s); info["segment_source"] = "kinematic fallback (no command signal)"; info["segmentation"] = kin
+        else:
+            mask = df["t"].to_numpy() >= warmup_s; info["segment_source"] = "all rows after warm-up (no command signal)"
         Z, meta = register_blocks(df, z_names, L_s=L, N=N, mask=mask)
     else:
         from ..phase.estimator import estimate_phase
@@ -101,11 +106,29 @@ def run(session_dir: Path, robot: str, mode: str, residual: str = "off", out: Pa
     rep["h0"] = {"whole_session_p": {k: float(v["p"]) for k, v in r_all.items()}, "window": window, "n_windows": int(nw),
                  "window_rejection_rate": float(np.mean(pw <= alpha)) if nw else float("nan"), "window_ks_p": float(stats.kstest(pw, "uniform").pvalue) if nw > 3 else float("nan"),
                  "eprocess_max": float(E.max()) if nw else float("nan"), "eprocess_alarm_window": alarm}
-    # (6) H0': differenced test first half vs second half; nu_0 calibration numbers
+    # (5b) block-correlation diagnostics: lag-1 autocorrelation of the per-block anti-symmetric energy (the flip test's
+    # exchangeability premise; W-block finding: L too short -> positive lag-1 -> paired-energy size above alpha)
+    from ..residuals.mirror_pairs import isotypic_split
+    _, Zminus = isotypic_split(Z, repC2)
+    em = (Zminus ** 2).mean(axis=(1, 2)); em = em - em.mean()
+    lag1 = float((em[:-1] * em[1:]).sum() / max((em ** 2).sum(), 1e-12)) if K > 3 else float("nan")
+    rep["block_correlation"] = {"lag1_autocorr_antisym_energy": lag1, "L_s": L, "note": "positive lag-1 -> blocks not exchangeable at this L; increase L (protocol: 1 s default, 2 s reduces the sim size 0.14 -> 0.07)"}
+    # (6) H0': asymmetry-CHANGE layer. (a) differenced test first half vs second half; (b) nu_0 calibration on the first
+    # K_cal blocks; (c) per-window H0' p (h0prime_test: window vs calibration, block permutation) -> e-process
+    from ..detect.h0prime import h0prime_test
     Kc = K // 2; Zc, Zm = Z[:Kc], Z[Kc:2 * Kc]
     pdiff, _ = hg_permutation_test(Zm - Zc, repC2, statistic="paired_energy", M=M, rng=np.random.default_rng([seed, 99]))
     cal = calibrate(Zc, repC2, n_boot=100, block_len=1, rng=np.random.default_rng(seed))
-    rep["h0prime"] = {"differenced_p_first_vs_second_half": float(pdiff), "nu0": float(cal["nu0"]), "nu0_boot_std": float(cal["nu0_boot_std"]), "K_cal": int(Kc)}
+    Kcal = max(window, K // 3); Zcal = Z[:Kcal]; nwp = (K - Kcal) // window; pwp = np.empty(nwp); nu_mon = np.empty(nwp)
+    for w in range(nwp):
+        r = h0prime_test(Zcal, Z[Kcal + w * window:Kcal + (w + 1) * window], repC2, M=M, rng=np.random.default_rng([seed, 500 + w]))
+        pwp[w] = r["p"]; nu_mon[w] = r["nu_mon"]
+    Ep, alarm_p = eprocess(pwp, alpha) if nwp else (np.array([]), None)
+    rep["h0prime"] = {"differenced_p_first_vs_second_half": float(pdiff), "nu0": float(cal["nu0"]), "nu0_boot_std": float(cal["nu0_boot_std"]), "K_cal": int(Kc),
+                      "window_test": {"K_cal": int(Kcal), "window": window, "n_windows": int(nwp), "window_rejection_rate": float(np.mean(pwp <= alpha)) if nwp else float("nan"),
+                                      "window_ks_p": float(stats.kstest(pwp, "uniform").pvalue) if nwp > 3 else float("nan"), "eprocess_max": float(Ep.max()) if nwp else float("nan"),
+                                      "eprocess_alarm_window": alarm_p, "nu_mon_median": float(np.median(nu_mon)) if nwp else float("nan"), "p_values": [float(x) for x in pwp]}}
+    rep["h0"]["p_values"] = [float(x) for x in pw]
     # (7) residual channel
     rep["residual_channel"] = {"requested": residual}
     if residual != "off":
@@ -145,21 +168,36 @@ def run(session_dir: Path, robot: str, mode: str, residual: str = "off", out: Pa
                                                  "not derivable from LowState alone — hardware path TODO" if robot == "go2" else f"{residual} not implemented for {robot}")
     # figures
     import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(1, 2, figsize=(9, 3.4))
+    fig, axes = plt.subplots(1, 3, figsize=(12, 3.5))
     if nw:
-        q = (np.arange(nw) + 0.5) / nw; axes[0].plot(q, np.sort(pw), "o-", ms=3); axes[0].plot([0, 1], [0, 1], "k:")
-        axes[0].set_xlabel("uniform quantile"); axes[0].set_ylabel(f"window p (paired energy, {window} elements)"); axes[0].set_title(f"R⁻ window p-values (n={nw}, KS p={rep['h0']['window_ks_p']:.2f})", fontsize=9)
-        axes[1].semilogy(np.arange(1, nw + 1), E, "-o", ms=3); axes[1].axhline(1 / alpha, color="r", ls="--", label=f"1/α = {1/alpha:.0f}"); axes[1].set_xlabel("window"); axes[1].set_ylabel("e-process E_t"); axes[1].legend(fontsize=8); axes[1].set_title("R⁻ e-process trajectory", fontsize=9)
-    fig.tight_layout(); fig.savefig(out / "rminus_qq_eprocess.png", dpi=130); plt.close(fig)
+        q = (np.arange(nw) + 0.5) / nw; axes[0].plot(q, np.sort(pw), "o-", ms=3, label="H₀ (naive flip)")
+        if nwp:
+            qp = (np.arange(nwp) + 0.5) / nwp; axes[0].plot(qp, np.sort(pwp), "s-", ms=3, label="H₀′ (vs calibration)")
+        axes[0].plot([0, 1], [0, 1], "k:"); axes[0].legend(fontsize=7)
+        axes[0].set_xlabel("uniform quantile"); axes[0].set_ylabel(f"window p ({window} elements)"); axes[0].set_title(f"R⁻ window p QQ (H₀ n={nw}, KS {rep['h0']['window_ks_p']:.2f}; H₀′ n={nwp})", fontsize=8)
+        axes[1].plot(np.arange(1, nw + 1), pw, "o-", ms=3, label="H₀"); 
+        if nwp:
+            axes[1].plot(Kcal / window + np.arange(1, nwp + 1), pwp, "s-", ms=3, label="H₀′")
+        axes[1].axhline(alpha, color="r", ls="--", lw=0.8); axes[1].set_ylim(-0.02, 1.02); axes[1].set_xlabel("window (time order)"); axes[1].set_ylabel("p"); axes[1].legend(fontsize=7); axes[1].set_title("per-window p over time", fontsize=8)
+        axes[2].semilogy(np.arange(1, nw + 1), E, "-o", ms=3, label="H₀ e-process")
+        if nwp:
+            axes[2].semilogy(Kcal / window + np.arange(1, nwp + 1), Ep, "-s", ms=3, label="H₀′ e-process")
+        axes[2].axhline(1 / alpha, color="r", ls="--", label=f"1/α = {1/alpha:.0f}"); axes[2].set_xlabel("window"); axes[2].set_ylabel("E_t"); axes[2].legend(fontsize=7); axes[2].set_title("e-process trajectories", fontsize=8)
+    fig.suptitle(f"{session_dir.name} — {robot} {mode}, L={L}s, K={K}", fontsize=8)
+    fig.tight_layout(); fig.savefig(out / "rminus_qq_eprocess.png", dpi=120); plt.close(fig)
     (out / "report.json").write_text(json.dumps(rep, indent=1, default=str))
     md = [f"# GeoFDI session report — {session_dir.name} ({robot}, {mode})", "", f"- ingest checksums: {rep['ingest']}", f"- loader: {load_rep['n_rows']} rows, {load_rep['duration_s']:.1f} s, rate ≈ {load_rep['rate_hz_estimate']:.1f} Hz, mapping unverified: {load_rep['mapping_unverified']}",
           f"- missing channels: {load_rep['missing'] or 'none'}", f"- registration: {rep['registration']}", f"- data element: K = {Z.shape[0]}, d = {Z.shape[1]}, N = {Z.shape[2]}; dropped NaN channels: {dropped or 'none'}", "",
           f"## R⁻ under H₀", f"- whole-session flip test p: {rep['h0']['whole_session_p']}", f"- window rejection rate ({window}-element windows, α={alpha}): {rep['h0']['window_rejection_rate']:.3f} over {nw} windows; KS uniformity p = {rep['h0']['window_ks_p']:.3f}",
-          f"- e-process max {rep['h0']['eprocess_max']:.2f}, alarm window {rep['h0']['eprocess_alarm_window']}", "", f"## H₀′ (asymmetry change)", f"- differenced test first vs second half p = {pdiff:.3f}; ν₀ = {cal['nu0']:.4f} ± {cal['nu0_boot_std']:.4f} (K_cal = {Kc})", "",
+          f"- e-process max {rep['h0']['eprocess_max']:.2f}, alarm window {rep['h0']['eprocess_alarm_window']}",
+          f"- block correlation: lag-1 autocorrelation of the anti-symmetric block energy = {lag1:.3f} at L = {L} s (positive -> not exchangeable, raise L)", "",
+          f"## H₀′ (asymmetry change — the PRIMARY test on hardware; a naive-H₀ excursion is the expected regime, see W block)",
+          f"- differenced test first vs second half p = {pdiff:.3f}; ν₀ = {cal['nu0']:.4f} ± {cal['nu0_boot_std']:.4f} (K_cal = {Kc})",
+          f"- per-window H₀′ (calibration = first {Kcal} blocks, {window}-element windows): rejection rate {rep['h0prime']['window_test']['window_rejection_rate']:.3f} over {nwp} windows, KS p = {rep['h0prime']['window_test']['window_ks_p']:.3f}, e-process max {rep['h0prime']['window_test']['eprocess_max']:.2f}, alarm window {alarm_p}", "",
           f"## residual channel", f"- {rep['residual_channel']}", "", f"figures: rminus_qq_eprocess.png"]
     (out / "report.md").write_text("\n".join(md) + "\n")
     print(f"[pipeline] report -> {out}/report.md")
-    print(f"[pipeline] K={Z.shape[0]} d={Z.shape[1]} | R- whole-session p {rep['h0']['whole_session_p']} | window rejection {rep['h0']['window_rejection_rate']:.3f} (KS {rep['h0']['window_ks_p']:.2f}) | e-process max {rep['h0']['eprocess_max']:.2f} alarm {alarm} | H0' differenced p {pdiff:.3f} | residual: {rep['residual_channel'].get('status', rep['residual_channel'].get('Rminus_on_residual_p', 'off'))}")
+    print(f"[pipeline] K={Z.shape[0]} d={Z.shape[1]} | R- whole-session p {rep['h0']['whole_session_p']} | window rejection {rep['h0']['window_rejection_rate']:.3f} (KS {rep['h0']['window_ks_p']:.2f}) | e-process max {rep['h0']['eprocess_max']:.2f} alarm {alarm} | lag1 {lag1:.2f} | H0' differenced p {pdiff:.3f}, window rejection {rep['h0prime']['window_test']['window_rejection_rate']:.3f} alarm {alarm_p} | residual: {rep['residual_channel'].get('status', rep['residual_channel'].get('Rminus_on_residual_p', 'off'))}")
     return rep
 
 

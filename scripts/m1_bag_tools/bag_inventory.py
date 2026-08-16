@@ -52,10 +52,23 @@ def db_files(bag: Path) -> list[Path]:
 
 
 def sqlite_summary(db: Path, sample_rows: int) -> dict:
-    """Index-only totals + a time-ordered sample of (topic_id, timestamp) rows."""
+    """Index-only totals + a time-ordered sample of (topic_id, timestamp) rows.
+
+    Empty (0-byte) or malformed files return {"file", "size_bytes", "unreadable": reason, "message_count": 0} —
+    an aborted recording/copy must not stop the inventory of the readable files.
+    """
+    out: dict = {"file": db.name, "size_bytes": db.stat().st_size}
+    if out["size_bytes"] == 0:
+        out.update(unreadable="0-byte file", message_count=0, t_min=None, t_max=None, topics=[], schema=None); return out
+    try:
+        return _sqlite_summary(db, sample_rows, out)
+    except sqlite3.DatabaseError as e:
+        out.update(unreadable=f"sqlite: {e}", message_count=0, t_min=None, t_max=None, topics=[], schema=None); return out
+
+
+def _sqlite_summary(db: Path, sample_rows: int, out: dict) -> dict:
     con = sqlite3.connect(f"file:{db}?mode=ro&immutable=1", uri=True)
     cur = con.cursor()
-    out: dict = {"file": db.name, "size_bytes": db.stat().st_size}
     try:
         out["schema"] = cur.execute("SELECT schema_version, ros_distro FROM schema").fetchall()
     except sqlite3.Error:
@@ -92,32 +105,45 @@ def sqlite_summary(db: Path, sample_rows: int) -> dict:
 
 
 def decode_samples(bag: Path, topics: list[str]) -> dict:
-    """Decode one message per (standard-typed) topic with rosbags; returns {topic: description}."""
+    """Decode one message per (standard-typed) topic with the rosbags typestore; returns {topic: description}.
+
+    Reads the .db3 files directly (sqlite3, first readable file that has the topic) instead of rosbags' Reader, so it
+    does not depend on a consistent metadata.yaml and survives 0-byte / partially corrupt files.
+    """
     try:
-        from rosbags.rosbag2 import Reader  # type: ignore
         from rosbags.typesys import Stores, get_typestore  # type: ignore
     except Exception as e:  # pragma: no cover
         return {"_error": f"rosbags not importable ({e}); pip install rosbags"}
     ts = get_typestore(Stores.ROS2_HUMBLE)
     res: dict = {}
-    with Reader(bag) as r:
-        conns = {c.topic: c for c in r.connections}
-        for name in topics:
-            c = conns.get(name)
-            if c is None:
-                continue
-            if c.msgtype not in ts.types:
-                res[name] = f"type {c.msgtype} not decodable without its message package"
-                continue
-            try:
-                for conn, t, raw in r.messages(connections=[c]):
-                    m = ts.deserialize_cdr(raw, conn.msgtype)
-                    res[name] = describe(m, conn.msgtype)
-                    break
-                else:
-                    res[name] = "no messages"
-            except Exception as e:  # pragma: no cover
-                res[name] = f"decode error: {type(e).__name__}: {e}"
+    pending = set(topics)
+    for f in db_files(bag):
+        if not pending:
+            break
+        if f.stat().st_size == 0:
+            continue
+        try:
+            con = sqlite3.connect(f"file:{f}?mode=ro&immutable=1", uri=True)
+            tmap = {name: (tid, typ) for tid, name, typ in con.execute("SELECT id, name, type FROM topics")}
+            for name in list(pending):
+                if name not in tmap:
+                    continue
+                tid, typ = tmap[name]
+                if typ not in ts.types:
+                    res[name] = f"type {typ} not decodable without its message package"; pending.discard(name); continue
+                row = con.execute("SELECT data FROM messages WHERE topic_id=? ORDER BY id LIMIT 1", (tid,)).fetchone()
+                if row is None:
+                    continue                      # maybe in a later file
+                try:
+                    res[name] = describe(ts.deserialize_cdr(row[0], typ), typ)
+                except Exception as e:  # pragma: no cover
+                    res[name] = f"decode error: {type(e).__name__}: {e}"
+                pending.discard(name)
+            con.close()
+        except sqlite3.DatabaseError:
+            continue
+    for name in pending:
+        res.setdefault(name, "no messages")
     return res
 
 
@@ -170,9 +196,14 @@ def inventory(bag: Path, sample_rows: int, decode: bool) -> dict:
     for i, f in enumerate(files):
         per_file.append(sqlite_summary(f, sample_rows if i == 0 else 0))
     rep["files"] = [{k: v for k, v in pf.items() if k != "sample" and k != "topics"} for pf in per_file]
-    if per_file:
-        rep["schema"] = per_file[0]["schema"]
-        db_topics = {t["name"]: t for t in per_file[0]["topics"]}
+    for pf in per_file:
+        if pf.get("unreadable"):
+            rep["issues"].append(f"{pf['file']}: unreadable ({pf['unreadable']}) — recording/copy aborted; the readable head of a "
+                                 f"partially corrupt file can still be extracted with geofdi.io.m1_rosbag")
+    readable = [pf for pf in per_file if not pf.get("unreadable")]
+    if readable:
+        rep["schema"] = readable[0]["schema"]
+        db_topics = {t["name"]: t for t in readable[0]["topics"]}
     else:
         db_topics = {}
     # cross-checks against metadata
@@ -207,7 +238,7 @@ def inventory(bag: Path, sample_rows: int, decode: bool) -> dict:
                     rep["issues"].append(f"{name}: type db='{dbt['type']}' meta='{typ}'")
                 if "::" in (dbt["type"] or "") or "::" in (typ or ""):
                     rep["issues"].append(f"{name}: DDS-style type name '{dbt['type'] or typ}' — normalize with fix_metadata.py")
-                st = per_file[0].get("sample", {}).get(dbt["id"]) if per_file else None
+                st = readable[0].get("sample", {}).get(dbt["id"]) if readable else None
                 if st:
                     row.update(measured_hz=st.get("rate_hz"), median_dt_ms=st.get("median_dt_ms"),
                                jitter_ms=st.get("jitter_ms"), sample_n=st.get("n"))

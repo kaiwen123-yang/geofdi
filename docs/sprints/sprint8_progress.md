@@ -13,13 +13,18 @@ Read this first in a new session; continue from the first unchecked item. Each i
   `sha256sum -c` against the source list can be repeated directly on `/mnt/h/m1_data`.
 
 ## Block D — M1 real data (headline; commits d1/d2/d3)
-- [ ] D1 `docs/protocol/m1_h_data_audit.md`: 4 sessions × (structure/format/size/time; topic table with measured rate,
-  duration, sample fields; decision list: joint count, `names` verbatim, q/dq/efforts + magnitudes, wheel encoders +
-  wrap, IMU topic/rate/frame, cmd, contact, motor temp, localization pose, timestamp monotonicity + inter-topic skew)
-- [ ] D1 `io/m1_mapping.yaml` checked against `names` (unverified→false or corrected + diff recorded)
-- [ ] D1 per-session verdict (rolling H0' / rolling InEKF / DeLaN / archive-only)
-- [ ] D2 qualified sessions ingested via `ingest_session.sh` into `raw/m1/nominal/` (or audit/), meta.yaml filled
-- [ ] D2 straight-segment splitting (cmd if present; else |ω_z| + wheel-speed-difference rule, thresholds recorded)
+- [x] d1 D1 `docs/protocol/m1_h_data_audit.md`: 4 sessions audited (rosbag2 v5; 200 Hz joints/IMU; session 4 truncated at the
+  source: 76 of 151 s readable; all "walk" = wheeled rolling, no gait); tools `geofdi.io.m1_rosbag` (sqlite+typestore, tolerant of
+  0-byte/partially corrupt db3), `scripts/m1_h_audit.py`; inventory/metadata tools made truncation-tolerant
+- [x] d1 D1 `io/m1_mapping.yaml`: names match (fl1_hip_roll..br4_foot) → `unverified: false`; per_leg_sign RF/RH = [+1,−1,−1,−1]
+  (the yaml's earlier candidate [−1,−1,−1,−1] was wrong for ABAD — recorded); IMU frame (x right, y back, z down), g units,
+  R_body_from_sensor; odom conventions; loader accepts raw bags (auto-extract), vendor vs sim conventions via meta.yaml
+- [x] d1 D1 per-session verdicts (§9): static → audit/rest-noise only; 172847/173028/173247 → rolling H0' + InEKF (173028 primary);
+  DeLaN impossible (4.6 min total < 20 min)
+- [x] d1 D2 all four ingested (`raw/m1/audit/m1_static_…`, `raw/m1/nominal/m1_walk_…`), payload hashes verified equal to the H:
+  Get-FileHash list; meta.yaml + catalog rows filled (fingerprints 5ee91cfb / ab623e3e / 2566ec71 / 4fc3c926)
+- [x] d1 D2 straight-segment fallback `straight_mask_kinematic` (RMS|ω_z|<0.15, RMS(L−R)<1 rad/s, mean|wheel|>2 rad/s, runs ≥2 s;
+  thresholds from the distributions, audit §10): 5/12/5 runs, 30.6/83.2/38.4 s
 - [ ] D3 `docs/protocol/m1_real_preregistration.md` committed BEFORE any run
 - [ ] D3.1 `run_pipeline.sh <session> --robot m1 --mode rolling` per session → report.md; first real-robot R⁻ H0' figure
   (QQ, per-window p, e-process); block length L from protocol boundary, adjusted after measured block correlation

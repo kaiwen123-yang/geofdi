@@ -65,27 +65,34 @@ def scan(bag: Path, per_topic: bool) -> dict:
         raise SystemExit(f"no .db3 files in {bag}")
     topics: dict[str, dict] = {}
     finfo = []
+    unreadable = []          # 0-byte / malformed files (aborted recording or copy) — reported, not fatal
     for f in files:
-        con = sqlite3.connect(f"file:{f}?mode=ro&immutable=1", uri=True)
-        cur = con.cursor()
-        tmap = {}
-        for tid, name, typ, ser, qos in cur.execute("SELECT id, name, type, serialization_format, offered_qos_profiles FROM topics"):
-            tmap[tid] = name
-            t = topics.setdefault(name, {"name": name, "type": normalize_type(typ), "raw_type": typ,
-                                         "serialization_format": ser or "cdr",
-                                         "offered_qos_profiles": qos if qos else DEFAULT_QOS, "count": 0,
-                                         "qos_was_empty": not qos, "type_was_dds": normalize_type(typ) != typ})
-        n, tmin, tmax = cur.execute("SELECT COUNT(*), MIN(timestamp), MAX(timestamp) FROM messages").fetchone()
-        finfo.append({"path": f.name, "count": n, "t_min": tmin, "t_max": tmax})
-        if per_topic:
-            for tid, c in cur.execute("SELECT topic_id, COUNT(*) FROM messages GROUP BY topic_id"):
-                topics[tmap[tid]]["count"] += c
-        con.close()
+        if f.stat().st_size == 0:
+            unreadable.append({"path": f.name, "reason": "0-byte file"}); continue
+        try:
+            con = sqlite3.connect(f"file:{f}?mode=ro&immutable=1", uri=True)
+            cur = con.cursor()
+            tmap = {}
+            for tid, name, typ, ser, qos in cur.execute("SELECT id, name, type, serialization_format, offered_qos_profiles FROM topics"):
+                tmap[tid] = name
+                t = topics.setdefault(name, {"name": name, "type": normalize_type(typ), "raw_type": typ,
+                                             "serialization_format": ser or "cdr",
+                                             "offered_qos_profiles": qos if qos else DEFAULT_QOS, "count": 0,
+                                             "qos_was_empty": not qos, "type_was_dds": normalize_type(typ) != typ})
+            n, tmin, tmax = cur.execute("SELECT COUNT(*), MIN(timestamp), MAX(timestamp) FROM messages").fetchone()
+            finfo.append({"path": f.name, "count": n, "t_min": tmin, "t_max": tmax})
+            if per_topic:
+                for tid, c in cur.execute("SELECT topic_id, COUNT(*) FROM messages GROUP BY topic_id"):
+                    topics[tmap[tid]]["count"] += c
+            con.close()
+        except sqlite3.DatabaseError as e:
+            unreadable.append({"path": f.name, "reason": f"sqlite: {e} (partial rowid-order reads may still work: geofdi.io.m1_rosbag)"})
     starts = [fi["t_min"] for fi in finfo if fi["t_min"] is not None]
     ends = [fi["t_max"] for fi in finfo if fi["t_max"] is not None]
     t0 = min(starts) if starts else 0
     t1 = max(ends) if ends else 0
-    return {"files": finfo, "topics": topics, "t0": t0, "t1": t1, "count": sum(fi["count"] for fi in finfo)}
+    return {"files": finfo, "topics": topics, "t0": t0, "t1": t1, "count": sum(fi["count"] for fi in finfo),
+            "unreadable": unreadable}
 
 
 def build_metadata(s: dict) -> dict:
@@ -108,10 +115,11 @@ def build_metadata(s: dict) -> dict:
 
 
 def check(bag: Path, s: dict) -> list[str]:
-    issues = []
+    issues = [f"{u['path']}: unreadable db3 ({u['reason']}) — bag truncated; readable files: "
+              f"{[fi['path'] for fi in s['files']]}" for u in s.get("unreadable", [])]
     mf = bag / "metadata.yaml"
     if not mf.exists():
-        return ["metadata.yaml missing"]
+        return issues + ["metadata.yaml missing"]
     meta = yaml.safe_load(mf.read_text()).get("rosbag2_bagfile_information", {})
     listed = meta.get("relative_file_paths", [])
     present = [fi["path"] for fi in s["files"]]

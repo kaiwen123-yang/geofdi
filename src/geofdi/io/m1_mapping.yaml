@@ -1,7 +1,15 @@
-# Wheeled M1 (GENISOM zsm-1w / MATRiX `zgws`) channel mapping — Sprint 7 Block W1.
-# unverified: true  -> candidate until the Day-0 audit (docs/protocol/m1_day0_wheeled.md) fixes names, order and signs.
+# Wheeled M1 (GENISOM zsm-1w / MATRiX `zgws`) channel mapping — Sprint 7 Block W1, verified on hardware bags in Sprint 8 Block D.
+# unverified: false -> joint count/names/order, per-leg signs, IMU frame/units and the odometry conventions were fixed from
+# the four H:\m1_data rosbag2 sessions of 2026-08-10 (docs/protocol/m1_h_data_audit.md). Still open (vendor): efforts
+# semantics (current vs torque; the values are recorded raw), IMU absolute mounting offset, and the joint SIGN test by hand
+# (Day-0 §1.3) — the mirror relation below is what the data determine, which is all the R- test needs.
 robot: m1_wheeled
-unverified: true
+unverified: false
+verification:
+  date: 2026-08-16
+  source: "H:\\m1_data rosbag2 sessions 2026-08-10 (raw/m1/nominal, raw/m1/audit); docs/protocol/m1_h_data_audit.md"
+  fixed: [joint_count_16, joint_names_and_order, per_leg_mirror_signs, wheel_angle_wrapped, imu_frame_units, odom_conventions, rates_200hz]
+  open: [efforts_semantics (vendor), joint_positive_direction_by_hand (Day-0 §1.3), imu_mounting_offset (tf not recorded)]
 geofdi_order:                       # the GeoFDI telemetry order (LF, RF, LH, RH x ABAD, HIP, KNEE, WHEEL)
   legs: [LF, RF, LH, RH]
   joints: [ABAD, HIP, KNEE, WHEEL]
@@ -11,30 +19,53 @@ mjcf:                               # MATRiX zgws MJCF joint names in GeoFDI ord
      FAR_ABAD_JOINT, FAR_HIP_JOINT, FAR_KNEE_JOINT, FAR_FOOT_JOINT,
      RBL_ABAD_JOINT, RBL_HIP_JOINT, RBL_KNEE_JOINT, RBL_FOOT_JOINT,
      RAR_ABAD_JOINT, RAR_HIP_JOINT, RAR_KNEE_JOINT, RAR_FOOT_JOINT]
-sdk:                                # genisom_robot_sdk JointStateData.names (GEN2 SDK): fl/fr/bl/br x 1..4 — CANDIDATE
-  name_pattern: "{leg}{index}"      # e.g. fl1
+sdk:                                # ROS 2 /joint_shm_controller/joint_states `name[]` (VERIFIED, 16 entries, this order):
+  #   fl1_hip_roll fl2_hip_pitch fl3_knee_pitch fl4_foot | fr1..fr4 | bl1..bl4 | br1..br4   (index 1 ABAD, 2 HIP, 3 KNEE, 4 WHEEL)
+  # The GEN2 SDK JointStateData.names may carry the bare prefix (fl1 ..): the loader accepts <leg><index><suffix> first,
+  # then the bare <leg><index>.
+  name_pattern: "{leg}{index}{suffix}"
   legs: {fl: LF, fr: RF, bl: LH, br: RH}
-  index: {"1": ABAD, "2": HIP, "3": KNEE, "4": WHEEL}     # candidate: 1 = hip roll, 2 = hip pitch, 3 = knee pitch, 4 = wheel
-  positions_units: rad
-  velocities_units: rad/s
-  efforts_semantics: unknown        # unknown | current_estimate | torque  (Day-0 item)
-  legacy_bag_names: [fl_hip_roll_joint, fl_hip_pitch_joint, fl_knee_pitch_joint, fl_foot_joint]   # August 2026 rosbag2 JointState names (per leg prefix fl/fr/bl/br)
+  index: {"1": ABAD, "2": HIP, "3": KNEE, "4": WHEEL}
+  suffix: {"1": _hip_roll, "2": _hip_pitch, "3": _knee_pitch, "4": _foot}
+  positions_units: rad              # wheel (index 4) angle is WRAPPED to [-pi, pi) by the vendor (jumps of 2pi while rolling)
+  velocities_units: rad/s           # wheel rate is continuous (no wrap); ~6-7 rad/s at 0.65 m/s -> r_eff = 0.097 m
+  efforts_semantics: unknown        # unknown | current_estimate | torque  (vendor confirmation pending; observations in the audit)
+  ros_topic: /joint_shm_controller/joint_states
+  rate_hz: 200
 signs:                              # sign convention relative to the GeoFDI uniform-axis convention (ABAD roll x, others pitch y)
-  convention: uniform_axis_candidate
+  convention: vendor_mirror_frame_verified
   note: >
-    The legacy August bags showed all four joints flipping between mirror legs (vendor-frame signs, legacy_aug_inventory.md
-    §4a). If confirmed on Day 0, set per_leg_sign below to {LF: [1,1,1,1], RF: [-1,-1,-1,-1], LH: [1,1,1,1], RH: [-1,-1,-1,-1]}
-    (right legs expressed in the vendor frame -> uniform-axis frame); the manifest signs (ABAD -1, others +1) are unchanged.
-  per_leg_sign: {LF: [1, 1, 1, 1], RF: [1, 1, 1, 1], LH: [1, 1, 1, 1], RH: [1, 1, 1, 1]}
+    Vendor coordinates mirror ALL FOUR joints between the left and right legs (static and rolling means: hip_roll -0.52/+0.54,
+    hip_pitch +1.86/-1.86, knee +1.6/-1.63, wheel rate -6.5/+6.8 for fl/fr; the same for bl/br) — legacy §4a confirmed on the
+    2026-08-10 bags. The GeoFDI mirror representation is diag(-1,+1,+1,+1) (ABAD roll flips, pitch-axis joints keep their
+    sign), so the vendor->uniform-axis conversion for the RIGHT legs is diag(+1,-1,-1,-1): ABAD already carries the physical
+    roll flip, HIP/KNEE/WHEEL are re-signed. (The earlier candidate [-1,-1,-1,-1] would have flipped ABAD twice.)
+  per_leg_sign: {LF: [1, 1, 1, 1], RF: [1, -1, -1, -1], LH: [1, 1, 1, 1], RH: [1, -1, -1, -1]}
 imu:
-  frame: body                       # candidate: base_link origin, x forward, y left, z up (MJCF site 'imu' at the base origin)
-  accel: specific_force_mps2
-  gyro: rad_s
-  quaternion_order: wxyz            # candidate
+  ros_topic: /imu_driver/imu_central
+  frame_id: imu_link
+  frame: sensor_RBD                 # VERIFIED by regression on the odometry (audit §IMU): sensor x = body RIGHT, y = body BACK, z = DOWN
+  R_body_from_sensor: [[0, -1, 0], [-1, 0, 0], [0, 0, -1]]   # a_body(FLU) = R a_sensor ; proper rotation (det +1)
+  accel: specific_force             # standard convention: +0.987 g upward at rest -> sensor z reads -0.987 (z down)
+  accel_units: g                    # loader multiplies by 9.80665 -> m/s^2
+  gyro_units: rad/s
+  quaternion_order: wxyz
+  orientation: constant_identity    # the driver publishes no attitude (orientation = (1,0,0,0) always, covariances 0)
+  rate_hz: 200
+  other_imus: {front: /front_lidar/imu (rslidar_head, y up), rear: /rear_lidar/imu (rslidar_tail, y up)}
+odom:                               # /odom/mc_odom nav_msgs/Odometry 'odom' -> 'base_link', ~41 Hz irregular (median dt 24 ms)
+  ros_topic: /odom/mc_odom
+  kind: vendor_motion_controller_odometry   # NOT ground truth: covariance all zeros; yaw rate ~18 % below the three IMUs
+  twist_linear_frame: odom          # twist.linear is expressed in the ODOM frame (corr 0.999 with the world velocity), not base_link
+  base_height_m: 0.54
+  slam_topic: /odom/slam_odom       # present in the bags but EMPTY (0 messages) on 2026-08-10
 contacts:
   source: none                      # the wheeled M1 has no foot-force sensor: contact flag from wheel effort/current or absent
 session_files:                      # session directory layout consumed by geofdi.io.m1_sdk.load_m1_session
   joint_states: joint_states.csv    # t, <name>_pos, <name>_vel, <name>_eff for every SDK name (any order; missing -> NaN)
-  imu: imu.csv                      # t, qw, qx, qy, qz, wx, wy, wz, ax, ay, az
+  imu: imu.csv                      # t, qw, qx, qy, qz, wx, wy, wz, ax, ay, az   (raw sensor frame/units; loader converts)
+  odom: odom.csv                    # optional: t, x, y, z, qw..qz, vx, vy, vz, wx, wy, wz  (vendor odometry -> base_* diagnostics)
   cmd: cmd.csv                      # optional: t, vx, vy, wz (commanded body velocity)
-  meta: meta.yaml                   # robot, source (sim|hardware), rate_hz, efforts_semantics, notes
+  meta: meta.yaml                   # robot, source (sim|hardware), rate_hz, efforts_semantics, imu_accel_units, notes
+  # a raw rosbag2 directory (metadata.yaml + *.db3) is accepted too: the loader extracts it with geofdi.io.m1_rosbag into
+  # $GEOFDI_DATA_ROOT/data/processed/m1/<session>/ (raw stays untouched) and then reads the CSVs
