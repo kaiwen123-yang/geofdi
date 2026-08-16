@@ -45,12 +45,11 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [ ] rp026 Block L review pack
 
 ## Block T2 — N1-2 two-layer restatement (`feat(theory): N1-2 two-layer restatement`; tag `theory-part1-v1.1`)
-- [ ] (I) law-level blindness dichotomy (Σ-fixed fault + A5-under-fault ⟹ power ≤ α; law-level breaking detectable
-  by consistent statistics) + amplitude-ceiling remark (→ P1)
-- [ ] (II) mean-level power characterisation (K‖Π⁻μ‖², single-leg share ½)
-- [ ] (III) statistic-consistency remark (paired-mean blind to zero-mean law differences; energy distance sees them → P2)
-- [ ] falsification conditions + empirical-anchor placeholders; `make theory` zero error
-- [ ] rp027 Block T2 review pack; tag `theory-part1-v1.1`
+- [x] T2 (I) law-level blindness dichotomy: (I.a) Σ-fixed + A5-under-fault ⟹ ρ-invariant law ⟹ power ≤ α; (I.b) converse via energy-distance/MMD; amplitude-ceiling Remark (A5-under-fault fails → chirality bifurcation → visible, → P1)
+- [x] T2 (II) mean-level power: noncentrality K‖Π⁻μ‖², share ½, nonlinear-response (II.b); consistent iff Π⁻μ≠0 (strict subset of I.b)
+- [x] T2 (III) statistic-consistency Remark: paired_energy blind to zero-mean law breaking (one-sided variance inflation, Π⁻μ=0), energy_distance sees it → P2; deploy both
+- [x] T2 falsification split by layer + P1/P2 empirical-anchor placeholders; Székely-Rizzo bib entry; `make theory` 0 error / 0 undefined / 0 overfull
+- [x] rp027 Block T2 review pack; tag `theory-part1-v1.1`
 
 ## Block P — three pre-registered prediction experiments (`experiments/e15_predictions/`)
 - [ ] `docs/protocol/e15_preregistration.md` committed BEFORE the run
