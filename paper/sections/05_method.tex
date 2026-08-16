@@ -88,3 +88,16 @@ into an $e$-value; the per-leg $e$-values become weights $\pi_i$ that either dro
 down-weight (soft gate, covariance scaled by $1/w_i$) that foot's measurement. Because the gate is calibrated rather
 than thresholded, its per-event false-alarm rate is $\approx\alpha$ by construction --- which is the property the
 standard fixed foot-speed threshold lacks (\S\ref{sec:hardware}).
+
+\subsection{Implementation and compute}
+\label{sec:compute}
+
+The detector is deliberately cheap: the flip test is a few hundred signed sums over a $34\times64$ element. Timing every
+stage on recorded sessions, on a single pinned core with BLAS restricted to one thread, gives $3.4$\,ms of detector work
+per gait cycle on the Go2 against a $444$\,ms cycle period (a factor $131$), and $2.3$\,ms per one-second block on the
+wheeled M1 (a factor $444$). The cost is dominated by the gait-phase estimate ($1.47$\,ms) and the $H_0'$ permutation
+test ($1.75$\,ms); the flip test itself costs $0.06$\,ms at $M=512$. The contact-aided invariant filter, propagate plus
+update, runs at $0.163$\,ms per telemetry sample, i.e.\ a sustainable $6.1$\,kHz against a $250$\,Hz telemetry rate.
+\emph{These are laptop-class numbers} (\texttt{Intel Core Ultra 9 275HX}) and are reported as a proxy for onboard
+compute; the same script and CSV schema are set up to be re-run on an onboard-class machine
+(\texttt{docs/protocol/bench\_nuc.md}).
