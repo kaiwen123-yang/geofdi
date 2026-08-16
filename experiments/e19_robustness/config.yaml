@@ -1,0 +1,17 @@
+# e19 — robustness sweeps of the R- size (Sprint 9 B2): the three reviewer probes.
+experiment: e19_robustness
+workers: 20
+sim:
+  model: go2_urdf_sym
+  gait: trot
+  speed: 0.0
+  terrain: flat
+  ctrl_dt: 0.005
+  sim_dt: 0.0025
+  controller: {period_s: 0.5, kp: [80, 80, 80], kd: [2.0, 2.0, 2.0], lift_kfe: 0.45, lift_hfe: 0.20, stab_k_wz: 0.2}
+  noise: {actuator_std: 0.02, encoder_pos_std: 0.002, encoder_vel_std: 0.03, torque_meas_std: 0.2, imu_acc_std: 0.1, imu_gyro_std: 0.01}
+registration: {N: 64, drop_first: 20}
+detect: {alpha: 0.05, M: 512}
+sweep_phase:   {R: 60, seed_base: 90000, K: 60, errors_pct: [0, 2, 5, 10, -2, -5, -10]}
+sweep_kcal:    {R: 60, seed_base: 91000, K_cals: [60, 200, 400], K_mon: 60}
+sweep_block:   {R: 60, seed_base: 92000, K: 120, tau_cycles: 4.0, ratios: [0.5, 1.0, 2.0]}
