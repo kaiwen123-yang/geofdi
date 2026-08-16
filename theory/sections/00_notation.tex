@@ -155,10 +155,60 @@ distribution and leg geometry differ between front and hind pairs), so the
 richer groups $\mathbb{C}_2\times\mathbb{C}_2$ or $\mathbb{K}_4$ of idealized
 quadrupeds are unavailable.
 
-\todo[inline]{M1 joint count and ordering are unresolved: it is not yet
-confirmed whether the platform is a 12-DoF point-foot quadruped (three joints
-per leg) or carries additional wheel degrees of freedom. $n_j$, the joint
-ordering convention, and the per-joint reflection signs of
-Table~\ref{tab:joint-signs} will be back-filled from the Day-0 telemetry
-audit. All statements are written for generic $n_j$ and specialize once the
-audit lands.}
+\paragraph{Joint count, ordering and reflection signs (resolved on hardware).}
+The M1 platform is a \emph{wheeled-legged} quadruped: $n_j = 16$, four legs
+$\times$ (ABAD = hip roll, HIP = hip pitch, KNEE = knee pitch, WHEEL). The
+ordering and every reflection sign in Table~\ref{tab:joint-signs} were fixed on
+the 2026-08-10 hardware corpus (\texttt{docs/protocol/m1\_h\_data\_audit.md};
+telemetry names \texttt{fl1\_hip\_roll \dots br4\_foot}), superseding the
+placeholder that stood here.
+
+Two conventions must be kept apart. In the \emph{uniform-axis} convention used
+throughout this document, a channel's mirror sign is decided by whether it is a
+polar or an axial quantity about the sagittal plane: the roll-axis joint flips,
+the pitch-axis joints do not. In the \emph{vendor} frame the manufacturer may
+already define mirrored positive directions, in which case the raw telemetry
+carries extra sign flips that the loader must undo before the representation
+$\repW(\gs)$ of \eqref{eq:cycle-action} applies --- this is the case for M1,
+where all four joints flip between mirror legs in vendor coordinates.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{@{}p{2.6cm}p{3.5cm}p{2.5cm}cc@{}}
+\toprule
+platform & channel & kind & $\repW(\gs)$ & vendor$\to$uniform (R legs) \\
+\midrule
+M1 (16 joints) & ABAD (hip roll) & axial-about-$x$ & $-1$ & $+1$ \\
+               & HIP (hip pitch) & pitch axis & $+1$ & $-1$ \\
+               & KNEE (knee pitch) & pitch axis & $+1$ & $-1$ \\
+               & WHEEL (rate) & pitch axis & $+1$ & $-1$ \\
+\midrule
+Go2 (no joints) & \texttt{foot\_pos}/\texttt{foot\_vel} $(x,y,z)$ & polar vector & $(+1,-1,+1)$ & --- \\
+               & \texttt{foot\_force} & magnitude & $+1$ & --- \\
+\midrule
+both & IMU accelerometer & polar & $\operatorname{diag}(+1,-1,+1)$ & --- \\
+     & IMU gyroscope & axial & $\operatorname{diag}(-1,+1,-1)$ & --- \\
+\bottomrule
+\end{tabular}
+\caption{Per-channel reflection signs under $\gs$, verified on hardware. M1:
+Sprint~8 audit; the wheel \emph{angle} is unbounded (the vendor wraps it to
+$[-\pi,\pi)$) and is therefore excluded from the data element, while the wheel
+\emph{rate} and torque stay. The rightmost column is the extra flip the loader
+applies to the right legs to leave the vendor frame; the forward-rolling sign of
+the wheel is additionally $-1$ on the left legs and $+1$ on the right. Go2
+(Sprint~9): the high-level API exposes \emph{no} joint stream, so the element is
+built from the robot's own forward kinematics
+(\texttt{foot\_position\_body}/\texttt{foot\_speed\_body}) plus foot force and
+the IMU; the same $\mathbb{C}_2$ representation applies channel-wise.}
+\label{tab:joint-signs}
+\end{table}
+
+For the Go2 corpus of Sprint~9 the situation is different in kind rather than in
+degree: the recorded high-level interface (\texttt{SportModeState}) carries no
+\texttt{motorState}, so $n_j$ is not observable at all. What it does publish is
+the manufacturer's own forward kinematics of each leg, which is a bijective
+re-coordinatisation of the leg joint vector, so the mirror pairing and the
+isotypic split of Section~\ref{sec:reps} go through unchanged on those channels.
+Only the torque channel --- and with it the model-residual ($R^+$) layer --- is
+lost.
