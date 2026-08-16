@@ -77,3 +77,30 @@ honest weak spot of the mirror channel on this fault family at these window sett
 The claim this table supports is the one stated at the top of this protocol, unchanged: **comparable detection at a
 guarantee the baseline does not provide — no fault data, an exact level, and silence under symmetric nuisances** — plus
 the newly quantified caveat that the classical baseline wins on friction faults and on delay.
+
+### Friction row (Sprint 10 M0.3) — why the classical detector "won" on friction, and what closes it
+
+e21 left an open question: the classical χ² detector reached 0.85–0.90 on friction faults where the **raw-element** R⁻
+scored 0.00. e13a had predicted the reason (a friction change is a *model-residual* phenomenon, invisible in the raw
+mirror element), and this addendum measures it — the same generalised-momentum observer, read through the mirror channel
+instead of a χ² threshold (`experiments/e21_classical_baseline/friction_addendum.py`, R = 20 per cell).
+
+| friction_scale | classical_fixed (FAR 0.15) | classical_far_matched (FAR 0.50) | R⁻ raw element (FAR 0.00) | **R⁻ analytic residual (FAR 0.00)** |
+|---|---:|---:|---:|---:|
+| ×1.2 | 0.20 | 0.90 | 0.00 | 0.05 |
+| ×1.5 | 0.20 | 0.85 | **0.00** | **1.00** |
+| ×2.0 | 0.45 | 0.95 | 1.00 | 1.00 |
+| ×3.0 | 1.00 | 1.00 | 1.00 | 1.00 |
+
+**The gap closes at ×1.5: raw R⁻ 0.00 → residual R⁻ 1.00, at a measured nominal false-alarm rate of 0.00**, while the
+classical detector needs FAR 0.50 (recalibrated) to reach 0.85 and manages only 0.20 at FAR 0.15 with its textbook
+threshold. So the earlier "classical wins on friction" reading was a comparison against the wrong GeoFDI channel: the
+mirror test is not blind to friction, the *raw element* is, and moving the same test onto the residual element recovers
+full detection without giving up the level. This is the empirical form of Proposition N3-1/N3-2 (the residual inherits
+H₀ and can only gain power).
+
+**Where the classical detector still leads, honestly:** at the smallest magnitude ×1.2 it reaches 0.90 (far-matched)
+and 0.20 (fixed) against the residual R⁻'s 0.05 — but at FAR 0.50 and 0.15 respectively, so the comparison is not at
+equal FAR and cannot be claimed as a like-for-like win in either direction. What can be claimed is that **the smallest
+friction change any detector here catches while holding its stated false-alarm rate is ×1.5, and only the residual R⁻
+does it.**
