@@ -34,6 +34,7 @@ OUTDIR="$GEOFDI_DATA_ROOT/review/outbox"
 OUT="$OUTDIR/rp${NNN}_${STAMP}_${SLUG}.zip"
 mkdir -p "$OUTDIR"
 
+MANIFEST_GIVEN=0
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE"/{figures,tables,logs,code}
@@ -76,11 +77,16 @@ for item in "$@"; do
         continue
     fi
     base="$(basename "$item")"
-    # any file named MANIFEST.md or MANIFEST*.md (e.g. MANIFEST_rp025.md) replaces the top-level template — the
-    # Sprint 7 packs rp020-024 passed MANIFEST_rpNNN.md, which used to fall through to code/ and leave the TODO stub.
-    if [[ -f "$item" && "$base" == MANIFEST*.md ]]; then
-        cp "$item" "$STAGE/MANIFEST.md"
+    # Any file whose name contains MANIFEST (any case, any prefix/suffix: MANIFEST.md, MANIFEST_rp025.md,
+    # rp031_manifest.md) replaces the top-level template. History: rp020-024 passed MANIFEST_rpNNN.md and the strict
+    # "MANIFEST.md" match sent it to code/, leaving the TODO stub at top level (Sprint 7 bug, Sprint 8 partial fix).
+    # The silent-failure mode is closed for good by the post-build assertion below, not only by this matcher.
+    shopt -s nocasematch
+    if [[ -f "$item" && "$base" == *manifest*.md ]]; then
+        shopt -u nocasematch
+        cp "$item" "$STAGE/MANIFEST.md"; MANIFEST_GIVEN=1
     elif [[ -d "$item" ]]; then
+        shopt -u nocasematch
         case "$base" in
             figures|tables|logs|code) cp -r "$item"/. "$STAGE/$base"/ ;;
             *)                        cp -r "$item" "$STAGE/code/$base" ;;
@@ -89,6 +95,17 @@ for item in "$@"; do
         cp "$item" "$STAGE/$(bucket_for "$base")/"
     fi
 done
+
+# --- self-check (Sprint 9 B9): the packing bug must never fail silently again. If a MANIFEST was supplied, the staged
+# top-level MANIFEST.md must NOT still be the stub template; otherwise the pack would ship with an empty Purpose.
+if grep -qx "TODO" "$STAGE/MANIFEST.md" 2>/dev/null; then
+    if [[ "$MANIFEST_GIVEN" == "1" ]]; then
+        echo "ERROR: a MANIFEST file was passed but the top-level MANIFEST.md is still the TODO template." >&2
+        echo "       (staged files: $(cd "$STAGE" && ls))" >&2
+        exit 1
+    fi
+    echo "WARN: no MANIFEST supplied — the pack ships with the TODO template. Pass one as an extra argument." >&2
+fi
 
 rm -f "$OUT"
 ( cd "$STAGE" && zip -qr "$OUT" . )
