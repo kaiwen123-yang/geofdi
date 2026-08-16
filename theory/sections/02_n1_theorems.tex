@@ -10,8 +10,9 @@ are cited by Part~2). Every result carries the Part~0 triple: proof,
 falsification condition, empirical anchor (experiment and figure/table id).
 Workstreams: N1-1 (data elements, exactness), N1-2 (isotypic detectability),
 N1-5 (sequential layer; the number is kept for continuity with the sprint
-plans), with N1-3/N1-4 (accumulation and metric refinement) left as the open
-list of Section~\ref{sec:p1-open}.
+plans) and N1-3 (power lower bound, Proposition~\ref{prop:n1-3-power}), with
+N1-4 (metric refinement) and the accumulation question left as the open list of
+Section~\ref{sec:p1-open}.
 
 \subsection{Data elements, the two actions, and block exchangeability}
 \label{sec:p1-elements}
@@ -597,6 +598,72 @@ case; the HIP-gain case is largely absorbed by the loaded loop, W pack).
 
 \subsection{Open list: N1-3 / N1-4}
 \label{sec:p1-open}
+
+One item on this list is closed by Sprint~9 and is stated first; the rest remain
+open.
+
+\begin{proposition}[N1-3: power lower bound for the quadratic flip statistic]
+\label{prop:n1-3-power}
+Model the differenced half-cycle scores as Gaussian: $D_k = Z_k - \rho Z_k$ with
+$D_k \sim \mathcal{N}(2\Pi^-\mu, \Sigma_D)$ i.i.d.\ across the $K$ elements, and
+let $T = K\,\|\bar D\|^2_{\Sigma_D}$ be the whitened quadratic flip statistic on
+$d = \dim \mathcal{W}^-$ effective coordinates, compared with the level-$\alpha$
+critical value $c_\alpha = \chi^2_{d,1-\alpha}$. Write the noncentrality
+\begin{equation}
+  \label{eq:n13-lambda}
+  \lambda \;=\; K\,\|\Pi^-\mu\|^2_{\Sigma_D}.
+\end{equation}
+Then the power satisfies the explicit lower bound
+\begin{equation}
+  \label{eq:n13-bound}
+  \mathbb{P}(T > c_\alpha)
+  \;\ge\; 1 - \exp\!\Bigl(-\frac{(d + \lambda - c_\alpha)_+^2}{4\,(d + 2\lambda)}\Bigr).
+\end{equation}
+Consequently, for a target power $1-\beta$ it suffices that
+$\lambda \ge \lambda^*(d,\alpha,\beta)$ with
+\begin{equation}
+  \label{eq:n13-samplesize}
+  \sqrt{\lambda^*} \;=\; \sqrt{2\ln\tfrac1\beta}
+  \;+\; \sqrt{\,2\ln\tfrac1\beta + 2\sqrt{d\ln\tfrac1\alpha} + 2\ln\tfrac1\alpha + 2\sqrt{d\ln\tfrac1\beta}\,},
+\end{equation}
+i.e.\ the number of cycles needed is
+$K \ge \lambda^*(d,\alpha,\beta)\,/\,\|\Pi^-\mu\|^2_{\Sigma_D}$ --- the
+sample-size rule that Theorem~\ref{thm:n1-2}(II.a) left implicit.
+\end{proposition}
+
+\begin{proof}
+Under the stated model $T \sim \chi^2_d(\lambda)$ with $\lambda$ as in
+\eqref{eq:n13-lambda}. Laurent--Massart's lower-tail inequality for a
+noncentral chi-square \cite{laurent2000adaptive} gives, for every $x > 0$,
+$\mathbb{P}\bigl(T \le d + \lambda - 2\sqrt{(d + 2\lambda)x}\bigr) \le e^{-x}$.
+Choosing $x$ so that the left endpoint equals $c_\alpha$, i.e.
+$x = (d+\lambda-c_\alpha)^2 / \bigl(4(d+2\lambda)\bigr)$ whenever
+$d + \lambda > c_\alpha$, yields $\mathbb{P}(T \le c_\alpha) \le e^{-x}$, which
+is \eqref{eq:n13-bound}. For \eqref{eq:n13-samplesize}, power $\ge 1-\beta$
+holds as soon as $x \ge \ln(1/\beta)$, i.e.
+$d + \lambda - c_\alpha \ge 2\sqrt{(d+2\lambda)\ln(1/\beta)}$. Bound the
+critical value by the companion upper tail,
+$c_\alpha \le d + 2\sqrt{d\ln(1/\alpha)} + 2\ln(1/\alpha)$, and
+$\sqrt{d + 2\lambda} \le \sqrt d + \sqrt{2\lambda}$; the requirement becomes
+$\lambda - 2\sqrt{2\ln(1/\beta)}\sqrt{\lambda} - A \ge 0$ with
+$A = 2\sqrt{d\ln(1/\alpha)} + 2\ln(1/\alpha) + 2\sqrt{d\ln(1/\beta)}$, a
+quadratic in $\sqrt\lambda$ whose positive root is \eqref{eq:n13-samplesize}.
+\end{proof}
+
+\paragraph{Falsification, tightness and anchor.}
+The bound is falsified by any $(d,\lambda,\alpha)$ with true power below
+\eqref{eq:n13-bound}; a numerical sweep over $d \in \{4,12,40,100\}$,
+$\lambda \in [0,120]$ and $\alpha \in \{0.01,0.05\}$ found none, and the
+sample-size rule \eqref{eq:n13-samplesize} delivered at least the requested
+power in every case checked. Tightness: at $d = 12$ the true power reaches
+$0.8$ at $\lambda = 17.4$ while the bound reaches it at $\lambda = 30.7$, a
+factor $1.76$ in $\lambda$ and hence only $\approx 1.33$ in the fault
+\emph{magnitude} (since $\lambda \propto \|\Pi^-\mu\|^2$) --- usable for
+sizing an experiment, not for predicting a knee. The Gaussian premise is the
+limitation: the deployed statistic is a permutation-calibrated energy
+statistic, not a whitened quadratic form, so \eqref{eq:n13-bound} describes
+its Gaussian surrogate; the e04a/e08 power curves remain the empirical
+reference.
 
 \begin{enumerate}
 \item \emph{Second-order inflation for energy statistics}
