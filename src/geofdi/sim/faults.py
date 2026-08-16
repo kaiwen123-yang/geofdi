@@ -11,6 +11,8 @@ Faults (act on the leg/joint given, or on all if None):
   inertia_add     link mass += magnitude*s(t) [kg], link distal to the joint (HFE -> thigh, KFE/None -> calf);
                   inertia scaled with the mass
   encoder_bias    measured q += magnitude*s(t) [rad]
+  encoder_noise_scale  per-leg/joint encoder-noise STD *= 1 + magnitude*s(t) (ZERO-MEAN variance inflation; magnitude 1 => std x2,
+                  variance x4). A law-level (not mean-level) fault: Pi^- mu = 0 but push_rho P != P (theory N1-2 Remark statistic-consistency).
   foot_friction   foot geom sliding friction *= 1 + magnitude*s(t)
 Nuisances (symmetric or symmetric-in-law; not faults):
   payload_symmetric   base mass += magnitude [kg] at the base COM
@@ -34,7 +36,7 @@ import numpy as np
 LEGS = ("LF", "RF", "LH", "RH")
 JOINTS = ("HAA", "HFE", "KFE")
 FAULT_TYPES = ("actuator_gain", "actuator_bias", "deadzone", "delay", "friction_scale", "inertia_add",
-               "encoder_bias", "foot_friction")
+               "encoder_bias", "encoder_noise_scale", "foot_friction")
 NUISANCE_TYPES = ("payload_symmetric", "payload_asymmetric", "drift_symmetric", "drift_lateral")
 
 
@@ -169,6 +171,16 @@ class FaultBank:
                 if sv:
                     q_meas[s.mask()] += s.magnitude * sv
         return q_meas
+
+    def encoder_noise_std(self, base_std: float, t: float) -> np.ndarray:
+        """Per-joint (12,) encoder-noise std after any encoder_noise_scale faults (zero-mean variance inflation)."""
+        std = np.full(12, float(base_std))
+        for s in self.specs:
+            if s.type == "encoder_noise_scale":
+                sv = s.s(t)
+                if sv:
+                    std[s.mask()] *= (1.0 + s.magnitude * sv)
+        return std
 
     def model_update(self, t: float) -> None:
         if not self.has_model_faults:

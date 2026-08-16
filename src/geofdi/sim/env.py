@@ -212,7 +212,7 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
         q = d.qpos[qadr].copy(); dq = d.qvel[vadr].copy()
         faults.advance(t)
         faults.model_update(t)
-        q_meas = faults.measure(q, t) + rng.normal(0.0, noise.encoder_pos_std, 12)
+        q_meas = faults.measure(q, t) + rng.normal(0.0, 1.0, 12) * faults.encoder_noise_std(noise.encoder_pos_std, t)
         dq_meas = dq + rng.normal(0.0, noise.encoder_vel_std, 12)
         body = _body_state(d, sadr, noise, rng, gyr_prev)
         tau_cmd, q_ref, _ = ctrl.torque(q_meas, dq_meas, theta, t, setpoint_offset=faults.setpoint_offset(t), body=body)
