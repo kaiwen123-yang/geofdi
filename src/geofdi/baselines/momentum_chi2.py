@@ -12,8 +12,11 @@ neither chi^2 nor independent across samples. We therefore report the method BOT
 
   * `fixed`       — the classical chi^2_{k,1-alpha} threshold. Its *measured* nominal exceedance rate is reported; the
                     gap to alpha is the point of the comparison.
-  * `far_matched` — the threshold re-calibrated on the run's own nominal calibration cycles to the target FAR, i.e. the
-                    same detector given the FAR control that the classical recipe lacks. This is the fair power row.
+  * `far_matched` — the threshold re-calibrated on the run's own nominal data so that the probability of raising ANY
+                    alarm within a monitoring HORIZON equals alpha. This is the comparison the unified baseline protocol
+                    requires (docs/protocol/baseline_protocol.md): detection is "first exceedance inside the horizon", so
+                    a per-sample rate alpha is not the same guarantee -- over a 100-cycle horizon a per-sample rate of
+                    0.05 alarms with probability ~1. Bootstrapped exactly like the e-CUSUM threshold h.
 
     det = MomentumChi2(alpha=0.05, debounce=3)
     det.fit(r_cal)                      # (T_cal, k) nominal residual rows
@@ -26,8 +29,10 @@ from scipy import stats
 
 
 class MomentumChi2:
-    def __init__(self, alpha: float = 0.05, debounce: int = 3, diagonal: bool = False, ridge: float = 1e-9):
+    def __init__(self, alpha: float = 0.05, debounce: int = 3, diagonal: bool = False, ridge: float = 1e-9,
+                 horizon: int | None = None, n_boot: int = 400, rng=None):
         self.alpha = float(alpha); self.debounce = int(debounce); self.diagonal = bool(diagonal); self.ridge = float(ridge)
+        self.horizon = horizon; self.n_boot = int(n_boot); self.rng = np.random.default_rng(0) if rng is None else rng
 
     def fit(self, r_cal: np.ndarray):
         r = np.asarray(r_cal, float); r = r[np.isfinite(r).all(axis=1)]
@@ -41,8 +46,10 @@ class MomentumChi2:
         q_cal = np.einsum("ij,jk,ik->i", d, self.Sinv_, d)
         self.q_cal_ = q_cal
         self.thr_fixed_ = float(stats.chi2.ppf(1 - self.alpha, self.k_))
-        # FAR-matched: the quantile of the calibration statistic that makes the DEBOUNCED alarm rate equal alpha
-        self.thr_far_ = float(_debounced_quantile(q_cal, self.alpha, self.debounce))
+        # FAR-matched: horizon-calibrated (probability of ANY debounced alarm within `horizon` samples <= alpha),
+        # bootstrapped from the nominal statistic; falls back to the per-sample quantile when no horizon is given.
+        self.thr_far_ = (float(_horizon_threshold(q_cal, self.alpha, self.debounce, int(self.horizon), self.n_boot, self.rng))
+                         if self.horizon else float(_debounced_quantile(q_cal, self.alpha, self.debounce)))
         self.cal_exceed_fixed_ = float(np.mean(q_cal > self.thr_fixed_))
         return self
 
@@ -75,5 +82,23 @@ def _debounced_quantile(q_cal: np.ndarray, alpha: float, debounce: int) -> float
     cands = np.quantile(q_cal, np.linspace(0.50, 0.9999, 400))
     for thr in cands:
         if _debounce(q_cal > thr, debounce).mean() <= alpha:
+            return float(thr)
+    return float(cands[-1])
+
+
+def _horizon_threshold(q_cal: np.ndarray, alpha: float, debounce: int, horizon: int, n_boot: int, rng) -> float:
+    """Smallest threshold whose probability of raising ANY debounced alarm inside a `horizon`-sample window of nominal
+    data is <= alpha. Windows are drawn as contiguous blocks of the calibration statistic (so serial correlation, the
+    very thing that breaks the i.i.d. chi-square assumption, is preserved in the bootstrap)."""
+    n = len(q_cal)
+    if n <= horizon:
+        starts = np.zeros(n_boot, int); horizon = max(1, n - 1)
+    else:
+        starts = rng.integers(0, n - horizon, size=n_boot)
+    wins = np.stack([q_cal[s:s + horizon] for s in starts])
+    cands = np.quantile(q_cal, np.linspace(0.50, 0.99999, 300))
+    for thr in cands:
+        hit = np.mean([_debounce(w > thr, debounce).any() for w in wins])
+        if hit <= alpha:
             return float(thr)
     return float(cands[-1])
