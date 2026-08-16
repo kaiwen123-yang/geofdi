@@ -1,0 +1,10 @@
+# Machine profile: Intel NUC13, Ubuntu 22.04, no GPU — the onboard-compute proxy (Sprint 10 Block N).
+# Purpose: re-run scripts/bench_pipeline.py on a machine class comparable to a robot's onboard computer, so the
+# manuscript can quote onboard timing rather than laptop timing. See docs/protocol/bench_nuc.md for the procedure.
+machine: nuc13
+data_root: ~/geofdi-data          # local directory on the NUC; only the benchmarked sessions need to be present
+gpu: none                          # install the CPU-only torch wheel; nothing in the benchmark path needs CUDA
+notes: >
+  The benchmark needs no dataset beyond the one or two sessions copied over by scp, and no CUDA. Keep the same
+  single-core discipline as the laptop run (taskset -c 0 and BLAS threads pinned to 1, which bench_pipeline.py sets
+  itself before importing numpy) so the two hosts' rows in results/bench/<hostname>/bench_table.csv are comparable.
