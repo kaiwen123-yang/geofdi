@@ -37,10 +37,10 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [x] rp025 Block D review pack
 
 ## Block L — leftover fixes (`chore: leftover fixes`)
-- [ ] L1 `make_review_pack.sh` in-block MANIFEST overrides top-level template; rp020–024 top-level MANIFEST back-filled
-- [ ] L2 Day-0 docs + `run_pipeline.sh` report notes: rolling primary test = H0', naive H0 excursion expected
-- [ ] L3 weld world e13a/e13b (power + δ_f contamination, R=50) → `docs/paper/split_option.md`
-- [ ] L4 e03 audit doc note: mirrored-bilateral external test n=8 inconclusive
+- [x] L1 make_review_pack.sh matches MANIFEST*.md as the override; rp020–024 top-level MANIFEST back-filled in place
+- [x] L2 run_pipeline.sh + m1_day0_wheeled.md + go2_day0.md: rolling primary = H0', naive H0 excursion expected
+- [x] L3 e13 weld addendum R=50 (analytic residual power > raw; plain DeLaN H0 size 1.00 vs equiv 0.00; H0' restores) → split_option.md
+- [x] L4 liu_a1_audit.md: mirrored-bilateral external test n=8 inconclusive note
 - [x] L5 `docs/sprints/theory_backlog.md` registers the N2 formalisation (sparse-correction consistency + signature=observable projection) as the next theory-sprint item
 - [ ] rp026 Block L review pack
 
