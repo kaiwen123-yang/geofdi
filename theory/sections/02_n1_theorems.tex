@@ -238,7 +238,7 @@ observations were traced to a broken hypothesis (Assumption~E through the
 wrap condition, e04d; a heading-dependent friction artefact of the pyramidal
 contact cone in the M1 world, W2), never to the test.
 
-\subsection{Theorem N1-2: isotypic detectability, nonlinear form}
+\subsection{Theorem N1-2: two-layer isotypic detectability (law-level blindness + mean-level power)}
 \label{sec:n1-2}
 
 Under $G = \mathbb{C}_2$ the element space splits into $\mathcal{W} =
@@ -249,23 +249,47 @@ $P_\varphi$; write $\mu(\varphi) := \mathbb{E}_{P_\varphi} Z$ for the mean
 profile and, for the leg-wise parametrization $\varphi = (\kappa_{\mathrm{L}},
 \kappa_{\mathrm{R}})$ of a joint pair, $\mu(\kappa_{\mathrm{L}}, \kappa_{\mathrm{R}})$.
 
-\begin{theorem}[N1-2, isotypic detectability]
+The statement is organized in two layers: a \emph{law-level} dichotomy
+(layer~I) that says exactly which faults are invisible to \emph{every}
+invariance test, and a \emph{mean-level} power characterization (layer~II)
+for the specific paired statistic used in practice. The two layers do not
+coincide --- Remark~\ref{rem:statistic-consistency} exhibits a fault that is
+law-level detectable but mean-level blind --- which is why deployment uses
+two statistic families, not one.
+
+\begin{theorem}[N1-2, two-layer isotypic detectability]
 \label{thm:n1-2}
+\emph{Layer~I (law level).}
 \begin{enumerate}
-\item[(i)] \emph{(structural blindness)} If the fault pattern is fixed by
-$\symgrp$ (bilateral, synchronized, equal magnitude: $\varphi = (\kappa,
-\kappa)$ on a mirror pair, or any pattern with stabilizer $\symgrp_\varphi
-= \symgrp$), the faulty closed loop is still $\symgrp$-equivariant, $H_0$
-holds under $P_\varphi$, and every $\symgrp$-invariance test has power
-$\le$ its level, whatever the magnitude. Equivalently $\Pi^-\mu(\kappa,\kappa)
-= 0$ and all higher moments are $\rho$-invariant.
-\item[(ii)] \emph{(what is visible)} An alternative law $P_\varphi$ is
-detectable by some invariance test iff $\push{\rho}P_\varphi \neq P_\varphi$;
-for the paired-energy flip test the noncentrality after $K$ elements is
-$K\,\|\Pi^-\mu(\varphi)\|^2_{\Sigma}$ (standardized units), and the test is
-consistent iff $\Pi^-\mu(\varphi) \neq 0$ (location alternatives with
-$\rho$-invariant fluctuations, as in the Sprint-6 core).
-\item[(iii)] \emph{(nonlinear response; the difference heuristic is wrong)}
+\item[(I.a)] \emph{(blindness)} Suppose the fault pattern is fixed by
+$\symgrp$ (stabilizer $\symgrp_\varphi = \symgrp$: bilateral, synchronized,
+equal magnitude $\varphi = (\kappa,\kappa)$ on a mirror pair, symmetric wear)
+\emph{and} the faulted closed loop still satisfies Assumption~\ref{as:erg}
+under the $\symgrp$-symmetric command --- call this \emph{A5-under-fault}: the
+faulted plant has a unique invariant measure. Then $\push{\rho}P_\varphi =
+P_\varphi$, $H_0$ holds under $P_\varphi$, and every $\symgrp$-invariance
+test has power $\le$ its level, whatever the magnitude. Equivalently
+$\Pi^-\mu(\kappa,\kappa) = 0$ \emph{and} all higher moments are
+$\rho$-invariant.
+\item[(I.b)] \emph{(detectability, converse)} Conversely, if $\push{\rho}
+P_\varphi \neq P_\varphi$ (any law-level breaking of the invariance, not only
+of the mean) then some bounded $h$ has $\mathbb{E}_{P_\varphi}[h(Z) -
+h(\rho Z)] \neq 0$, and a statistic that is consistent for the full
+two-sample problem between $\{Z_k\}$ and $\{\rho Z_k\}$ --- the
+\emph{energy-distance} class $\mathcal{E}(\{Z_k\},\{\rho Z_k\})$
+\cite{szekely2013energy}, or any characteristic-kernel MMD --- detects it
+with power $\to 1$. Membership of $P_\varphi$ in the blind set of (I.a) is
+thus exactly $\push{\rho}P_\varphi = P_\varphi$.
+\end{enumerate}
+\emph{Layer~II (mean level; the paired-energy flip test).}
+\begin{enumerate}
+\item[(II.a)] \emph{(noncentrality)} For the paired-energy flip statistic the
+noncentrality after $K$ elements is $K\,\|\Pi^-\mu(\varphi)\|^2_{\Sigma}$
+(standardized units); the test is consistent \emph{iff} $\Pi^-\mu(\varphi)
+\neq 0$ (location alternatives with $\rho$-invariant fluctuations, the
+Sprint-6 core). It is therefore consistent against a strict subset of the
+laws that (I.b) covers.
+\item[(II.b)] \emph{(nonlinear response; the difference heuristic is wrong)}
 For a mirror pair with leg-wise response $f$ (the mean profile of the leg's
 channels as a function of its own parameter, plus the equivariant coupling),
 $\Pi^-\mu(\kappa_{\mathrm{L}}, \kappa_{\mathrm{R}}) = \tfrac12\bigl(f(\kappa_{\mathrm{L}})
@@ -279,25 +303,33 @@ independently of $f$ is the antisymmetric \emph{share}
 $\|\Pi^-\mu\|^2/\|\mu\|^2$: exactly $\tfrac12$ for a footprint supported on
 one leg (its mirror image is orthogonal to it), $0$ for the fixed pattern,
 strictly between for an unequal pair.
-\item[(iv)] \emph{(general alternatives)} If $P_\varphi$ is not $\rho$-invariant
-some bounded $h$ has $\mathbb{E}[h(Z) - h(\rho Z)] \neq 0$ and the flip test
-with $T = |K^{-1}\sum_k (h(Z_k) - h(\rho Z_k))|$ is consistent.
 \end{enumerate}
 \end{theorem}
 
 \begin{proof}
-(i) A fault with $\symgrp_\varphi = \symgrp$ maps the closed loop to itself
-under every $\sigma \in \symgrp$: the faulty transition kernels are
+\emph{(I.a)} A fault with $\symgrp_\varphi = \symgrp$ maps the closed loop to
+itself under every $\sigma \in \symgrp$: the faulted transition kernels are
 conjugation-invariant exactly as in A1--A4 (the fault is part of the
-equivariant plant), and A5 for the faulty loop gives \eqref{eq:h0} for
-$P_\varphi$; Theorem~\ref{thm:n1-1} makes every flip test level-$\alpha$
-under $P_\varphi$. (ii) If $\push{\rho}P_\varphi = P_\varphi$ then (i)
-applies; the noncentrality computation is that of the Sprint-6 core:
-$D_k = 2\Pi^-\mu + (\xi_k - \rho\xi_k)$, $\mathbb{E}\|\bar D\|^2 =
-4\|\Pi^-\mu\|^2 + \operatorname{tr}\operatorname{Var}(D_1)/K$ against a
-flip-null expectation of $\operatorname{tr}\operatorname{Var}(D_1)/K +
+equivariant plant). By Remark~\ref{rem:bifurcation} equivariance alone gives
+$\push{\rho}\mu$ invariant whenever $\mu$ is; A5-under-fault (uniqueness for
+the faulted loop) is what forces $\push{\rho}P_\varphi = P_\varphi$, i.e.\
+\eqref{eq:h0} for $P_\varphi$. Theorem~\ref{thm:n1-1} then makes every flip
+test level-$\alpha$ under $P_\varphi$. \emph{(I.b)} If $\push{\rho}P_\varphi
+\neq P_\varphi$ two probability measures differ, so some bounded continuous
+$h$ separates them, $\mathbb{E}_{P_\varphi}[h(Z)] \neq \mathbb{E}_{P_\varphi}
+[h(\rho Z)]$; the energy distance (equivalently the MMD with a characteristic
+kernel) is zero iff the two laws coincide and is estimated $\sqrt K$-consistently
+from the paired sample, so the permutation flip test built on it has power
+$\to 1$ \cite{szekely2013energy}. \emph{(II.a)} With $\push{\rho}P_\varphi$
+allowed to differ from $P_\varphi$ only in the mean, the noncentrality is the
+Sprint-6 core: $D_k = 2\Pi^-\mu + (\xi_k - \rho\xi_k)$, $\mathbb{E}\|\bar
+D\|^2 = 4\|\Pi^-\mu\|^2 + \operatorname{tr}\operatorname{Var}(D_1)/K$ against
+a flip-null expectation of $\operatorname{tr}\operatorname{Var}(D_1)/K +
 O(\|\Pi^-\mu\|^2/K)$; consistency follows from the law of large numbers on
-both. (iii) In leg-pair coordinates $\mu = (f(\kappa_{\mathrm{L}}),
+both, and holds iff $\Pi^-\mu \neq 0$. Since $\Pi^-\mu = 0$ is possible with
+$\push{\rho}P_\varphi \neq P_\varphi$ (equal means, unequal higher moments;
+Remark~\ref{rem:statistic-consistency}), (II.a) covers a strict subset of
+(I.b). \emph{(II.b)} In leg-pair coordinates $\mu = (f(\kappa_{\mathrm{L}}),
 f_{\mathrm{mir}}(\kappa_{\mathrm{R}}))$ with $f_{\mathrm{mir}} = \rho f$ by
 equivariance of the plant, so $\Pi^-\mu = \tfrac12(f(\kappa_{\mathrm{L}}) -
 \rho\,\rho f(\kappa_{\mathrm{R}}), \dots) = \tfrac12(f(\kappa_{\mathrm{L}}) -
@@ -309,9 +341,49 @@ $\|\Pi^\pm s\|^2 = \tfrac12\|s\|^2$; for $\kappa_{\mathrm{L}} =
 pair $\mu = s_{\mathrm{L}} + s_{\mathrm{R}}$ with $\rho s_{\mathrm{L}}
 \parallel s_{\mathrm{R}}$ and $\|\Pi^-\mu\|^2 = \tfrac12\|s_{\mathrm{L}} -
 \rho s_{\mathrm{R}}\|^2 < \tfrac12\|\mu\|^2$ unless $s_{\mathrm{R}} = 0$.
-(iv) is the standard characterization of distributional invariance by test
-functions.
 \end{proof}
+
+\begin{remark}[Amplitude ceiling of the blindness --- A5-under-fault can fail]
+\label{rem:amplitude-ceiling}
+Layer~I.a is not unconditional: its hypothesis A5-under-fault is exactly the
+uniqueness that Remark~\ref{rem:bifurcation} warns can break. A bilateral
+$\symgrp$-fixed fault deep enough to destabilize the symmetric attractor of
+the faulted loop drives it (generically) to a \emph{chiral} limit cycle whose
+mirror image is a second attractor: then A1--A4 still hold, the fault is still
+$\symgrp$-fixed, yet $\push{\rho}P_\varphi \neq P_\varphi$ and (I.b) makes it
+visible. So the blindness has an \emph{amplitude ceiling}: mild-to-moderate
+symmetric degradation is invisible to $R^-$, but a sufficiently severe
+bilateral fault reappears through the chirality channel $\eps{chir}$
+(Assumption~A5$'$). The ceiling is the fault magnitude at which the symmetric
+periodic orbit of the faulted plant loses stability; below it the two-channel
+design (Corollary~\ref{cor:two-channel-necessity}) is required, above it a
+one-sided residual re-emerges. This prediction is tested in the pre-registered
+chirality-ceiling experiment (P1, \S\ref{sec:p1-open} anchor;
+\texttt{experiments/e15\_predictions}): a bilateral mirror fault of equal
+severity $\kappa$ is swept downward and $R^-$ power together with the
+duty-factor chirality index is recorded --- the theorem predicts $R^-$ power
+$\approx \alpha$ at mild $\kappa$ and a rise coincident with the onset of a
+nonzero chirality index at the ceiling.
+\end{remark}
+
+\begin{remark}[Statistic consistency --- paired mean vs energy distance]
+\label{rem:statistic-consistency}
+Layers~I and~II differ precisely on \emph{zero-mean law breaking}. A fault
+that changes the law of a mirror pair without changing its mean --- e.g.\ a
+one-sided variance inflation, the left leg's encoder-noise variance raised
+while every mean profile stays $\rho$-fixed --- has $\Pi^-\mu = 0$ but
+$\push{\rho}P_\varphi \neq P_\varphi$. By (II.a) the paired-energy /
+paired-mean flip test has power $\to \alpha$ (blind); by (I.b) the
+energy-distance flip test has power $\to 1$ (visible). Neither dominates: the
+paired-mean statistic is more powerful against the location alternatives that
+dominate the actuator-fault families (II.a noncentrality $K\|\Pi^-\mu\|^2$),
+the energy-distance statistic is the one with the full converse. A deployment
+should therefore run \emph{both} families on the same elements and alarm on
+either. This is the pre-registered statistic-split experiment (P2,
+\texttt{experiments/e15\_predictions}): left-leg encoder variance $\times 4$
+at zero mean, with the prediction \texttt{paired\_energy} power $\approx
+\alpha$ and \texttt{energy\_distance} power $> \alpha$.
+\end{remark}
 
 \begin{corollary}[Two channels are necessary]
 \label{cor:two-channel-necessity}
@@ -327,22 +399,31 @@ asymmetric by construction.
 \end{corollary}
 
 \paragraph{Falsification and anchors (N1-2).}
-e04c (rp005; the isotypic figure and the projection-energy table of that
-pack): single $R^-$ $1.00$ / $R^+$ $1.00$; bilateral equal $R^-$ alarm $0.00$
-(blind), $R^+$ $1.00$; unequal $(0.7, 0.5)$: $R^-$ $1.00$ with \emph{more}
-antisymmetric energy than the single ($87.4$ vs $60.8$) --- the pre-registered
-``strictly between'' prediction was falsified, the share ordering
-$0.554 > 0.201 > 0.007$ held: (iii) is the corrected statement. e13c on the
-equivariant residual: shares $0.49 / 0.000 / 0.15$ (a one-joint footprint
-splits exactly $\tfrac12$--$\tfrac12$ on the residual; $0.43$ on the raw
-element because kinematic coupling spreads the footprint), bilateral-equal
-$R^-$ e-process $0.00$, $\Pi^+$-magnitude $1.00$. e03 (external Gazebo
-benchmark, Block~E): the mirror-double class is the pre-registered
-blindness test on data we did not generate. The theorem is falsified if a
-$\symgrp$-fixed fault is detected by an invariance test at a rate above its
-false-alarm rate on a world satisfying A1--A5 --- e03 reports this per
-class and per command condition (turning commands break the symmetry of
-the gait itself and are excluded from the blindness claim).
+\emph{Layer~II (mean level).} e04c (rp005; the isotypic figure and the
+projection-energy table of that pack): single $R^-$ $1.00$ / $R^+$ $1.00$;
+bilateral equal $R^-$ alarm $0.00$ (blind), $R^+$ $1.00$; unequal $(0.7, 0.5)$:
+$R^-$ $1.00$ with \emph{more} antisymmetric energy than the single ($87.4$ vs
+$60.8$) --- the pre-registered ``strictly between'' prediction was falsified,
+the share ordering $0.554 > 0.201 > 0.007$ held: (II.b) is the corrected
+statement. e13c on the equivariant residual: shares $0.49 / 0.000 / 0.15$ (a
+one-joint footprint splits exactly $\tfrac12$--$\tfrac12$ on the residual;
+$0.43$ on the raw element because kinematic coupling spreads the footprint),
+bilateral-equal $R^-$ e-process $0.00$, $\Pi^+$-magnitude $1.00$. e03
+(external Gazebo benchmark, Block~E): the mirror-double class is a blindness
+test on data we did not generate --- reported \emph{inconclusive} at $n = 8$
+straight episodes ($R^-$ straight $0.50$; too few to separate ``blind'' from
+``underpowered'', \texttt{docs/protocol/liu\_a1\_audit.md} \S4). Layer~II is
+falsified if a $\symgrp$-fixed, A5-under-fault fault is detected by the
+paired flip test above its false-alarm rate on a world satisfying A1--A5.
+\emph{Layer~I (law level), pre-registered:} the amplitude-ceiling claim
+(Remark~\ref{rem:amplitude-ceiling}) and the statistic-split claim
+(Remark~\ref{rem:statistic-consistency}) are tested in
+\texttt{experiments/e15\_predictions} (P1, P2). \textbf{[P1/P2 empirical
+anchors --- fill after the Block~P runs: P1 $R^-$ power and chirality index
+vs bilateral severity $\kappa$ with the ceiling estimate; P2
+\texttt{paired\_energy} vs \texttt{energy\_distance} power under a zero-mean
+one-sided variance inflation.]} Command conditions that break the symmetry of
+the gait itself (turning) are excluded from every blindness claim.
 
 \subsection{Proposition N1-5: the sequential layer}
 \label{sec:n1-5}
