@@ -67,12 +67,12 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [x] rp029 Block G review pack
 
 ## Block PUB — public data harvest (`experiments/e17_public_realdata/`)
-- [ ] `docs/protocol/e17_preregistration.md` committed BEFORE the run
-- [ ] PUB1 Mini Cheetah contact dataset ingested to `raw/public/minicheetah-contact/` (URL, licence, hashes)
-- [ ] PUB2 Mini Cheetah: 8-terrain R⁻ H0' FAR table; real residual R⁻ (model choice recorded); air-sequence weld run; (opt) K₄
-- [ ] PUB3 Street A1 / legkilo Go1: straight-segment mining → real H0' FAR figures; legkilo three-estimator gating table
-- [ ] PUB4 `docs/data_catalog.md` + paper outline evidence stack (five layers)
-- [ ] rp030 Block PUB review pack
+- [x] edd659f e17 pre-registration committed BEFORE the run (2026-08-16 15:24)
+- [x] PUB1 Mini Cheetah ingested (raw/public/minicheetah-contact, 12 sequences, SOURCE.md + hashes; io/minicheetah.py loader)
+- [~] PUB2 Mini Cheetah 8-terrain R⁻ table: naive H0 rejects on all 8 (cross-terrain detection); H0' elevated on the flying trot (honest — not FAR≈α, non-stationary + phase-reg); residual = model-free raw element incl. tau_est (recorded); air weld run done
+- [x] PUB3 legkilo (naive H0 rejects, H0' IN BAND 4/5) + street (H0 rejects, H0' 0.29) real R⁻ H0' figures; legkilo gating table (threshold vs GeoFDI both ≈α on slow trot)
+- [x] PUB4 data_catalog minicheetah rows filled; paper outline §8 five-layer evidence stack (L1 sim / L2 predictions / L3 M1 hardware / L4 public multi-platform / L5 multi-terrain)
+- [x] rp030 Block PUB review pack
 
 ## Wrap-up
 - [ ] tag `real-data-milestone-1`; final summary (audit one-liners, first real-robot figure list, leftover status
