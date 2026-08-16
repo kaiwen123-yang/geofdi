@@ -25,14 +25,16 @@ Read this first in a new session; continue from the first unchecked item. Each i
   Get-FileHash list; meta.yaml + catalog rows filled (fingerprints 5ee91cfb / ab623e3e / 2566ec71 / 4fc3c926)
 - [x] d1 D2 straight-segment fallback `straight_mask_kinematic` (RMS|ω_z|<0.15, RMS(L−R)<1 rad/s, mean|wheel|>2 rad/s, runs ≥2 s;
   thresholds from the distributions, audit §10): 5/12/5 runs, 30.6/83.2/38.4 s
-- [ ] D3 `docs/protocol/m1_real_preregistration.md` committed BEFORE any run
-- [ ] D3.1 `run_pipeline.sh <session> --robot m1 --mode rolling` per session → report.md; first real-robot R⁻ H0' figure
-  (QQ, per-window p, e-process); block length L from protocol boundary, adjusted after measured block correlation
-- [ ] D3.2 rolling InEKF vs fixed-foot RIEKF vs ESKF on real data (reference = localization topic if present, else
-  relative metrics)
-- [ ] D3.3 M1 real equivariant DeLaN (if ≥ 20 min nominal rolling) — residual R⁻ vs model-free R⁻ table
-- [ ] D3.4 efforts semantics / real ε_dyn candidate / ν₀ magnitude → audit doc (theory intake)
-- [ ] rp025 Block D review pack
+- [x] 46ffc52 D3 pre-registration committed BEFORE any run (2026-08-16 14:05)
+- [x] d3 D3.1 pipeline on 3 sessions (L=1 and 2 s); first real-robot R⁻ H0/H0' figure `e18_real_h0_h0prime.png`. Naive H0 rejects
+  all 3 (predicted); H0' sequential e-process silent all 3; H0' differenced in band on 172847/173028, rejects on 173247 (real slow
+  drift — prediction 2 partially falsified, reported, nothing tuned). ν0 13.7/2.8/9.8; lag1 0.65/0.52/0.79 → 0.23/0.23/0.55 at L=2
+- [x] d3 D3.2 rolling InEKF vs fixed-foot RIEKF/ESKF + RollingESKF (`experiments/e18_m1_real`): path recovered 0.99/1.00/0.99 vs
+  0.04/0.03/0.04, per-run arclen-err 0.6-1.4% vs 98% (real-robot e10). Vector metrics dominated by shared skid-steer yaw
+  corruption (all filters) → Block G motivation. Reference = vendor odometry (not truth)
+- [~] d3 D3.3 DeLaN NOT run (pre-declared: 4.6 min nominal rolling < 20 min minimum) — reported, not a miss
+- [x] d3 D3.4 efforts observations / real ε_dyn candidates / ν0 magnitudes → audit doc §8/§11/§13
+- [x] rp025 Block D review pack
 
 ## Block L — leftover fixes (`chore: leftover fixes`)
 - [ ] L1 `make_review_pack.sh` in-block MANIFEST overrides top-level template; rp020–024 top-level MANIFEST back-filled
