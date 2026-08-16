@@ -1,3 +1,32 @@
 \section{External Benchmarks}
 \label{sec:external}
-[placeholder]
+
+Three third-party datasets test the claims on data we did not generate, on three robots we do not own.
+
+\paragraph{A fault dataset with labels}
+On the Liu et al.\ A1 actuator-fault dataset, the half-cycle $\Rminus$ test with its sequential layer detects
+$0.73$/$0.84$/$0.75$/$0.68$ of single, same-side, mirrored and diagonal double faults respectively, at
+\textbf{0.049 false alarms per healthy gap} against a nominal $0.05$ --- i.e.\ the exactness claim survives contact with
+foreign data. The comparison detectors on the same episodes are informative in both directions: a GRU trained on this
+dataset's own faults detects essentially everything ($\approx1.00$) and isolates to a joint, which a test needing no
+fault data cannot match; a Mahalanobis detector matches its detection but fires on \textbf{0.522} of healthy gaps, a
+$10\times$ higher false-alarm burden than ours at comparable sensitivity. The pre-registered blindness check --- the
+mirrored double fault, which theory says must be invisible --- is \emph{inconclusive} here: the straight-segment subset
+contains only $n=8$ such episodes and returns $0.50$, too few to separate blindness from low power. We report it as a
+gap rather than as support.
+
+\paragraph{Cross-terrain breadth}
+The MIT Mini Cheetah contact dataset gives eight terrains at 1\,kHz with labelled contacts. The detection channel fires
+on \textbf{all eight} (naive $H_0$, $p\approx0.002$ everywhere): the machine's real mirror asymmetry is visible
+regardless of ground. The recalibrated $H_0'$ layer, however, is \emph{also} elevated on this corpus, and we could not
+rescue it: replacing cycle registration by rolling-style time blocks with a phase-free element reduced the sequential
+alarms from 6/8 to 2/8, but that reduction is confounded by the block construction leaving only 1--4 monitoring windows
+instead of 7--20, and the window-reject \emph{rate} barely moves ($0.397\to0.375$). We therefore record an honest scope
+limit: on a $0.25$\,s flying trot with a flight phase the healthy asymmetry level is not stationary at the resolution
+these segments allow, and $H_0'$ needs a slower, well-registered gait.
+
+\paragraph{Two more platforms}
+On the Leg-KILO Go1 sequences the picture is the clean one: naive $H_0$ rejects on every sequence, and $H_0'$ is
+\emph{in band} on 4 of 5 (the fifth is a 21-cycle fragment). On the Cerberus Street A1 sequence naive $H_0$ rejects and
+$H_0'$ is partly elevated ($0.29$) over a 260\,m outdoor walk. Together with the Mini Cheetah result this bounds the
+$H_0'$ layer's applicability empirically: it holds on walking trots and rolling gaits, and not on aggressive ones.

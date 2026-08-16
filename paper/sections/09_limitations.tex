@@ -1,3 +1,33 @@
 \section{Limitations}
 \label{sec:limitations}
-[placeholder]
+
+We list what the construction cannot do, in the order a sceptical reader will ask.
+
+\begin{enumerate}
+\item \textbf{The invariance channel sees only the antisymmetric component.} This is structural
+  (Thm.~\ref{thm:twolayer}), not a property of our statistic: a bilaterally symmetric degradation is invisible to
+  \emph{any} invariance test at \emph{any} magnitude while the symmetric attractor persists. The magnitude channel
+  covers it, and that channel inherits none of the nuisance immunity --- a symmetric drift inflates it (measured:
+  $0.50$--$0.95$ alarm on a nuisance where $\Rminus$ is at $0.00$). The guarantee is therefore asymmetric across the two
+  channels by construction.
+\item \textbf{The mirrored double fault remains empirically open on external data.} Our own simulations confirm the
+  blindness, but the one third-party dataset containing mirrored double faults offers $n=8$ straight-segment episodes,
+  which is too few to distinguish blindness from low power. The clean external demonstration is still owed.
+\item \textbf{$H_0'$ fails on aggressive gaits.} On a $0.25$\,s flying trot the recalibrated level is not stationary at
+  the resolution the data allow, and replacing phase registration by time blocking does not rescue it (the apparent
+  improvement is confounded by window count). The layer is validated on walking trots and rolling gaits only.
+\item \textbf{An $H_0'$ calibration does not transfer across traverses.} The \emph{level} $\nu_0$ reproduces over two
+  months, but a calibration taken from one run applied to another gives window-rejection $0.32$--$0.49$. Deployment must
+  calibrate per homogeneous segment, and we show a session where one continuous run is itself not homogeneous.
+\item \textbf{Site-A's surface switch is not resolved.} We could not certify from the recordings which half of a session
+  was indoors, and the split we could define does not move the symmetric readouts. The surface-switch interpretation is
+  an interpretation, not a measurement.
+\item \textbf{The model-free variant cannot see friction.} Friction faults require the residual channel and hence a
+  dynamics model; the raw-element test detects none of them at $\times1.5$ while holding its level. Where no model is
+  available, that fault family is out of scope.
+\item \textbf{No fault was injected on our own robots.} All hardware evidence is observational
+  (\S\ref{sec:hardware}); the injection experiments are enumerated in the placeholder box and are the paper's largest
+  open item.
+\item \textbf{The onboard numbers are a proxy.} Timing is measured on a laptop-class CPU pinned to one core, not on the
+  robot's own computer; \S\ref{sec:method} reports it as such.
+\end{enumerate}

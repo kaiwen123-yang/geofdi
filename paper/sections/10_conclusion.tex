@@ -1,3 +1,19 @@
 \section{Conclusion}
 \label{sec:conclusion}
-[placeholder]
+
+We proposed treating fault and slip detection as a test of the invariances a healthy robot must satisfy --- the mirror
+symmetry of its body, the space--time symmetry of its gait, and the geometry of its contacts. The reframing buys a
+false-alarm rate that is exact in finite samples with no fault data and no training, an anytime-valid sequential form,
+and --- because the group is explicit --- a precise statement of which faults are invisible and what second channel is
+needed to cover them. It also transfers to wheeled-legged machines: a rolling contact leaves the invariant filter's
+error dynamics untouched, so the same estimator and the same gate apply.
+
+The evidence runs from a mirror-exact simulator through three public datasets to two of our own robots, and the
+hardware is where the reframing earns its keep: on a Go2 over a year in service, the recalibrated asymmetry level
+reproduces across two months to within a factor $1.18$, and used as an estimator front-end the calibrated gate discards
+$1.9\,\%$ of nominal contact measurements where the standard threshold discards $40.6\,\%$. What remains is
+injection: every hardware number here is observational, and the enumerated experiments would convert the detectability
+statements from simulated to measured.
+
+The longer aim is that $\pi_i$ --- a per-leg, per-event, calibrated trust weight --- becomes the standard front-end
+between a legged robot's contacts and everything downstream that assumes they are trustworthy.

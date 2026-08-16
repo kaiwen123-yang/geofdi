@@ -1,3 +1,73 @@
-\section{Proofs}
+\section{Proofs and Numbering Map}
 \label{app:proofs}
-[placeholder]
+
+The technical notes behind this paper are organised in four parts; the map below relates the numbering used in the body
+to the numbering there, so a reader can follow a proof to its full statement with its assumptions and audits.
+
+\begin{table}[h]
+\centering
+\footnotesize
+\caption{Numbering map, manuscript $\rightarrow$ technical notes.}
+\label{tab:map}
+\begin{tabular}{@{}lll@{}}
+\toprule
+manuscript & technical notes & workstream \\
+\midrule
+Def.~\ref{def:h0} ($H_0$) & Part~0, Def.~``h0'' & --- \\
+Def.~\ref{def:h0prime} ($H_0'$) & Part~0, Def.~``h0prime'' & --- \\
+Thm.~\ref{thm:exact} & Part~1, Thm.~N1-1 & N1-1 \\
+Thm.~\ref{thm:twolayer} & Part~1, Thm.~N1-2 (two-layer) & N1-2 \\
+Prop.~\ref{prop:power} & Part~1, Prop.~N1-3 & N1-3 \\
+Prop.~\ref{prop:seq} & Part~1, Prop.~N1-5 & N1-5 \\
+Prop.~\ref{prop:residual} & Part~2, Prop.~N3-1 / N3-2 & N3 \\
+Prop.~\ref{prop:rolling} & Part~3, rolling group-affine & N2 \\
+Table~\ref{tab:conditions} C1--C3 & Part~0, A1--A5 and Assumption~E & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{A.1 Exactness (Thm.~\ref{thm:exact})}
+Under $H_0$ the joint law of $(Z_1,\dots,Z_K)$ is invariant under the group action applied elementwise, so for a random
+$\sigma$ drawn uniformly the pair $(T(Z), T(\rho(\sigma)Z))$ is exchangeable. The rank of $T(Z)$ among
+$\{T(Z)\}\cup\{T(\rho(\sigma_m)Z)\}_{m<M}$ is therefore uniform on $\{1,\dots,M\}$, and the Monte-Carlo $p$-value
+$p=(1+\#\{T(\rho(\sigma_m)Z)\ge T(Z)\})/M$ satisfies $\mathbb{P}(p\le\alpha)=\lfloor\alpha M\rfloor/M\le\alpha$. No
+distributional assumption on $Z$ enters, which is why the level is exact at every $K$. \hfill$\square$
+
+\subsection*{A.2 Two-layer detectability (Thm.~\ref{thm:twolayer})}
+\emph{Layer~I.} A $\symgrp$-fixed fault maps the closed loop to itself, so equivariance alone gives that
+$\push{\rho}\mu$ is invariant whenever $\mu$ is; uniqueness of the invariant measure for the \emph{faulted} loop then
+forces $\push{\rho}P_\varphi=P_\varphi$, and Thm.~\ref{thm:exact} makes every flip test level-$\alpha$ under
+$P_\varphi$. Conversely if $\push{\rho}P_\varphi\ne P_\varphi$ the two laws differ, some bounded continuous $h$
+separates them, and the energy distance (equivalently a characteristic-kernel MMD) is zero iff the laws coincide and is
+estimated $\sqrt K$-consistently, so the permutation test built on it has power $\to1$.
+\emph{Layer~II.} With $D_k=Z_k-\rho Z_k$ we have $D_k = 2\Pi^-\mu + (\xi_k-\rho\xi_k)$, whence
+$\mathbb{E}\|\bar D\|^2 = 4\|\Pi^-\mu\|^2 + \operatorname{tr}\operatorname{Var}(D_1)/K$ against a flip-null expectation
+of $\operatorname{tr}\operatorname{Var}(D_1)/K + O(\|\Pi^-\mu\|^2/K)$; consistency follows by the law of large numbers
+and holds iff $\Pi^-\mu\ne0$. Since $\Pi^-\mu=0$ is possible with $\push{\rho}P_\varphi\ne P_\varphi$ (equal means,
+unequal higher moments), Layer~II covers a strict subset of Layer~I. \hfill$\square$
+
+\subsection*{A.3 Power bound (Prop.~\ref{prop:power})}
+The whitened statistic is $\chi^2_d(\lambda)$ with $\lambda=K\|\Pi^-\mu\|^2_\Sigma$. Laurent--Massart's lower tail gives
+$\mathbb{P}(T\le d+\lambda-2\sqrt{(d+2\lambda)x})\le e^{-x}$; choosing $x$ so the endpoint equals $c_\alpha$ yields the
+stated bound, and requiring $x\ge\ln(1/\beta)$ together with the companion upper tail for $c_\alpha$ gives the
+sample-size rule after solving a quadratic in $\sqrt\lambda$. \hfill$\square$
+
+\subsection*{A.4 Sequential validity (Prop.~\ref{prop:seq})}
+For a super-uniform $p$, $\mathbb{E}[\tfrac12p^{-1/2}]\le\tfrac12\int_0^1u^{-1/2}du=1$, so each $e_t$ is an $e$-value and
+the running product is a nonnegative supermartingale with unit initial value; Ville's inequality bounds
+$\mathbb{P}(\sup_t E_t\ge1/\alpha)\le\alpha$. \hfill$\square$
+
+\subsection*{A.5 Residual inheritance (Prop.~\ref{prop:residual})}
+If $\hat f$ is equivariant then $r=y-\hat f(x,u)$ transforms in the same representation as $y$, so $H_0$ for $Z$ implies
+$H_0$ for the residual element and Thm.~\ref{thm:exact} applies unchanged. If $\hat f$ is not equivariant, its defect
+$\delta_f = \hat f\circ\rho - \rho\circ\hat f$ appears in the residual as a deterministic antisymmetric offset, which
+enters $\Pi^-\mu$ and inflates the rejection rate under $H_0$; the $H_0'$ construction removes it by differencing
+because the offset is common to calibration and monitoring windows. \hfill$\square$
+
+\subsection*{A.6 Rolling contact (Prop.~\ref{prop:rolling})}
+Writing the contact component of the propagation as $f^{d_i}_u(X)=Ru_i$ and expanding the group-affine identity in the
+$\SE_{2+m}(3)$ product, all three terms reduce to $RR_Yu_i$, so $f_u$ is group-affine and the right-invariant error obeys
+an autonomous linear equation. Reading $A$ off the world-constant parts, the velocity block inherits $[g]_\times$ from
+gravity while the contact block has no world-constant term --- $Ru_i$ is a pure transport of a known body vector --- so
+$A[d_i,R]=0$. Replacing $u_i$ by $u_i+\delta u_i$ adds $R\,\mathrm{Cov}(\delta u_i)R^\top$ to the contact process noise
+and nothing else. \hfill$\square$

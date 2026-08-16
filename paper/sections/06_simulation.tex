@@ -1,3 +1,57 @@
 \section{Simulation Study}
 \label{sec:simulation}
-[placeholder]
+
+The simulation layer isolates the statistical claims from modelling error: the world is mirror-exact by construction, so
+a level that fails here is the test's fault and not the robot's. All runs use a MuJoCo Unitree Go2 with a symmetrised
+model, $\alpha=0.05$, and deterministic seeds.
+
+\paragraph{The level holds, and what breaks it}
+Under $H_0$ the flip test sits inside its nominal band across process-noise levels, and the three standard robustness
+probes behave as follows. A systematic gait-phase clock error of $\pm2$, $\pm5$, $\pm10\,\%$ leaves the size at
+$0.000$--$0.050$, i.e.\ inside the band at every point: a mis-registered phase \emph{decorrelates} the mirror pairing and
+makes the test conservative, so it costs power, not level. The $H_0'$ calibration set may be small: $K_{\mathrm{cal}}\in
+\{60,200,400\}$ gives sizes $0.083/0.033/0.000$, all in band, so 60 nominal cycles already suffice for validity. The one
+probe that does break the level is the block length: under an autocorrelated but mirror-symmetric-in-law nuisance with
+correlation time $\tau$, flip blocks of $0.5\tau$, $1\tau$, $2\tau$ give sizes $0.350$, $0.217$, $0.100$. \emph{The block
+must be at least twice the nuisance correlation time}; this is the single number a practitioner must get right, and it
+is condition C3 of Table~\ref{tab:conditions}.
+
+\paragraph{Isotypic prediction}
+The two-layer theorem is directly visible. A single-leg fault splits its footprint exactly half-and-half between
+$\mathcal{W}^+$ and $\mathcal{W}^-$; a bilaterally symmetric fault of equal magnitude puts all of it in $\mathcal{W}^+$
+and $\Rminus$ alarms at $0.00$ while the magnitude channel alarms at $1.00$; an unequal bilateral pair lands in between.
+Sweeping the symmetric fault down to $30\,\%$ of nominal torque leaves $\Rminus$ at its level throughout, with the
+realised gait's chirality index pinned at its nominal floor --- the blindness is robust in amplitude, and its escape
+route is a bifurcation of the gait, not a bigger fault. The statistic split predicted by Layer~I versus Layer~II is also
+confirmed: against a zero-mean variance change the paired statistic stays pinned at $\alpha$ while the energy-distance
+statistic rises to $0.88$.
+
+\paragraph{Equivariance is not optional}
+On the welded-leg world, the flip test on a residual formed with an \emph{equivariant} learned model has size $0.00$ and
+with the analytic model $0.02$, both inside the band; formed with a plain (non-equivariant) learned model of the same
+architecture and training budget, the size is $1.00$. The recalibrated $H_0'$ construction restores it to $0.04$, while
+naively subtracting the calibration mean does not (it stays at $1.00$) --- centring is not a substitute for the
+differenced null.
+
+\paragraph{Against the classical baseline, on identical rollouts}
+Table~\ref{tab:claims} summarises; the numbers are these. The momentum-observer $\chi^2$ detector attains mean detection
+$0.77$ at its textbook threshold and $0.96$ with a horizon-recalibrated one, against $0.71$ for the raw-element
+$\Rminus$, and it is faster (median delay $4.6$--$13.5$ cycles versus $25$). But its measured nominal alarm rate is
+$0.15$ and $0.50$ respectively, against $0.00$ for $\Rminus$, so those detection numbers are not at equal false-alarm
+rate. Under a symmetric torque/friction drift --- a nuisance, not a fault --- the classical detector alarms on
+$0.90$--$0.95$ of runs and the autoencoder and Mahalanobis detectors on $0.50$, while $\Rminus$ stays at $0.00$.
+
+\paragraph{Friction, and which channel sees it}
+The one fault family where the raw-element $\Rminus$ is genuinely blind is friction. Moving the same test onto the
+analytic residual closes it: at \texttt{friction\_scale} $\times1.5$ the raw element detects $0.00$ and the residual
+element $1.00$, both at a measured nominal alarm rate of $0.00$, where the classical detector reaches $0.85$ only at a
+false-alarm rate of $0.50$. Below that, at $\times1.2$, no detector catches the fault while holding its stated level.
+This is the empirical content of Prop.~\ref{prop:residual} and the reason the architecture carries a residual channel
+rather than only a raw one.
+
+\paragraph{Slip as a classification problem}
+Finally, the two-channel structure separates slip \emph{regimes} rather than merely detecting slip. With a one-sided
+low-friction patch, $\Rminus$ reaches power $1.00$ while the estimator's innovation statistic stays flat; with uniformly
+low friction under all four feet, $\Rminus$ stays at $\alpha$ --- as Thm.~\ref{thm:twolayer} requires --- and the
+estimator's NIS ratio rises to $1.42$. Reading the pair therefore tells unilateral from bilateral slip, which a single
+channel cannot do.

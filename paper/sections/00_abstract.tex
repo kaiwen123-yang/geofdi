@@ -1,1 +1,18 @@
-[abstract placeholder]
+Legged robots degrade silently: an actuator loses torque, a foot slips for part of a step, an encoder drifts. Existing
+detectors either threshold a model residual against a distributional assumption a periodic robot violates, or learn what
+nominal looks like and threshold that; in both cases the false-alarm rate is empirical, and we measure it missing its
+target by $3\times$ to $10\times$. We reframe detection as \emph{testing the structural invariances of the robot
+itself}: the mirror symmetry of the body, the space--time symmetry of the commanded gait, and the geometry of contact.
+Faults and slip are, by construction, breaks of these, so a group-randomisation test of the invariance hypothesis yields
+a false-alarm rate that is \emph{exact at any sample size}, requires no fault data and no training, and extends to an
+anytime-valid sequential monitor. Because the group is explicit we can characterise what such a test can see: we prove a
+two-layer dichotomy separating faults that are invisible to \emph{every} invariance test from those any consistent
+statistic detects, which forces a three-channel architecture and dictates when a learned nominal model must be
+equivariant. We further prove that a rolling contact preserves the group-affine structure of a contact-aided invariant
+filter, admitting wheeled-legged robots to the same machinery. Evaluation spans a mirror-exact simulator, three public
+datasets (Mini Cheetah, Leg-KILO Go1, Cerberus A1) and two of our own platforms. On an external fault dataset the test
+holds its level at $0.049$ where a Mahalanobis detector fires on $52\,\%$ of healthy segments; on our own Go2, eleven
+sessions across three sites and two months, the recalibrated asymmetry level reproduces to within a factor $1.18$; on
+our wheeled-legged M1 the rolling-contact filter recovers $0.99$--$1.00$ of the driven path where the standard
+fixed-foot filter recovers $0.03$; and as an estimator front-end the calibrated per-event gate discards $1.9\,\%$ of
+nominal contact measurements against $40.6\,\%$ for the standard fixed foot-speed threshold.

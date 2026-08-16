@@ -1,3 +1,114 @@
 \section{Hardware Evaluation}
 \label{sec:hardware}
-[placeholder]
+
+Two of our own robots, recorded independently of this work, provide the evidence that matters most: a wheeled-legged M1
+and a Unitree Go2 that has been in service for over a year.
+
+\subsection{Wheeled-legged M1: rolling contact}
+
+Four sessions were recorded on the M1 (16 joints, wheel-footed), of which three are rolling traverses with a vendor
+odometry reference. Two results follow.
+
+First, the rolling-contact filter of Prop.~\ref{prop:rolling} is not a refinement but the difference between working and
+not working. Measured against the odometry, the rolling filter recovers \textbf{0.99--1.00} of the driven path length on
+the three sessions, and a fixed-foot contact-aided filter --- the standard construction --- recovers
+\textbf{0.03--0.04} (Fig.~\ref{fig:m1inekf}); per straight run the travelled-distance error is $0.6$--$1.4\,\%$ against
+$98\,\%$. The classical-error-coordinate version of the same rolling model performs equivalently, confirming that the
+gain comes from the contact model rather than from the error parametrisation.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/m1_inekf.png}
+\caption{Wheeled-legged M1, real rolling traverses. Left: estimated base paths against the vendor odometry (thick olive
+= the straight-rolling runs used for testing). Right: the heading-independent metric --- fraction of the driven path
+length recovered. The rolling-contact model recovers essentially all of it; the fixed-foot model recovers almost none,
+because it treats a continuously rolling robot as near-stationary.}
+\label{fig:m1inekf}
+\end{figure}
+
+Second, the invariance layer behaves exactly as $H_0'$ predicts for a real machine: the naive test rejects on all three
+rolling sessions ($p\approx0.002$), i.e.\ the robot has a real and stable asymmetry, while the sequential $H_0'$ monitor
+stays silent within each session. One session is the exception that produced the per-traverse rule of
+\S\ref{sec:percalib}, and is discussed with the Go2 case below.
+
+\subsection{Unitree Go2: eleven sessions, three sites, two months}
+
+The Go2 corpus is eleven sessions recorded on two dates two months apart, at three sites (an indoor--outdoor tile
+transition, a GNSS-restricted smooth area, and rough ground; site labels confirmed by the operator), at
+$\approx1$\,m/s under a constant $\approx5$\,kg payload, with a Fixposition Vision-RTK2 reference. The recorded
+interface is the vendor's high-level API, which carries \emph{no} joint stream; the mirror element is therefore built
+from the robot's own forward kinematics --- body-frame foot positions and velocities --- plus foot forces and the IMU,
+34 channels of which 28 are leg-resolved.
+
+\paragraph{The asymmetry is real, large, and reproducible}
+The naive test rejects on \textbf{11/11} sessions (Fig.~\ref{fig:go2r1}), with per-window rejection $0.67$--$0.98$: a
+machine of this age carrying a payload is unambiguously not mirror-symmetric, which is precisely why $H_0'$ rather than
+$H_0$ is the deployable null. The recalibrated level $\nu_0$ ranges over $7.2$--$21.9$, and \textbf{across the two-month
+gap its mean changes by a factor $1.18$, smaller than the session-to-session spread within a single site and day}
+(standard deviations $3.1$--$6.4$). The asymmetry level of this robot is thus a reproducible property. An $H_0'$
+\emph{calibration}, however, does not transfer: applying one session's calibration to another gives window-rejection
+$0.32$--$0.49$, far above $\alpha$, and same-site pairs ($0.33$) are barely better than different-site pairs ($0.37$).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/go2_r1.png}
+\caption{Own Go2 corpus, eleven sessions. Left: the naive invariance test rejects everywhere --- the natural asymmetry
+of a machine over a year in service. Middle: the recalibrated level $\nu_0$ per session, coloured by site; January
+(\texttt{nmb}, \texttt{xb}) versus March (\texttt{by}) is the two-month reproducibility check. Right: sequential
+monitors.}
+\label{fig:go2r1}
+\end{figure}
+
+\paragraph{Where the asymmetry lives, and what does \emph{not} cause it}
+Because $\Rminus$ ranks mirror pairs and the side comes from the signed mean (condition C9), the localisation is
+reported both ways. The hind pair carries the larger antisymmetric energy share in 6 of 11 sessions, and the signed
+statistic is remarkably stable: \textbf{in 11/11 sessions the left-hind minus right-hind foot force is negative and the
+left-front minus right-front is positive} --- one consistent diagonal loading pattern across three sites and two
+months. A foot-mounted inertial board on the left-hind leg was the obvious candidate cause; the March sessions carry
+\emph{no such board} and show the same or a larger asymmetry, so the board is ruled out. The remaining candidates are
+payload placement and accumulated wear, which a payload-swap session would separate.
+
+\paragraph{Residual anomalies, and the limit of the per-traverse rule}
+The per-traverse calibration rule of \S\ref{sec:percalib} came from this corpus: pooling straight runs alarms on 8/11
+sessions and single runs on 2/11, with 8/11 $\nu$-trajectories classified as boundary jumps and none as drift. We then
+split the two sessions that alarmed \emph{inside} a single traverse. Neither pre-registered outcome occurred. In both,
+one half is clean and the other is not: for one session the spatial half beyond the track midpoint has window-rejection
+$0.00$ with a sequential statistic of $0.54$ (nowhere near the $1/\alpha=20$ alarm line) while the other half alarms;
+for the second session the first temporal half is in band ($0.07$) and the second alarms. The inhomogeneity is
+therefore real and \emph{localised} rather than an artefact of joining runs. For the first session the symmetric
+readouts across the split are identical (foot-force level differs by $1\,\%$, high-frequency IMU texture by $3\,\%$), so
+the split does \emph{not} correspond to the site's tile boundary and the surface-switch explanation is unsupported; for
+the second, foot-force level moves by $17\,\%$ and the heavier half is the one that alarms. These two segments are
+carried as \emph{residual anomalies}: reproducible rejections on a healthy machine whose cause the recorded channels do
+not identify.
+
+\paragraph{The gate on real outdoor data}
+The high-level API publishes body-frame foot positions, which is exactly what a contact-aided invariant filter consumes,
+so the estimator experiment ran despite the absent joint stream. Trajectory error against the quality-gated RTK
+reference is $\approx6.6\,\%$ of path length and is \emph{unchanged} by gating --- these traverses contain no slip severe
+enough to repair, and we report that null. What does differ is the false-alarm burden: \textbf{the standard fixed
+$0.4$\,m/s foot-speed threshold discards $40.6\,\%$ of nominal contact measurements, the calibrated per-event gate
+$1.9\,\%$}, on the same data. This is the real-robot form of the guarantee, and it is the one property that survives the
+absence of a severe slip event.
+
+\begin{placeholderbox}
+\textbf{Injection experiments not yet run (the robot day).} The evaluation above is entirely \emph{observational}: no
+fault was injected on either of our platforms. The following are pre-specified and will fill the correspondingly named
+rows; each is listed so that a reader can see exactly what is missing.
+\begin{enumerate}\itemsep1pt
+\item[(P1)] \textbf{Unilateral low-friction patch} (PTFE/acrylic under one track) --- fills the one-sided slip row of
+  the slip-classifier table with hardware, against the simulated $\Rminus$ power $1.00$.
+\item[(P2)] \textbf{Bilateral low-friction patch} (full-width) --- the blindness prediction on hardware: $\Rminus$ at
+  $\alpha$, estimator NIS elevated.
+\item[(P3)] \textbf{Unilateral ballast} --- a controlled one-sided mass asymmetry of known magnitude, to calibrate the
+  detectable-magnitude axis against the simulated minimum-detectable table.
+\item[(P4)] \textbf{Payload diagonal rotation} --- rotating the $5$\,kg payload between diagonal placements, to
+  separate payload offset from wear as the cause of the stable LH$-$RH / LF$-$RF pattern reported above.
+\item[(P5)] \textbf{Continuous straight runs $\ge60$\,s (M1)} --- the current runs are $12$--$14$\,s, too short for a
+  within-run $H_0'$ control; this is what would settle the residual-anomaly question on that platform.
+\item[(P6)] \textbf{\texttt{LowState} recording (Go2)} --- the joint/torque stream the high-level API cannot provide;
+  unlocks the residual ($\Rplus$) channel and the friction-detectable row on this robot.
+\item[(P7)] \textbf{Joint-level command access (M1)} --- required for controlled actuator-fault injection and for the
+  commanded-torque residual.
+\end{enumerate}
+\end{placeholderbox}
