@@ -60,14 +60,19 @@ def build_event_library(df, kin, sigma_enc=3e-3, n_legs=4, **kw):
 
 
 def _run(df, kin, mode="none", lib=None, sigma_gyro=0.01, sigma_accel=0.1, sigma_enc=3e-3, sigma_contact=3e-3,
-         sigma_kin_floor=3e-3, alpha=0.05, foot_speed_thresh=0.4, cov_inflate=10.0, threshold_hard=False, slip=None):
+         sigma_kin_floor=3e-3, alpha=0.05, foot_speed_thresh=0.4, cov_inflate=10.0, threshold_hard=False, slip=None,
+         use_provided_feet=False):
+    # use_provided_feet=True reads the body-frame contact point from foot_{x,y,z}_{leg} columns (a real robot's own FK,
+    # e.g. Leg-KILO footPosition2Body) with a fixed measurement covariance sigma_contact^2 I -- no URDF FK needed.
     # slip = dict(leg, t0, t1, vel_world=[vx,vy,vz]): a controlled world-frame foot slip that corrupts the stationary-
     # contact measurement of `leg` during [t0,t1] (the tracked contact point drifts by vel_world*(t-t0), body-framed).
     q_cols = [f"q_{l}_{j}" for l in LEGS for j in JOINTS]
     Q = df[q_cols].to_numpy(); acc = df[["imu_a_x", "imu_a_y", "imu_a_z"]].to_numpy(); gyr = df[["imu_w_x", "imu_w_y", "imu_w_z"]].to_numpy()
     C = df[[f"c_{l}" for l in LEGS]].to_numpy() > 0.5; t = df["t"].to_numpy()
-    quat = df[["base_qw", "base_qx", "base_qy", "base_qz"]].to_numpy(); pos = df[["base_x", "base_y", "base_z"]].to_numpy(); vel = df[["base_vx", "base_vy", "base_vz"]].to_numpy()
-    R0 = quat_to_rot(quat[0]); p0 = pos[0] + R0 @ kin.r_imu; v0 = vel[0]
+    quat = df[["base_qw", "base_qx", "base_qy", "base_qz"]].to_numpy()
+    pos = np.nan_to_num(df[["base_x", "base_y", "base_z"]].to_numpy()); vel = np.nan_to_num(df[["base_vx", "base_vy", "base_vz"]].to_numpy())
+    FP = df[[f"foot_{ax}_{l}" for l in LEGS for ax in "xyz"]].to_numpy() if use_provided_feet else None
+    R0 = quat_to_rot(quat[0]); p0 = (pos[0] + R0 @ kin.r_imu) if not use_provided_feet else np.zeros(3); v0 = np.nan_to_num(vel[0])
     f = RIEKF(R0, v0, p0, sigma_gyro=sigma_gyro, sigma_accel=sigma_accel, sigma_contact=sigma_contact, sigma_kin_floor=sigma_kin_floor)
     dt = float(np.median(np.diff(t))); prev = np.zeros(4, bool); h_prev = [None] * 4
     track = mode in ("track_only",) or mode.startswith("geofdi")
@@ -79,7 +84,12 @@ def _run(df, kin, mode="none", lib=None, sigma_gyro=0.01, sigma_accel=0.1, sigma
         meas = []; w_k = np.ones(4)
         for leg in range(4):
             if C[k, leg]:
-                h, J = kin.h_and_jac(Q[k], leg); cov = J @ (sigma_enc ** 2 * np.eye(3)) @ J.T
+                if use_provided_feet:
+                    h = FP[k, 3 * leg:3 * leg + 3]; cov = sigma_contact ** 2 * np.eye(3)
+                    if not np.all(np.isfinite(h)):
+                        continue
+                else:
+                    h, J = kin.h_and_jac(Q[k], leg); cov = J @ (sigma_enc ** 2 * np.eye(3)) @ J.T
                 if slip is not None and leg == slip["leg"] and slip["t0"] <= t[k] < slip["t1"]:
                     drift_world = np.asarray(slip["vel_world"], float) * (t[k] - slip["t0"]); h = h + f.R.T @ drift_world
                 if not prev[leg]:

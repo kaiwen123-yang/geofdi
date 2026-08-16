@@ -124,13 +124,42 @@ GRU baseline to be re-implemented — docs/protocol/liu_a1_audit.md). Reading pl
 delay per class vs the GRU at equal FAR; the dataset has no phase signal → phase estimation from joint kinematics is a
 prerequisite (workstream N1/N3 phase estimator).
 
-## 8. Hardware ⌂ (placeholders)
+## 8. The five-layer evidence stack (Sprint 8)
 
-- Go2 trot (own recordings): Gate 1 (controller symmetry audit), Gate 1b (attractor), nominal FAR, injected faults
-  where safe (payload, foot friction pads).
-- M1 wheeled-legged (MATRiX; legacy August bags are wheeled driving only): rolling mode with Σ = G (pure reflection),
-  16-joint manifest, single-side wheel motor fault κ = 0.8, symmetric / lateral payload nuisances (e13d design).
-- Physical faults: [to be defined with the lab].
+The claims are supported at five levels of increasing externality; each layer answers a distinct objection.
+
+**L1 — Controlled simulation (Go2, MuJoCo, go2_urdf_sym).** Exact-level flip test, isotypic power, residual
+inheritance, sequential layer, three-channel isolation (§6; e01/e04/e08/e09/e11/e13; rp003–rp024). The world is
+mirror-exact by construction, so this layer isolates the *statistical* claims from modelling error.
+
+**L2 — Pre-registered predictions (e15, Block P; rp028).** The N1-2 two-layer theorem's own predictions, pre-registered
+before the runs: (P1) blindness is *robust* to symmetric gain faults (R⁻ ≈ α at every κ; the amplitude ceiling needs a
+genuine symmetry-breaking bifurcation, not reached by symmetric degradation); (P2) the statistic split — paired_energy is
+blind to a zero-mean law difference (pinned at α), energy_distance is consistent (power → 1 with the variance ratio),
+decisive in the exact-hypothesis toy; (P3) the blindness theorem **as a slip classifier** — one-sided slip fires R⁻,
+bilateral slip is R⁻-silent but lights the InEKF NIS (Go2 clean: unilateral R⁻ 1.0 / NIS quiet, uniform R⁻ 0.0 / NIS 1.4).
+
+**L3 — Own hardware, M1 wheeled-legged (Block D; rp025).** First self-collected corpus (2026-08-10, four rosbag2
+sessions; `m1_h_data_audit.md`). Verified channel map (names, per-leg mirror signs, IMU frame). First real-robot R⁻: the
+naive H₀ flip test rejects on all three rolling sessions (the stably-asymmetric healthy loop, real ε_dyn) while the
+**sequential H₀′ monitor stays silent** — the H₀′-is-primary story confirmed on hardware. Rolling InEKF recovers the
+driven path (0.99–1.00 of the odometry length) where fixed-foot filters recover ~0.03 (the e10 result on real data).
+
+**L4 — Public multi-platform (Block PUB, e17; rp030).** Leg-KILO Go1 (RA-L 2024) and Cerberus Street A1 (ICRA 2023),
+straight-trot mined: the naive H₀ flip test rejects on every sequence (real mirror asymmetry) and the **H₀′ per-window
+test is in band (FAR ≈ α) on 4/5 Leg-KILO sequences** (Go1 walking trot; Street A1's 260 m outdoor walk is partly
+non-stationary, H₀′ win-reject 0.29). The πᵢ-gating FAR check reproduces on real Go1 (both the 0.4 m/s threshold and the
+calibrated gate ≈ α on this slow trot — the threshold's over-rejection needs the faster gait of the e16 sim).
+
+**L5 — Public multi-terrain (MIT Mini Cheetah contact dataset, CoRL 2021; e17).** The A3 breadth: the R⁻ detection
+channel fires across **all 8 terrains** (naive H₀ p ≈ 0.002 everywhere) — the asymmetry is detected regardless of
+environment. Honest caveat: on this *flying* trot (0.25 s period, flight phase) the cycle-level H₀′ is itself elevated
+(non-stationary cycle-to-cycle + phase-registration stress), unlike the cleaner walking trots of L3/L4 — cycle-level H₀′
+needs a well-registered, stationary gait. The air gaits are the leg-in-air (weld) nominal, an RA-L bridge to the L3 §L
+weld result.
+
+**Still open (the lab):** controlled physical faults (payload, foot-friction pads, single-wheel μ), Gate 4 (joint-level
+command access for fault injection), efforts-semantics vendor confirmation — see `docs/protocol/hw_slip_protocol.md`.
 
 ## 9. Limitations (self-listed, seven)
 
