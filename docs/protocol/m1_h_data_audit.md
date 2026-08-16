@@ -235,3 +235,34 @@ files + `metadata.yaml`, filled `meta.yaml`, catalog rows) and verified against 
 | `m1_walk_20260810_173247` | `raw/m1/nominal/` | `4fc3c926` | OK (all db3 + metadata.yaml equal the H: Get-FileHash list) |
 
 Processed derivatives (CSV extraction) live in `data/processed/m1/<session>/` and are regenerated on demand by the loader.
+
+## 14. Diagnosis of the `173247` H₀′ rejection (Sprint 9 B5) — and a correction to §13
+
+Sprint 8 §13 attributed the H₀′ half-vs-half rejection on `m1_walk_20260810_173247` (p = 0.002) to *"a real slow drift of
+the asymmetry level"*. Sprint 9 re-examined it with the shape classifier and the pooled-vs-within-run control developed
+on the much larger Go2 corpus (`go2_quadric_audit.md` §R5), and **that attribution was too strong**:
+
+| session | straight runs | ν trajectory (10-block windows) | drift score | jump score | shape | H₀′ differenced p (pooled) | (within longest run) |
+|---|---:|---|---:|---:|---|---:|---:|
+| `…173247` | 5 (longest 12.4 s) | 28.6 → 9.1 → 34.6 | 0.83 | 2.34 | non-monotone excursion | **0.002** | 0.025 |
+| `…173028` | 12 (longest 12.1 s) | 21.2 → 7.9 → 5.7 → 15.3 → 7.4 → 13.4 → 12.3 | 0.70 | 2.66 | boundary-jump | 0.092 | 0.025 |
+| `…172847` | 5 (longest 14.1 s) | 12.7 → 26.6 | 4.00 | 2.00 | (only 2 windows) | 0.369 | 0.066 |
+
+**Conclusion 1 — it is not a monotone drift.** The ν trajectory of `173247` falls and then rises by a factor of ~3.8
+between consecutive windows (drift score 0.83, i.e. the linear trend explains less than one standard deviation across the
+record). The Sprint-8 wording is corrected to: *a large between-window change of the asymmetry level*, whose shape matches
+the **between-run condition change** mechanism established on the Go2 corpus, not a slow within-session drift.
+
+**Conclusion 2 — the M1 corpus cannot settle it, and this is a data-collection limit, not an analysis gap.** The
+within-run control is decisive on Go2 (H₀′ alarms 8/11 pooled vs 2/11 within one run) because Go2 runs are 30–60 s. On
+this M1 corpus the longest straight run is 12–14 s = 12–14 one-second blocks, so a within-run differenced test has only
+~6 pairs; it returns p ≈ 0.025–0.066 on *all three* sessions regardless of their pooled verdict, i.e. it is too weak to
+discriminate. **Settling it needs continuous straight M1 runs of ≥ 60 s** (a lane long enough not to require a turn),
+which is added to the robot-day list.
+
+**Conclusion 3 — the deployment rule is unchanged and now doubly supported:** calibrate ν₀ **per continuous run**, not per
+session, and use the sequential monitor rather than the half-vs-half differenced test for deployment. The half-vs-half
+test over-reads a between-run change on both platforms.
+
+Condition cross-check (unchanged from §13): the increase is concentrated in the right-front knee/ABAD channels and tracks
+the odometry turning bias, consistent with a heading/ground-dependent asymmetry rather than a component fault.
