@@ -4,7 +4,7 @@ experiment: e20_go2_quadric
 sessions:
   "2026-01-05": [nmb1, nmb2, nmb3, nmb4, xb1, xb2, xb3, xb4]
   "2026-03-06": [by1, by2, by3]
-sites:                       # [inferred] in go2_session_meta_form.md; R2 pairs by site
+sites:                       # CONFIRMED by the operator 2026-08-16 (identical to the audit inference); R2 pairs by site
   nmb: B
   xb: A
   by: C

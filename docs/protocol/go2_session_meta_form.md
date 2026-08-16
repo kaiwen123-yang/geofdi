@@ -1,7 +1,7 @@
 # Go2 QUADRIC-GINS corpus — session metadata form (Sprint 9 Q1.5)
 
 11 sessions, Unitree Go2, recorded for the QUADRIC-GINS project and re-used here as GeoFDI hardware corpus.
-Rows marked **[user]** are the operator's own account (dictated 2026-08-16); rows marked **[inferred]** were derived from
+Rows marked **[user]** are the operator's own account (dictated 2026-08-16); rows marked **[confirmed by operator 2026-08-16]** were derived from
 the data (RTK track geometry / GNSS quality / foot-force + IMU vibration texture) and are the audit's *hypothesis*, to be
 corrected by the operator. Empty cells are genuinely unknown — please fill.
 
@@ -32,19 +32,19 @@ instead. If a lateral asymmetry shows up, the two candidate true causes are (a) 
 
 | # | session | day | start (UTC) | dur [s] | site | terrain | payload | cmd speed | gait | weather | anomalies / notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | nmb1 | 2026-01-05 | 11:16:05 | 408 | **B** [inferred] | smooth, GNSS-restricted [inferred] | ≈5 kg [user] | ≈1 m/s [user] | trot [user] | clear [user] | fix_ok 0.55, pvar_x ≈ 0.4 m |
-| 2 | nmb2 | 2026-01-05 | 11:25:05 | 363 | **B** [inferred] | " | ≈5 kg | ≈1 m/s | trot | clear | fix_ok 0.52 |
-| 3 | nmb3 | 2026-01-05 | 11:32:45 | 365 | **B** [inferred] | " | ≈5 kg | ≈1 m/s | trot | clear | fix_ok 0.57 |
-| 4 | nmb4 | 2026-01-05 | 11:39:51 | 348 | **B** [inferred] | " | ≈5 kg | ≈1 m/s | trot | clear | fix_ok 0.51 |
-| 5 | xb1 | 2026-01-05 | 12:25:15 | 396 | **A** [inferred] | tile, rough→smooth switch [inferred] | ≈5 kg | ≈1 m/s | trot | clear | fix_ok 0.82, pvar_x ≈ 7.6 m (indoor/outdoor GNSS swings) |
-| 6 | xb2 | 2026-01-05 | 12:33:39 | — | **A** [inferred] | " | ≈5 kg | ≈1 m/s | trot | clear | |
-| 7 | xb3 | 2026-01-05 | 12:40:55 | — | **A** [inferred] | " | ≈5 kg | ≈1 m/s | trot | clear | |
-| 8 | xb4 | 2026-01-05 | 12:49:28 | — | **A** [inferred] | " | ≈5 kg | ≈1 m/s | trot | clear | pvar_x ≈ 34 m |
-| 9 | by1 | 2026-03-06 | 07:52:23 | 446 | **C** [inferred] | rough ground [inferred] | ≈5 kg | ≈1 m/s | trot | clear | fix_ok high, pvar_x ≈ 0.002 m (clean open sky); no foot IMU recorded |
-| 10 | by2 | 2026-03-06 | 08:00:55 | 302 | **C** [inferred] | " | ≈5 kg | ≈1 m/s | trot | clear | no foot IMU |
-| 11 | by3 | 2026-03-06 | 08:06:41 | 297 | **C** [inferred] | " | ≈5 kg | ≈1 m/s | trot | clear | no foot IMU |
+| 1 | nmb1 | 2026-01-05 | 11:16:05 | 408 | **B** [confirmed by operator 2026-08-16] | smooth, GNSS-restricted [confirmed by operator 2026-08-16] | ≈5 kg [user] | ≈1 m/s [user] | trot [user] | clear [user] | fix_ok 0.55, pvar_x ≈ 0.4 m |
+| 2 | nmb2 | 2026-01-05 | 11:25:05 | 363 | **B** [confirmed by operator 2026-08-16] | " | ≈5 kg | ≈1 m/s | trot | clear | fix_ok 0.52 |
+| 3 | nmb3 | 2026-01-05 | 11:32:45 | 365 | **B** [confirmed by operator 2026-08-16] | " | ≈5 kg | ≈1 m/s | trot | clear | fix_ok 0.57 |
+| 4 | nmb4 | 2026-01-05 | 11:39:51 | 348 | **B** [confirmed by operator 2026-08-16] | " | ≈5 kg | ≈1 m/s | trot | clear | fix_ok 0.51 |
+| 5 | xb1 | 2026-01-05 | 12:25:15 | 396 | **A** [confirmed by operator 2026-08-16] | tile, rough→smooth switch [confirmed by operator 2026-08-16] | ≈5 kg | ≈1 m/s | trot | clear | fix_ok 0.82, pvar_x ≈ 7.6 m (indoor/outdoor GNSS swings) |
+| 6 | xb2 | 2026-01-05 | 12:33:39 | — | **A** [confirmed by operator 2026-08-16] | " | ≈5 kg | ≈1 m/s | trot | clear | |
+| 7 | xb3 | 2026-01-05 | 12:40:55 | — | **A** [confirmed by operator 2026-08-16] | " | ≈5 kg | ≈1 m/s | trot | clear | |
+| 8 | xb4 | 2026-01-05 | 12:49:28 | — | **A** [confirmed by operator 2026-08-16] | " | ≈5 kg | ≈1 m/s | trot | clear | pvar_x ≈ 34 m |
+| 9 | by1 | 2026-03-06 | 07:52:23 | 446 | **C** [confirmed by operator 2026-08-16] | rough ground [confirmed by operator 2026-08-16] | ≈5 kg | ≈1 m/s | trot | clear | fix_ok high, pvar_x ≈ 0.002 m (clean open sky); no foot IMU recorded |
+| 10 | by2 | 2026-03-06 | 08:00:55 | 302 | **C** [confirmed by operator 2026-08-16] | " | ≈5 kg | ≈1 m/s | trot | clear | no foot IMU |
+| 11 | by3 | 2026-03-06 | 08:06:41 | 297 | **C** [confirmed by operator 2026-08-16] | " | ≈5 kg | ≈1 m/s | trot | clear | no foot IMU |
 
-### Basis of the site inference [inferred] — see `go2_quadric_audit.md` §5 for the numbers
+### Basis of the original inference (kept for the record; the conclusion was later confirmed) — numbers in `go2_quadric_audit.md` §5
 1. **The three name groups occupy three geographically distinct places.** Session-median WGS-84 position:
    `nmb*` 39.9783 N / 116.3456 E, `xb*` 39.9834 N / 116.3394 E (≈ 700 m from nmb), `by*` 39.9846 N / 116.3424 E.
    So the group name (nmb / xb / by) *is* the site label; no session mixes two of them.
@@ -57,5 +57,6 @@ instead. If a lateral asymmetry shows up, the two candidate true causes are (a) 
 4. **by → C (rough ground).** Cleanest GNSS of the corpus (variance 0.002–0.003 m, wide open sky) yet the *highest*
    vibration texture (§5), i.e. rough ground under an open sky.
 
-**Please correct any [inferred] cell.** The cross-period comparison (R2) pairs sessions by site, so a wrong site label
-would mix conditions; until corrected, R2 additionally reports the weaker "same-day" pairing as a fallback.
+**Operator confirmation (2026-08-16): the attribution above is correct as inferred.** The cross-period comparison (R2)
+therefore pairs sessions by a confirmed site label; the weaker "same-day" fallback pairing that R2 also reports is no
+longer needed to interpret it, and is kept only as a robustness check.

@@ -122,10 +122,13 @@ the session, and the straight-run splitter naturally cuts there. `xb1` yields mu
 site-mates (76–82 %), consistent with more manoeuvring in that first run of the site. Median speed on the straight
 segments is **1.03–1.19 m/s across all 11 sessions**, independently confirming the operator's "≈ 1 m/s".
 
-## 5. Site attribution [inferred] and its basis
+## 5. Site attribution — inferred from the data, then CONFIRMED by the operator (2026-08-16)
 
 The operator described three sites (A indoor–outdoor transition with a rough→smooth tile switch; B smoother ground with
-restricted GNSS; C rough ground) but did not record which session was where. Two independent data channels attribute them:
+restricted GNSS; C rough ground) but did not record which session was where. Two independent data channels attributed
+them, and the operator has since **confirmed the attribution as inferred**: `xb` = A, `nmb` = B, `by` = C. The inference
+is kept below because it is the evidence that the two data channels are diagnostic of site — a small validation of the
+audit method itself, now with a known answer.
 
 **(i) Position — the three name groups are three distinct places.** Session-median WGS-84: `nmb*` 39.9783 N/116.3456 E,
 `xb*` 39.9834 N/116.3394 E (≈ 700 m away), `by*` 39.9846 N/116.3424 E. No session mixes two groups, so the name prefix
@@ -142,8 +145,8 @@ restricted GNSS; C rough ground) but did not record which session was where. Two
 **Honest limitation:** a coarse first-third vs last-third contrast of the vibration texture does **not** resolve site A's
 within-session rough→smooth switch (all sites give a ratio 1.00 ± 0.04). Detecting that switch needs finer segmentation;
 until then the P-A prediction is tested only in its *monitor* form (H₀′ must not alarm at a symmetric surface change).
-All site cells are marked `[inferred]` in `go2_session_meta_form.md` for the operator to correct; R2 additionally reports
-the weaker same-day pairing as a fallback.
+All site cells in `go2_session_meta_form.md` now read `[confirmed by operator 2026-08-16]`; R2's same-day pairing is
+retained only as a robustness check, no longer as a fallback for an uncertain label.
 
 ## 6. Straight-segment splitting (Q3)
 
@@ -275,3 +278,13 @@ use the foot IMU. The board is single-leg and was never a mirror channel.
 
 Not run as a nuisance contrast: the payload was **constant (≈ 5 kg) across all 11 sessions**, so the corpus has no
 payload variation. Recorded as a corpus-wide condition instead (see `go2_session_meta_form.md`).
+
+### 5a. Effect of the confirmation on the R2 numbers (Sprint 10 M0.1)
+
+The operator's confirmation matched the inference exactly (`xb`→A, `nmb`→B, `by`→C), and `experiments/e20_go2_quadric/
+config.yaml` had already been run with those labels. **Every R2 number therefore stands unchanged** — the reissue is an
+annotation change only, not a recomputation: ν₀ per session, the within-site standard deviations (A 4.53, B 3.11,
+C 6.38) and the between-date ratio mean(Mar)/mean(Jan) = 1.18 are all identical, and the same-site vs different-site
+cross-calibration contrast (0.33 vs 0.37) now compares *confirmed* rather than hypothesised groupings. Reported as
+required by the sprint rule "if the numbers change, report honestly": they did not change, because the hypothesis was
+right.
