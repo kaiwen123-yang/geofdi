@@ -60,11 +60,11 @@ Read this first in a new session; continue from the first unchecked item. Each i
 - [x] rp028 Block P review pack
 
 ## Block G — slip statistics + πᵢ gating (`detect/stance_event.py`, `estimate/pi_gating.py`, `experiments/e16_pi_gating/`)
-- [ ] G1 per-stance-event conformal p / e-values (legged) + per-wheel rolling-constraint residual (wheeled); FAR per event
-- [ ] G2 πᵢ gating (hard e ≥ 1/α, soft covariance scaling) → InEKF update
-- [ ] G3 e16: no gating / literature threshold (0.4 m/s + cov ×10) / GeoFDI hard / soft — RMSE, NEES, gating timeline
-- [ ] G4 `docs/protocol/hw_slip_protocol.md`
-- [ ] rp029 Block G review pack
+- [x] G1 detect/stance_event.py: per-stance-event conformal p / e-process; score = pre-update per-foot innovation; per-event FAR ≈ α (unit test)
+- [x] G2 estimate/pi_gating.py: πᵢ gate (hard e≥1/α drop, soft cov ×1/w) → RIEKF update; plus threshold baseline + controlled slip injection
+- [x] G3 e16 (R=20): FAR threshold 0.155 vs GeoFDI-soft 0.020/hard 0.000 (G gate ≈α); slip RMSE none 0.348/threshold 0.318/soft 0.320/hard 0.348; timeline figure. Honest: GeoFDI mitigates with FAR guarantee, hard conservative at this slip
+- [x] G4 docs/protocol/hw_slip_protocol.md (materials, VRTK2/SLocalization/KISS-ICP reference, three-segment session, pre-reg template)
+- [x] rp029 Block G review pack
 
 ## Block PUB — public data harvest (`experiments/e17_public_realdata/`)
 - [ ] `docs/protocol/e17_preregistration.md` committed BEFORE the run
