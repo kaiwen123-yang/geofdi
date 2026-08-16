@@ -23,7 +23,17 @@ LEGS = ("LF", "RF", "LH", "RH")
 
 
 def gait_signal(df, joint: str = "KFE", legs=LEGS) -> np.ndarray:
+    """Trot contrast signal: the diagonal pairs move in antiphase, so (LF + RH) - (RF + LH) is maximal at the gait
+    frequency and (unlike a single leg's channel) is insensitive to a common-mode body motion. `joint` names the column
+    family `q_<leg>_<joint>`; when the robot exposes no joint stream, pass the equivalent per-leg signal through
+    `estimate_phase(..., signal=...)` instead — e.g. the vertical foot position foot_pos_<leg>_z (Sprint 9 Go2)."""
     q = {l: df[f"q_{l}_{joint}"].to_numpy() for l in legs}
+    return q["LF"] + q["RH"] - q["RF"] - q["LH"]
+
+
+def gait_signal_from_columns(df, fmt: str = "foot_pos_{leg}_z", legs=LEGS) -> np.ndarray:
+    """Same trot contrast built from an arbitrary per-leg column family (joint-stream-free robots)."""
+    q = {l: df[fmt.format(leg=l)].to_numpy() for l in legs}
     return q["LF"] + q["RH"] - q["RF"] - q["LH"]
 
 
@@ -35,13 +45,14 @@ def dominant_frequency(s: np.ndarray, fs: float, fmin: float = 0.5, fmax: float 
 
 
 def estimate_phase(df, joint: str = "KFE", contact_cols=None, fs: float | None = None, band: float = 0.5,
-                   phi0_default: float | None = None, t_col: str = "t", method: str = "linear", window_cycles: float = 10.0) -> tuple[np.ndarray, dict]:
+                   phi0_default: float | None = None, t_col: str = "t", method: str = "linear", window_cycles: float = 10.0,
+                   signal: np.ndarray | None = None) -> tuple[np.ndarray, dict]:
     """method: 'linear' (default) — the unwrapped Hilbert phase is replaced by a piecewise-linear phase clock (local
     least-squares fit over `window_cycles` cycles): constant rate within the window, so the phase map has no
     within-cycle warping (a warping that is not exactly half-period-equivariant registers the two halves of the record
     slightly differently and shows up in the H0' differenced test — W3 finding); 'hilbert' — raw instantaneous phase."""
     t = df[t_col].to_numpy(); fs = float(fs or 1.0 / np.median(np.diff(t)))
-    s = gait_signal(df, joint)
+    s = gait_signal(df, joint) if signal is None else np.asarray(signal, dtype=float)
     f0 = dominant_frequency(s, fs)
     lo, hi = max(0.05, f0 * (1 - band)), min(0.49 * fs, f0 * (1 + band))
     b, a = butter(2, [lo / (fs / 2), hi / (fs / 2)], btype="band")
