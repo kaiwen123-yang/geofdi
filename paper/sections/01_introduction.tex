@@ -1,3 +1,81 @@
 \section{Introduction}
-\label{sec:introduction}
-[placeholder]
+\label{sec:intro}
+
+A legged robot's usefulness outside a laboratory rests on two things it cannot observe directly: whether its actuators
+still deliver what the controller asks, and whether its feet are where the estimator believes they are. Both degrade
+silently. An actuator loses torque gradually; a foot slips for a fraction of a step on a wet tile; an encoder drifts by
+a few milliradians. None of these announce themselves, and each corrupts the state estimate and the controller that
+depends on it.
+
+\input{figures/fig1_concept}
+
+The established answers fall into two families, and both leave the same hole. \emph{Model-based} residual methods run a
+dynamics model --- a generalised-momentum observer is the canonical choice
+\cite{deluca2003actuator,haddadin2017robot} --- and threshold the residual, usually against a $\chi^2$ quantile.
+\emph{Data-driven} methods learn what nominal looks like, from an autoencoder or a recurrent classifier, and threshold a
+reconstruction error or a predicted fault parameter. The hole is the false-alarm rate. A $\chi^2$ threshold is exact
+only if the residual is i.i.d.\ Gaussian, and a legged robot's residual is neither: it is gait-periodic, serially
+correlated, and non-stationary across a recording. We measure the consequence directly. On our simulation benchmark the
+textbook momentum-observer $\chi^2$ detector runs at a nominal alarm rate of \textbf{0.15} against a nominal $0.05$, and
+re-calibrating its threshold on the robot's own nominal data does not repair it --- on a \emph{held-out} stretch of the
+same nominal recording the rate is \textbf{0.50}, because the residual's statistics have already moved
+(\S\ref{sec:simulation}). On an external, third-party fault dataset a Mahalanobis detector fires on \textbf{52\,\%} of
+healthy segments (0.522 false alarms per healthy gap) where our test fires on \textbf{4.9\,\%}, i.e.\ at its nominal
+level (\S\ref{sec:external}). A detector whose false-alarm rate is unknown cannot be given authority over a controller,
+which is why slip handling in practice is still a hand-tuned threshold on foot speed \cite{jenelten2019slippery}.
+
+\paragraph{Gap}
+Three literatures each hold one piece and none holds the combination. Morphological-symmetry work in robotics
+\cite{ordonez2023discrete} uses a robot's discrete symmetry group to constrain models and policies, but treats symmetry
+as an architectural prior, not as a hypothesis to be tested. Fault detection and contact estimation
+\cite{camurri2017probabilistic,lin2021contact} build ever better nominal models and contact classifiers, but calibrate
+their decisions empirically. Invariance testing in statistics \cite{hemerik2018exact,koning2023evalues} gives exactly
+the guarantee the robotics side lacks --- a group-randomisation test whose level is exact in finite samples, and an
+anytime-valid sequential form --- but has not been connected to a physical invariance a robot actually possesses. The
+missing step is to notice that a healthy legged robot \emph{already satisfies} a group invariance precisely enough to
+serve as the null hypothesis, and that the faults we care about are exactly the things that break it.
+
+\paragraph{Thesis}
+We propose to detect faults and slip by testing the structural invariances of the robot itself (Fig.~\ref{fig:concept}).
+The morphological mirror symmetry of the body, the space--time symmetry of the commanded gait, and the geometry of
+contact are properties a healthy machine must satisfy; a one-sided actuator fault, a single-foot slip, or a broken
+rolling constraint are, by construction, violations of them. Framing detection this way replaces a learned or
+thresholded nominal with a hypothesis that needs no fault data, no training, and --- in its model-free form --- no
+dynamics model, and it inherits an exact finite-sample false-alarm rate from the group-randomisation construction.
+
+\paragraph{Contributions}
+\begin{enumerate}
+\item \textbf{Invariance as the null, with an exact level.} We formulate the healthy-robot hypothesis $H_0$ as
+  distributional invariance of a phase-registered data element under the gait symmetry group, and test it with a
+  group-randomisation (flip) test whose false-alarm rate is \emph{exact at any sample size}, plus an anytime-valid
+  sequential layer built from e-processes. We also give the recalibrated null $H_0'$ for the realistic case of a robot
+  that is stably but measurably asymmetric, and a power lower bound with an explicit sample-size rule
+  (\S\ref{sec:theory}; Thm.~\ref{thm:exact}, Prop.~\ref{prop:power}, Prop.~\ref{prop:seq}).
+\item \textbf{A two-layer characterisation of what is visible, and the architecture it forces.} We prove a dichotomy:
+  a fault fixed by the symmetry group (a bilaterally symmetric degradation) is invisible to \emph{every} invariance
+  test, whatever its magnitude, provided the faulted loop keeps a unique symmetric attractor; anything that breaks the
+  law is detectable by a consistent statistic. The mean-level layer gives the power of the specific paired statistic,
+  and the two layers do not coincide --- a zero-mean law change is invisible to the paired statistic and visible to an
+  energy-distance one. This is why the system needs three channels rather than one
+  (\S\ref{sec:theory}; Thm.~\ref{thm:twolayer}).
+\item \textbf{Equivariant nominal models, and why equivariance is not optional.} When a learned dynamics model is used
+  to form a residual, we show the residual inherits $H_0$ only if the model is equivariant, quantify the contamination
+  a non-equivariant model injects, and construct an equivariant Deep Lagrangian Network by mirror weight sharing. The
+  effect is not marginal: a plain learned model drives the residual test's false-alarm rate to $1.00$ while its
+  equivariant twin stays at $0.00$ (\S\ref{sec:theory},~\S\ref{sec:simulation}).
+\item \textbf{Rolling contact preserves the invariant filter, and a five-layer evidence stack.} We prove that a rolling
+  wheel's moving contact keeps the contact-aided invariant filter group-affine --- the invariant error dynamics is
+  unchanged, only the mean and the process noise move --- which admits wheeled-legged robots to the same estimator and
+  the same gating front-end as point-foot robots. The claims are evaluated at five levels of increasing externality,
+  including \emph{two} of our own hardware platforms (\S\ref{sec:hardware}).
+\end{enumerate}
+
+\paragraph{What the evaluation shows}
+On our own Unitree Go2 corpus --- eleven sessions, a machine over a year in service, three sites, two dates two months
+apart --- the naive invariance test rejects on \textbf{11/11} sessions, i.e.\ it sees the machine's real, stable
+left--right asymmetry, and the recalibrated level $\nu_0$ reproduces across the two-month gap to within a factor
+\textbf{1.18}, which is smaller than the session-to-session spread within a single day. On the wheeled-legged M1 the
+rolling-contact filter recovers \textbf{0.99--1.00} of the driven path length where a fixed-foot filter recovers
+\textbf{0.03--0.04}. Used as an estimator front-end, the calibrated per-event gate discards \textbf{1.9\,\%} of nominal
+contact measurements where the standard fixed foot-speed threshold discards \textbf{40.6\,\%} of them on the same real
+outdoor data. And on the external benchmark the test holds its level at \textbf{0.049} against a nominal $0.05$.

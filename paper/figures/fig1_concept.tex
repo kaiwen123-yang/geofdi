@@ -1,0 +1,75 @@
+% Fig. 1 — the whole claim in one single-column figure (Sprint 10 W2.2).
+% Left: three structural invariances a healthy robot must satisfy. Middle: breaking one IS the fault/slip.
+% Right: the three channels that read the break, and what each delivers.
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize,
+  box/.style={draw,rounded corners=2pt,align=center,inner sep=3pt,minimum height=8mm,text width=20mm},
+  inv/.style={box,fill=blue!8,draw=blue!55},
+  brk/.style={box,fill=red!8,draw=red!55,text width=20mm},
+  ch/.style={box,fill=green!8,draw=green!50!black,text width=22mm},
+  del/.style={align=left,inner sep=1pt,font=\tiny},
+  ar/.style={-{Latex[length=1.6mm]},draw=black!60},
+  lbl/.style={font=\tiny\bfseries,align=center}
+]
+
+% ---------------- column headings
+\node[lbl] (h1) at (0,2.35) {structural invariance\\(healthy robot)};
+\node[lbl] (h2) at (2.85,2.35) {breaking it\\\emph{is} the fault};
+\node[lbl] (h3) at (6.05,2.35) {channel that reads it\\$\rightarrow$ what it delivers};
+
+% ---------------- left: three invariances
+\node[inv] (i1) at (0,1.45) {morphological\\$C_2$: $\mathrm{LF}\!\leftrightarrow\!\mathrm{RF}$, $\mathrm{LH}\!\leftrightarrow\!\mathrm{RH}$};
+\node[inv] (i2) at (0,0.35) {gait space--time\\$\symgrp=\{e,(\gs,\tfrac{T}{2})\}$};
+\node[inv] (i3) at (0,-0.85) {contact geometry\\rolling: $\dot d_i = R u_i$};
+
+% tiny quadruped pictogram inside i1's margin
+\begin{scope}[shift={(-1.25,1.45)},scale=0.16]
+  \draw[black!55,fill=black!5] (-1.6,-0.7) rectangle (1.6,0.7);
+  \draw[dashed,red!60] (0,-1.15) -- (0,1.15);
+  \foreach \x/\y in {-1.15/0.75,1.15/0.75,-1.15/-0.75,1.15/-0.75} \draw[fill=blue!30] (\x,\y) circle (0.3);
+\end{scope}
+
+% ---------------- middle: the break
+\node[brk] (b1) at (2.85,1.45) {one-sided fault\\(actuator, encoder,\\single-foot slip)};
+\node[brk] (b2) at (2.85,0.35) {phase/duty break\\(gait asymmetry)};
+\node[brk] (b3) at (2.85,-0.85) {constraint break\\(wheel slip, lost contact)};
+
+% ---------------- right: channels
+\node[ch] (c1) at (6.05,1.45) {$\Rminus$ on the raw element\\{\tiny(mirror flip test)}};
+\node[ch] (c2) at (6.05,0.35) {$\Rminus$ on the \emph{residual}\\{\tiny(equivariant model)}};
+\node[ch] (c3) at (6.05,-0.85) {invariant filter\\innovation / NIS};
+
+% ---------------- arrows
+\foreach \a/\b in {i1/b1,i2/b2,i3/b3} \draw[ar] (\a) -- (\b);
+\foreach \a/\b in {b1/c1,b2/c2,b3/c3} \draw[ar] (\a) -- (\b);
+% cross links: the residual channel also serves the one-sided fault; the filter also serves the gait break
+\draw[ar,dashed,black!35] (b1) to[out=-25,in=170] (c2);
+\draw[ar,dashed,black!35] (b3) to[out=25,in=190] (c2);
+
+% ---------------- deliverables strip
+\node[draw,fill=black!4,rounded corners=2pt,text width=82mm,align=left,inner sep=4pt,font=\tiny]
+  (dl) at (3.0,-2.15) {%
+  \textbf{What the construction delivers.}\;
+  \emph{(i)} exact finite-sample false-alarm rate --- the test is a group-randomisation test, so its level holds at any
+  $K$ with no fault data and no training (Thm.~\ref{thm:exact});\;
+  \emph{(ii)} an anytime-valid sequential layer (e-process, Ville) that may be read at every cycle
+  (Prop.~\ref{prop:seq});\;
+  \emph{(iii)} a characterisation of \emph{what is visible}: a $\symgrp$-fixed (bilateral) fault is invisible to any
+  invariance test, and the magnitude channel is what covers it (Thm.~\ref{thm:twolayer}).};
+
+\begin{scope}[on background layer]
+  \node[fit=(h1)(i3),draw=blue!25,rounded corners=3pt,inner sep=4pt,fill=blue!3] {};
+  \node[fit=(h2)(b3),draw=red!25,rounded corners=3pt,inner sep=4pt,fill=red!3] {};
+  \node[fit=(h3)(c3),draw=green!30!black!35,rounded corners=3pt,inner sep=4pt,fill=green!3] {};
+\end{scope}
+\end{tikzpicture}
+\caption{\textbf{Fault and slip detection as invariance testing.} A healthy legged or wheeled-legged robot satisfies
+three structural invariances (left): the morphological mirror symmetry of the body, the space--time symmetry of the
+commanded gait, and the geometry of contact (a stance foot is fixed; a rolling wheel's contact point moves at the
+measured rolling rate). Every fault or slip we target \emph{is} a break of one of them (middle), which turns detection
+into a test of a symmetry hypothesis rather than a comparison against a learned or thresholded nominal. Three channels
+read the break (right); dashed links mark the couplings that make them complementary rather than redundant.}
+\label{fig:concept}
+\end{figure}

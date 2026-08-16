@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.8.14)  16 AUG 2026 19:56
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.8.14)  16 AUG 2026 19:59
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -751,20 +751,50 @@ Package hyperref Info: Link coloring OFF on input line 48.
 LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 60.
  (/home/kaiwen/.TinyTeX/texmf-dist/tex/latex/psnfss/ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
-) (./sections/00_abstract.tex) (./sections/01_introduction.tex) (./sections/02_related.tex) (./sections/03_preliminaries.tex) (./sections/04_theory.tex) (./sections/05_method.tex) (./sections/06_simulation.tex) (./sections/07_external.tex) (./sections/08_hardware.tex) (./sections/09_limitations.tex) (./sections/10_conclusion.tex) (build/main.bbl
+) (./sections/00_abstract.tex) (./sections/01_introduction.tex (./figures/fig1_concept.tex
+LaTeX Font Info:    Trying to load font information for U+msa on input line 20.
+ (/home/kaiwen/.TinyTeX/texmf-dist/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Trying to load font information for U+msb on input line 20.
+ (/home/kaiwen/.TinyTeX/texmf-dist/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
 
-! LaTeX Error: Something's wrong--perhaps a missing \item.
+LaTeX Warning: Reference `thm:exact' on page 1 undefined on input line 56.
 
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.23 \end{thebibliography}
-                          
-Try typing  <return>  to proceed.
-If that doesn't work, type  X <return>  to quit.
 
-) (./appendix/A_proofs.tex)
+LaTeX Warning: Reference `prop:seq' on page 1 undefined on input line 58.
+
+
+LaTeX Warning: Reference `thm:twolayer' on page 1 undefined on input line 60.
+
+
+Overfull \hbox (1.88719pt too wide) in paragraph at lines 67--73
+ [][] 
+ []
+
+)
+LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 22.
+ (/home/kaiwen/.TinyTeX/texmf-dist/tex/latex/psnfss/ts1ptm.fd
+File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
+) [1{/home/kaiwen/.TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/home/kaiwen/.TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc}
+
+
+]
+
+LaTeX Warning: Reference `thm:exact' on page 2 undefined on input line 53.
+
+
+LaTeX Warning: Reference `prop:power' on page 2 undefined on input line 53.
+
+
+LaTeX Warning: Reference `prop:seq' on page 2 undefined on input line 53.
+
+
+LaTeX Warning: Reference `thm:twolayer' on page 2 undefined on input line 60.
+
+) (./sections/02_related.tex) (./sections/03_preliminaries.tex) (./sections/04_theory.tex) (./sections/05_method.tex) (./sections/06_simulation.tex) (./sections/07_external.tex) (./sections/08_hardware.tex) (./sections/09_limitations.tex) (./sections/10_conclusion.tex) (build/main.bbl [2]) (./appendix/A_proofs.tex)
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -776,9 +806,7 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[1{/home/kaiwen/.TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/home/kaiwen/.TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc}
-
-
+[3
 
 ] (build/main.aux)
  ***********
@@ -787,30 +815,24 @@ L3 programming layer <2026-07-20>
  ***********
 
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+LaTeX Warning: There were undefined references.
 
-
-Package rerunfilecheck Warning: File `main.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `main.out':
-(rerunfilecheck)             Before: 261E18A5809BF4CE2313C7008839DFB1;1205
-(rerunfilecheck)             After:  1A974817E840814B606BC36A92B67606;1300.
+Package rerunfilecheck Info: File `main.out' has not changed.
+(rerunfilecheck)             Checksum: 1A974817E840814B606BC36A92B67606;1300.
  ) 
 Here is how much of TeX's memory you used:
- 25566 strings out of 469149
- 494888 string characters out of 5460013
- 939340 words of memory out of 5000000
- 54130 multiletter control sequences out of 15000+600000
- 656467 words of font info for 89 fonts, out of 8000000 for 9000
+ 25919 strings out of 469149
+ 500952 string characters out of 5460013
+ 968340 words of memory out of 5000000
+ 54433 multiletter control sequences out of 15000+600000
+ 669597 words of font info for 108 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 92i,8n,104p,465b,443s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmr8a.pfb>
-Output written on build/main.pdf (1 page, 43331 bytes).
+ 92i,9n,104p,830b,903s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></home/kaiwen/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on build/main.pdf (3 pages, 156324 bytes).
 PDF statistics:
- 88 PDF objects out of 1000 (max. 8388607)
- 76 compressed objects within 1 object stream
- 16 named destinations out of 1000 (max. 500000)
- 101 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 182 PDF objects out of 1000 (max. 8388607)
+ 149 compressed objects within 2 object streams
+ 35 named destinations out of 1000 (max. 500000)
+ 109 words of extra memory for PDF output out of 10000 (max. 10000000)
 
