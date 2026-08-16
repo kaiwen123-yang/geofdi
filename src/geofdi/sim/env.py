@@ -230,7 +230,7 @@ def rollout(cfg: SimConfig, model: mujoco.MjModel | None = None, return_state: b
                 gyr_sum += d.sensordata[sadr["imu_gyro"][0]:sadr["imu_gyro"][0] + 3]
             fz_s, fw_s, tw_s, cpw_s, fsum_s = _foot_contact_forces(m, d, floor, feet, leg_bodies)   # per-substep wrenches (averaged below)
             fw_sum += fw_s; tw_sum += tw_s; cpw_sum += cpw_s; fzw_sum += fsum_s
-        tau_meas = tau_app + rng.normal(0.0, noise.torque_meas_std, 12)
+        tau_meas = tau_app + rng.normal(0.0, 1.0, 12) * faults.torque_meas_noise_std(noise.torque_meas_std, t)
         if cfg.imu_mode == "sampled":
             acc0 = d.sensordata[sadr["imu_acc"][0]:sadr["imu_acc"][0] + 3].copy()
             gyr0 = d.sensordata[sadr["imu_gyro"][0]:sadr["imu_gyro"][0] + 3].copy()

@@ -358,12 +358,15 @@ bilateral fault reappears through the chirality channel $\eps{chir}$
 periodic orbit of the faulted plant loses stability; below it the two-channel
 design (Corollary~\ref{cor:two-channel-necessity}) is required, above it a
 one-sided residual re-emerges. This prediction is tested in the pre-registered
-chirality-ceiling experiment (P1, \S\ref{sec:p1-open} anchor;
-\texttt{experiments/e15\_predictions}): a bilateral mirror fault of equal
-severity $\kappa$ is swept downward and $R^-$ power together with the
-duty-factor chirality index is recorded --- the theorem predicts $R^-$ power
-$\approx \alpha$ at mild $\kappa$ and a rise coincident with the onset of a
-nonzero chirality index at the ceiling.
+chirality-ceiling experiment (P1, \texttt{experiments/e15\_predictions}): a
+bilateral mirror fault of equal severity $\kappa$ is swept downward and $R^-$
+power together with the duty-factor chirality index is recorded. The Block~P
+run found $R^-$ blind and the chirality index at its floor across the whole
+swept range (the symmetric gain fault preserves A5-under-fault and does not
+bifurcate at speed~$0$): the blindness is robust and the ceiling is a
+phenomenon of a genuine symmetry-breaking regime (the Sprint-1 moving-trot
+low-gain chiral gait) rather than of symmetric degradation --- see the P1
+anchor below.
 \end{remark}
 
 \begin{remark}[Statistic consistency --- paired mean vs energy distance]
@@ -415,15 +418,32 @@ straight episodes ($R^-$ straight $0.50$; too few to separate ``blind'' from
 ``underpowered'', \texttt{docs/protocol/liu\_a1\_audit.md} \S4). Layer~II is
 falsified if a $\symgrp$-fixed, A5-under-fault fault is detected by the
 paired flip test above its false-alarm rate on a world satisfying A1--A5.
-\emph{Layer~I (law level), pre-registered:} the amplitude-ceiling claim
-(Remark~\ref{rem:amplitude-ceiling}) and the statistic-split claim
-(Remark~\ref{rem:statistic-consistency}) are tested in
-\texttt{experiments/e15\_predictions} (P1, P2). \textbf{[P1/P2 empirical
-anchors --- fill after the Block~P runs: P1 $R^-$ power and chirality index
-vs bilateral severity $\kappa$ with the ceiling estimate; P2
-\texttt{paired\_energy} vs \texttt{energy\_distance} power under a zero-mean
-one-sided variance inflation.]} Command conditions that break the symmetry of
-the gait itself (turning) are excluded from every blindness claim.
+\emph{Layer~I (law level).} P1 (\texttt{experiments/e15\_predictions}, stage~a;
+\texttt{e15a\_chirality\_ceiling}): a bilaterally-symmetric actuator-gain fault
+(equal $\kappa$ on the front mirror pair) on \texttt{go2\_urdf\_sym},
+$1-\kappa \in \{0.3,0.5,0.6,0.7\}$, keeps $R^-$ power at $0.00$ (blind) at
+\emph{every} severity, with the realized-gait chirality index (stance duty
+and touch-down mirror residual) at its $\approx 0.00$ floor throughout ---
+A5-under-fault holds and no bifurcation occurs, so the blindness is robust and
+\emph{the amplitude ceiling is not reached by a symmetric gain fault in this
+speed-$0$ regime} (the chirality bifurcation is the Sprint-1 moving-trot
+low-gain phenomenon, rp003, chirality $\approx 0.23$; a symmetric gain
+reduction here degrades symmetrically instead of breaking chirally). This
+confirms Layer~I.a (blindness under A5-under-fault) and leaves the ceiling as
+a predicted phenomenon of a genuine symmetry-breaking regime, not of symmetric
+degradation. P2 (stage~b; \texttt{e15b\_statistic\_split}): a \emph{zero-mean}
+variance inflation ($\Pi^-\mu = 0$) --- in the controlled toy with the exact
+hypotheses (an i.i.d.\ Gaussian mirror pair, LF/RF variance ratio $1,2,4,9$)
+\texttt{paired\_energy} power stays at $\alpha$ ($0.05,0.10,0.03,0.03$: blind,
+Layer~II.a) while \texttt{energy\_distance} power rises to $0.88$ (consistent,
+Layer~I.b); in the closed loop the same direction holds near the flip-test
+floor (a single channel's scale change, standardized across the $50$-channel
+element, is diluted, and energy distance has intrinsically low power for pure
+scale alternatives at $K \le 80$). \emph{Deployment consequence
+(\texttt{protocol\_params.md}): run both statistic families and alarm on
+either --- \texttt{paired\_energy} alone misses a zero-mean/variance-only
+fault.} Command conditions that break the symmetry of the gait itself
+(turning) are excluded from every blindness claim.
 
 \subsection{Proposition N1-5: the sequential layer}
 \label{sec:n1-5}
