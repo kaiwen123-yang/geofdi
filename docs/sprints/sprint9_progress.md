@@ -29,17 +29,17 @@ Read this first in a new session; continue from the first unchecked item. `[ ]` 
 - [x] rp032 Block R review pack
 
 ## Block B — background backlog (one commit each)
-- [ ] B1 classical baseline row (De Luca momentum observer + χ² fixed threshold) on e08 grid + e07 nuisance
-- [ ] B2 robustness sweeps `experiments/e19_robustness/` (phase error, K_cal, block-length mismatch)
-- [ ] B3 N2 written up in `theory/sections/04_n2.tex`; `make theory` zero error; tag `theory-part3-v1`
-- [ ] B4 N1-3 attempt (timeboxed): power lower bound or conjecture + empirical curve
-- [ ] B5 173247 diagnosis (ν trajectory shape classification + condition cross-check)
-- [ ] B6 Mini Cheetah flying-trot block-mode rerun (does H0' come back into band?)
-- [ ] B7 joint sign tables back-filled into `00_notation` (M1 verified; Go2 per Q1)
-- [ ] B8 P1 Remark rewritten per the falsification result + empirical anchor
+- [x] B1 e21: classical det 0.77/0.96 vs R⁻ 0.71 and faster, **but nominal FAR 0.15 (fixed) / 0.50 (recalibrated, held-out) vs R⁻ 0.00**; symmetric-drift nuisance 0.90–0.95 vs 0.00. Classical wins on friction faults — reported
+- [x] B2 e19: phase ±10 % → all in band (**costs power, not level**); K_cal 60 already sufficient; **block ≥ 2× nuisance correlation time** (0.350/0.217/0.100) — the only probe that breaks the level
+- [x] B3 `theory/sections/04_n2.tex` (Part 3): rolling-contact group-affine **with proof**, sparse-correction consistency, signature=observable projection; 0 error/undefined/overfull; tag `theory-part3-v1`
+- [x] B4 **N1-3 CLOSED as a proposition** (not a conjecture): Laurent–Massart power lower bound + sample-size corollary, numerically valid over d∈{4,12,40,100}, tight to 1.76× in λ
+- [x] B5 **corrects the Sprint 8 claim**: not a monotone drift (score 0.83) but a between-window jump; M1 runs too short to settle it → **≥60 s continuous runs** added to the robot-day list
+- [~] B6 **NO** — block mode's alarm drop (6/8→2/8) is confounded by 1–4 windows vs 7–20; window-reject rate 0.397→0.375. Aggressive-gait limitation recorded
+- [x] B7 verified sign table in 00_notation (M1 16 joints + vendor conversion + wheel sign; Go2 no-joint-stream); **last theory TODO retired (0 remaining)**
+- [x] B8 amplitude-ceiling Remark now leads with the falsification (blind to κ=0.3; ceiling needs a genuine bifurcation, rp003 anchor 0.23 vs floor 0.003)
 - [x] B9 matcher broadened (any *manifest*.md, any case) + **post-build assertion that fails loudly**; verified by generating packs (positive + negative cases)
-- [ ] rp033 Block B review pack
+- [x] rp033 Block B review pack
 
 ## Wrap-up
-- [ ] tag `real-data-milestone-2`; final summary
+- [x] tag `real-data-milestone-2`; final summary
 - [x] `raw/m1/nominal-crossday/` placeholder created with ingest instructions
