@@ -1,0 +1,82 @@
+%% GeoFDI manuscript, v0 (Sprint 10). Working title; author block is a placeholder. Single-blind: no anonymisation.
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,shapes.geometric}
+\usepackage[framemethod=TikZ]{mdframed}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+
+% ---------------------------------------------------------------- macros (kept identical to theory/preamble.tex)
+\newcommand{\symgrp}{\Sigma}
+\newcommand{\gs}{g_{\mathrm{s}}}
+\newcommand{\repW}{\rho_{\mathcal{W}}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\SE}{\mathrm{SE}}
+\newcommand{\SO}{\mathrm{SO}}
+\newcommand{\eps}[1]{\varepsilon_{\mathrm{#1}}}
+\newcommand{\push}[1]{{#1}_{\#}}
+\newcommand{\Rminus}{R^{-}}
+\newcommand{\Rplus}{R^{+}}
+\newcommand{\Law}{\mathcal{L}}
+\newcommand{\Tc}{T_{\mathrm{c}}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% a visible box for data we have not collected yet (Sprint 10: the robot-day list)
+\newmdenv[linecolor=black!55,linewidth=0.6pt,backgroundcolor=black!4,innertopmargin=4pt,innerbottommargin=4pt,
+          skipabove=6pt,skipbelow=6pt,roundcorner=2pt]{placeholderbox}
+
+\begin{document}
+
+\title{GeoFDI: Fault and Slip Detection as Invariance Testing,\\
+with Finite-Sample Guarantees for Legged and\\ Wheeled-Legged Robots}
+
+\author{\IEEEauthorblockN{Kaiwen Yang}
+\IEEEauthorblockA{[affiliation TBD]\\ \texttt{[email TBD]}}
+\and
+\IEEEauthorblockN{[advisor TBD]}
+\IEEEauthorblockA{[affiliation TBD]}}
+
+\maketitle
+
+\begin{abstract}
+\input{sections/00_abstract}
+\end{abstract}
+
+\input{sections/01_introduction}
+\input{sections/02_related}
+\input{sections/03_preliminaries}
+\input{sections/04_theory}
+\input{sections/05_method}
+\input{sections/06_simulation}
+\input{sections/07_external}
+\input{sections/08_hardware}
+\input{sections/09_limitations}
+\input{sections/10_conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\appendices
+\input{appendix/A_proofs}
+
+\end{document}

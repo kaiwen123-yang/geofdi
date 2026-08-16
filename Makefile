@@ -2,7 +2,7 @@
 # env/machines/*.yaml — no hard-coded mounts anywhere in the build.
 VENV ?= $(HOME)/venvs/geofdi
 
-.PHONY: setup links theory test review-pack
+.PHONY: setup links theory paper paper-clean test review-pack
 
 setup:
 	python3 -m venv $(VENV)
@@ -14,6 +14,12 @@ links:
 
 theory:
 	$(MAKE) -C theory
+
+paper:
+	cd paper && latexmk -pdf -interaction=nonstopmode -outdir=build main.tex
+
+paper-clean:
+	cd paper && latexmk -C -outdir=build main.tex
 
 # PYTHONPATH is cleared: a ROS install on the host leaks its site-packages via
 # PYTHONPATH and auto-registers broken pytest plugins; the venv must stay hermetic.
