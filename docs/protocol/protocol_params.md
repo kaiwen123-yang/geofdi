@@ -57,3 +57,17 @@ deterministic given the seed (MuJoCo 3.11, integer phase clock).
 | registration with an estimated phase | `register_cycles` interpolates on the global unwrapped phase (no clamped cycle edges) | a fractional phase offset with clamped edges gave a systematic one-grid-point half-cycle asymmetry (p 0.002 on nominal data); identical results for the controller clock |
 | Gate-1 estimator | mirrored-command gap per torque channel = |mean_k mean_θ (τ_leg(θ) − s τ_partner(θ+½))| with bootstrap CI (`detect/gate1.py`) | rehearsal: wheel-rate 1.02 recovered within 1 %, Go2 HFE kp 1.05 within 26 % (median), M1 HIP kp 1.02 not resolvable (the loaded loop absorbs a gain change: command gap 0.011 vs counterfactual 0.12 N·m) — Gate 1 sees the closed-loop command asymmetry, not the controller's parameters |
 | Day-0 first commands | `scripts/run_pipeline.sh <session> --robot m1 --mode rolling` / `--robot go2 --mode trot` | W4; both zero-touch on the synthetic rehearsal sessions |
+
+## Sprint 9 Block B2 additions (2026-08-16) — robustness sweeps (`experiments/e19_robustness`, run `e19-20260816`)
+
+Three standard reviewer probes, all on the nominal `go2_urdf_sym` world under H₀, R = 60 per point, α = 0.05.
+
+| probe | setting | H₀ / H₀′ size | reading |
+|---|---|---|---|
+| **phase-clock error** | ±2, ±5, ±10 % of the period | 0.000 at every nonzero error (0.033 / 0.050 at 0 %) | **The level survives; the cost is power, not FAR.** A mis-scaled phase clock decorrelates the mirror pairing, so the flip test becomes *conservative* rather than anti-conservative. Practical rule: a phase estimate good to ±10 % cannot create false alarms; quantifying the power it costs needs a separate sweep (owed). |
+| **H₀′ calibration size** | K_cal ∈ {60, 200, 400}, K_mon = 60 | 0.083 / 0.033 / 0.000 | In band at all three; the size falls (more conservative) as the calibration set grows. **K_cal = 60 is already sufficient** for the level; larger sets buy stability of ν₀, not validity. |
+| **block length vs nuisance correlation time** | B/τ ∈ {0.5, 1, 2} under `drift_lateral` (mirror-symmetric in law, τ = 4 cycles) | **0.350 / 0.217 / 0.100** | The only probe that breaks the level. **Protocol number: the flip block must be at least 2× the nuisance correlation time** (B/τ = 2 is the first point inside the band; B/τ = 1 is still 4× α). This supersedes the looser Sprint-1 statement "block 8 gives 0.075, block 16 is in band" by expressing the requirement in units of τ. |
+
+Consequence for deployment: of the three things a practitioner can get wrong, only the block length threatens the false-
+alarm guarantee. Estimate the nuisance correlation time (lag autocorrelation of the per-element anti-symmetric energy)
+and set the block to ≥ 2τ; then a phase estimate within ±10 % and K_cal ≥ 60 are enough.
