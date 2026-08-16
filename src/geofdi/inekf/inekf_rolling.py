@@ -17,6 +17,7 @@ from __future__ import annotations
 import numpy as np
 
 from .liegroups import adjoint_sek3, exp_so3, skew
+from .eskf import ESKF
 from .rinekf import G_VEC, RIEKF
 
 
@@ -75,3 +76,39 @@ def wheel_contact_inputs(dq_wheel: dict, radius: float, forward_axis=(1.0, 0.0, 
     u_body = {f: float(radius) * float(om) * fwd for f, om in dq_wheel.items()}
     wheel_frame = {f: W for f in dq_wheel}
     return u_body, wheel_frame
+
+
+class RollingESKF(ESKF):
+    """Rolling-contact version of the classical error-state EKF baseline (Sprint 8 D3): SAME model as RollingRIEKF
+    (d_dot_i = R u_i with known u_i, wheel-frame anisotropic process noise), but in the ESKF's error coordinates the
+    contact block DOES couple to the attitude error: d(d_i)/d(delta_theta) = -R [u_i]x dt (the plain-EKF Jacobian that
+    the invariant error annihilates). Comparing the two on hardware isolates the error-parametrisation effect."""
+
+    def __init__(self, R0, v0, p0, P0_diag=(1e-4, 1e-4, 1e-4), sigma_gyro=0.01, sigma_accel=0.1, sigma_contact=1e-3,
+                 sigma_kin_floor=1e-3, sigma_roll=0.05, sigma_slip=2e-3):
+        super().__init__(R0, v0, p0, P0_diag, sigma_gyro, sigma_accel, sigma_contact, sigma_kin_floor)
+        self.sigma_roll = float(sigma_roll); self.sigma_slip = float(sigma_slip); self.u = {}; self.wheel_frame = {}
+
+    set_rolling_inputs = RollingRIEKF.set_rolling_inputs
+    _wheel_cov = RollingRIEKF._wheel_cov
+
+    def propagate(self, gyro, accel, dt):
+        w = np.asarray(gyro, float); a = np.asarray(accel, float)
+        R, v, p = self.R, self.v, self.p
+        acc_w = R @ a + G_VEC
+        n = self._dim(); nd = len(self.d)
+        F = np.eye(n)
+        F[0:3, 0:3] = np.eye(3) - skew(w) * dt
+        F[3:6, 0:3] = -R @ skew(a) * dt
+        F[6:9, 3:6] = np.eye(3) * dt
+        Q = np.zeros((n, n)); Q[0:3, 0:3] = self.sg**2 * np.eye(3) * dt; Q[3:6, 3:6] = R @ (self.sa**2 * np.eye(3)) @ R.T * dt
+        d_new = {}
+        for k, f in enumerate(self.feet):
+            ui = self.u.get(f, np.zeros(3))
+            d_new[f] = self.d[f] + R @ ui * dt
+            F[9 + 3 * k:12 + 3 * k, 0:3] = -R @ skew(ui) * dt                     # attitude -> contact coupling (plain EKF)
+            Q[9 + 3 * k:12 + 3 * k, 9 + 3 * k:12 + 3 * k] = (R @ self._wheel_cov(f) @ R.T if f in self.u else self.sd**2 * np.eye(3)) * dt
+        self.P = F @ self.P @ F.T + Q
+        self.R = R @ exp_so3(w * dt); self.v = v + acc_w * dt; self.p = p + v * dt + 0.5 * acc_w * dt * dt
+        for f in self.feet:
+            self.d[f] = d_new[f]
