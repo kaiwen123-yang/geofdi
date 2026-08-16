@@ -173,10 +173,54 @@ excluded parts are the turning manoeuvres — the operator turned by *skid-steer
 * Real ε_dyn candidates on hardware (stable mirror residuals while rolling straight): knee angle asymmetry 0.02–0.05 rad
   (right more flexed), hip_roll 0.02–0.03 rad, wheel-rate asymmetry ≈ 4 % of the session mean (turning bias); efforts
   L/R differ by 0.4–1.1 (knee, hip_roll) — i.e. the "stably asymmetric healthy loop" of H₀′ is the hardware regime, as
-  predicted in Sprint 7 Block W. ν₀ magnitudes from the pipeline runs: §D3 of the sprint report / `results/pipeline/`.
+  predicted in Sprint 7 Block W.
+* ν₀ (H₀′ calibration asymmetry functional, first-half calibration, L = 1 s): **13.7 ± 7.3 / 2.8 ± 1.7 / 9.8 ± 5.1**
+  (172847 / 173028 / 173247), significantly positive on every session (ν₀ / bootstrap-std ≈ 1.7–1.9).
 * Session-mean gyro z is nonzero on every drive (−0.05 … −0.09 rad/s in the sensor frame): the operator's loops, not a bias
   (static bias 1e-4).
-* IMU accel scale 0.987 g at rest; odometry yaw rate −18…−22 % vs the gyros: both must be in the InEKF error budget.
+* IMU accel scale 0.987 g at rest; odometry yaw rate −18…−22 % vs the gyros: both are in the InEKF error budget.
+
+## 13. First hardware runs (Block D3; results `results/pipeline/m1real_*`, `results/e18_m1_real/e18-20260816`)
+
+Pre-registration `docs/protocol/m1_real_preregistration.md` (committed 2026-08-16 14:05, before any run). Settings as
+pre-declared (N = 64, window = 10, α = 0.05, M = 512, seed 0, kinematic fallback segmentation, L = 1 s then 2 s).
+
+**D3.1 — R⁻ H₀ / H₀′** (first real-robot readout, figure `results/e18_m1_real/e18-20260816/e18_real_h0_h0prime.png`):
+
+| session | K (L=1) | naive H₀ p | H₀ e-proc | lag1 (L=1 → L=2) | H₀′ differenced p (L=1) | H₀′ per-window e-proc max | ν₀ ± std |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 172847 | 28 | 0.002 | 34 (alarm) | 0.65 → 0.23 | 0.37 (in band) | 0.98 (no alarm) | 13.7 ± 7.3 |
+| 173028 (primary) | 74 | 0.006 | 1462 (alarm) | 0.52 → 0.23 | 0.094 (in band) | 2.6 (no alarm) | 2.8 ± 1.7 |
+| 173247 | 36 | 0.006 | 223 (alarm) | 0.79 → 0.55 | **0.002 (rejects)** | 5.8 (no alarm) | 9.8 ± 5.1 |
+
+Against the pre-registration: prediction 1 (**naive H₀ rejects**) is confirmed on all three (as designed — the healthy
+loop is stably asymmetric + blocks correlated at L = 1 s; even at L = 2 s the whole-session flip test still rejects,
+p 0.002–0.043, but the H₀ e-process no longer alarms on the two shorter sessions and lag-1 drops to 0.23–0.55, confirming
+prediction 4). Prediction 3 (**sequential H₀′ monitor: no alarm within any session**) holds on all three — the e-process
+stays below 1/α = 20 everywhere (0.98 / 2.6 / 5.8). Prediction 2 (H₀′ differenced first-vs-second-half in band on ALL
+three) is **partially falsified**: it holds on 172847 and the primary 173028 but **rejects on 173247 (p = 0.002)**. The
+differenced rejection is a real *slow drift* of the asymmetry level over that 76-s session, not a fault — the increase is
+concentrated in the right-front knee/ABAD channels (normalised anti-symmetric energy of q_RF_KNEE rises 0.6 → 3.6, q_RF_ABAD
+0.6 → 2.9 between halves) and tracks the odometry turning bias (the operator's later runs curved more). Reported as
+predicted-falsified: the deployable sequential H₀′ monitor did not alarm, but the two-window differenced test is sensitive
+to this within-session non-stationarity — a note for the deployment (calibrate ν₀ on a short leading window, monitor
+sequentially; the differenced half-vs-half test over-reads slow drift). No parameter was changed after seeing the data.
+
+**D3.2 — rolling InEKF vs fixed-foot vs ESKF on hardware** (`experiments/e18_m1_real`, figure `e18_inekf_real.png`):
+the heading-independent, pre-registered metrics are decisive — **path length recovered 0.99 / 1.00 / 0.99** (rolling
+RIEKF) vs **0.04 / 0.03 / 0.04** (fixed-foot RIEKF/ESKF), and **per-run traveled-distance error median 0.6–1.4 %**
+(rolling) vs **98 %** (fixed) — the real-robot version of the e10 sim result (rolling 0.71 m vs fixed 13.4 m). The rolling
+ESKF matches the rolling RIEKF (path 1.05–1.08, arclen-err 0.6–1.4 %): the error-parametrisation effect is second order at
+these rates, as pre-registered. The *vector* metrics (whole-session RMSE 17–48 m, per-run vector displacement ratio ≈ 1)
+are dominated by a **shared yaw-corruption artifact**: during the operator's skid-steer turns the four wheels skid, which
+violates BOTH contact models, and the four fixed body-frame contact points over-constrain the yaw update and drag it away
+from the gyro (identical for all four filters, including the e10-validated fixed-foot ones) — the estimated heading ends
+150–300° from the gyro-integrated heading. This is exactly the failure that per-stance πᵢ gating (Sprint 8 Block G) is
+meant to remove (gate the kinematic update out while the wheel rolls-constraint residual is large), and it is called out
+as such. Falsification clause (rolling per-run error < half the fixed-foot's) is met decisively on the heading-independent
+metric (0.6–1.4 % vs 98 %). Reference is the vendor odometry, not ground truth (its yaw rate is 18–22 % low, §6).
+
+**D3.3 — DeLaN not run** (pre-declared: 4.6 min nominal rolling < 20 min minimum). Residual channel stays off.
 
 ## 12. Ingest record
 

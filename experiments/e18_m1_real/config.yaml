@@ -1,0 +1,27 @@
+# e18 — first GeoFDI experiments on the M1 hardware sessions of 2026-08-10 (Sprint 8 Block D3; pre-registration
+# docs/protocol/m1_real_preregistration.md, committed 2026-08-16 14:05 before any run).
+experiment: e18_m1_real
+sessions:                                   # raw/m1/nominal/<name> (payload fingerprints in the audit doc §12)
+  - m1_walk_20260810_172847
+  - m1_walk_20260810_173028
+  - m1_walk_20260810_173247
+primary: m1_walk_20260810_173028
+inekf:
+  # noise settings = e10 nis_smoke (sim), unchanged
+  sigma_gyro: 0.01
+  sigma_accel: 0.1
+  sigma_enc: 3.0e-3
+  sigma_contact: 3.0e-3
+  sigma_kin_floor: 3.0e-3
+  sigma_roll: 0.06
+  sigma_slip: 3.0e-3
+  wheel_radius: 0.097                       # audit §7 (odometry speed / mean wheel rate, three sessions)
+  accel_norm_correction: 0.9873             # static session |a| in g (audit §6): accel is divided by this so that rest reads 1 g
+  # declared constant contact geometry (pre-registration D3.2): body-frame contact points, all four wheels in contact
+  contact_points_body:
+    LF: [0.35, 0.22, -0.54]
+    RF: [0.35, -0.22, -0.54]
+    LH: [-0.27, 0.24, -0.54]
+    RH: [-0.27, -0.24, -0.54]
+  filters: [rolling_riekf, rolling_eskf, fixed_riekf, fixed_eskf]
+  warmup_s: 6.0

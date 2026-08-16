@@ -40,7 +40,10 @@ signs:                              # sign convention relative to the GeoFDI uni
     2026-08-10 bags. The GeoFDI mirror representation is diag(-1,+1,+1,+1) (ABAD roll flips, pitch-axis joints keep their
     sign), so the vendor->uniform-axis conversion for the RIGHT legs is diag(+1,-1,-1,-1): ABAD already carries the physical
     roll flip, HIP/KNEE/WHEEL are re-signed. (The earlier candidate [-1,-1,-1,-1] would have flipped ABAD twice.)
-  per_leg_sign: {LF: [1, 1, 1, 1], RF: [1, -1, -1, -1], LH: [1, 1, 1, 1], RH: [1, -1, -1, -1]}
+    WHEEL column: forward driving gives a NEGATIVE fl/bl wheel rate and a POSITIVE fr/br rate in vendor coordinates (odometry
+    body velocity +0.4..0.7 m/s while fl4/bl4 rates are -4..-8 rad/s, audit §7); the GeoFDI convention is positive = forward
+    rolling (as the sim world), so the LEFT wheels take -1 and the RIGHT wheels +1 (mirror relation unchanged: both forward).
+  per_leg_sign: {LF: [1, 1, 1, -1], RF: [1, -1, -1, 1], LH: [1, 1, 1, -1], RH: [1, -1, -1, 1]}
 imu:
   ros_topic: /imu_driver/imu_central
   frame_id: imu_link
